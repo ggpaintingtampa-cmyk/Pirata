@@ -1,0 +1,340 @@
+{
+  "verifiedAt": "2026-09-19T01:57:41.156033+00:00",
+  "status": "Live Figma design update; frontend-only publish and authenticated read-only production verification passed",
+  "target": "https://pirata.andresinbox.tech",
+  "audience": "owner plus up to four enabled employees",
+  "webReleaseId": "20260919T015539Z-7075cae7",
+  "apiReleaseId": "20260918T081813Z-a8592c71",
+  "previousWebReleaseId": "20260918T155018Z-e47e98e6",
+  "previousApiReleaseId": "20260918T081813Z-a8592c71",
+  "scope": "Figma frontend design, Files library, navigation, task capture and safe parent/child timer action; API, schema, records, accounts, uploads and AI configuration preserved",
+  "runtimeSha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+  "files": {
+    "assets/index-CGRAwinQ.js": "f433eda879202e70df73682b697fd8e19412323c56626e5f310bb5ad3dd47eb0",
+    "assets/index-DxU0qLj9.css": "07b71f980dfbfbd6876ae4d1e7f94d34a9876a0043a28d09ffd3b0f0fb4b2ba0",
+    "favicon.svg": "e20b5029ce6808cd5bbfc2f2b039cb062d921245a5c5780a5174b12bc01b73a8",
+    "index.html": "3bc8bc22eb998424ade3789415756e533323c4c250b7dc9a33ad09bb63968c18"
+  },
+  "webManifest": "/var/backups/pirata/20260919T015539Z-7075cae7.json",
+  "apiManifest": "/var/backups/pirata/team-upgrade-20260918T081813Z-a8592c71/upgrade.json",
+  "migration": {
+    "version": 2,
+    "checksums": {
+      "001-foundation.sql": "2d201c8615f2eb7b74543ee285c77909b8bfe45002a5e940bb41060014d85c71",
+      "002-team.sql": "7169b94a50f157ac39b6783ff4e83fdcb99b2019b160f149ec73a2a42dc8da60"
+    },
+    "historicalRecords": "Every original column and row compared equal in both preflight and closed-window migrated scratch copies"
+  },
+  "backup": {
+    "database": "/var/backups/pirata/database/20260919T015117Z-c077de3f0803479f95eec81971390345.sqlite",
+    "sha256": "6e3287c0e5b95eae24c50618e1767559b94abfee1340bc0c0a86321a3640e4b0",
+    "includes": "Matching .files directory and .manifest.json; keep all three together",
+    "scratchRestore": "/var/backups/pirata/figma-restore-20260919T015117",
+    "result": "Current API restore verified database integrity, relationships and migration compatibility. No live uploads existed; populated photo/PDF/preview recovery and tamper rejection passed isolated tests."
+  },
+  "rollback": {
+    "kind": "Compatible frontend rollback; retain live API, database and uploads",
+    "command": "sudo -n bash web/deploy/deploy.sh rollback 20260918T155018Z-e47e98e6",
+    "previousReleaseRetained": true,
+    "previousReleaseChecksumsVerified": true,
+    "instructions": "web/deploy/TEAM-RECOVERY.md"
+  },
+  "authentication": "Public static sign-in shell; authorized application sessions required for all business APIs and files; old Basic Auth file retained privately but no longer imported by Pirata",
+  "checks": {
+    "https": "Normal certificate/hostname verification, exact HTTP308 redirect, sign-in shell and security headers passed",
+    "assets": "All four live files match final canonical build SHA256 hashes",
+    "liveOwner": "Work, Projects, all four Calendar modes, Files, Ask, Updates, Progress, Settings, task-first Add, child Back, Menu search, task/file recovery controls, refresh/Back, and 320/390/768/1280 navigation passed; temporary session revoked",
+    "privateData": "Anonymous snapshot/export/admin/file content returned401; private source/config/database/upload paths returned404",
+    "productionWrites": "No business writes or fixture/employee creation; a short-lived verification session was minted and revoked",
+    "services": "API, Caddy and backup timer active/enabled; API still loopback3001; existing unrelated3003service and ResearchHTTPS401 preserved",
+    "backup": "Complete verified online backup restored into a new private scratch directory before publication",
+    "ai": "Existing owner-configured credentials and allowances unchanged; no paid provider requests",
+    "networkVantage": "Live checks originated on VPS. Actual production password entry and physical iPhone/Safari were not performed."
+  },
+  "tests": {
+    "workspaceLint": "Passed; existing Fast Refresh export warning",
+    "workspaceBuild": "Passed root typecheck/build and final frontend production build; existing bundle-size advisory",
+    "server": 150,
+    "frontendUnit": 69,
+    "deploymentBackupRecoverySetup": 26,
+    "demoChromium": 46,
+    "legacyIntegratedChromium": 11,
+    "clientsProjectsFoundationChromium": 13,
+    "spendingInventoryChromium": 17,
+    "tasksTimePlanningChromium": 17,
+    "redesignChromium": 12,
+    "redesignWebKit": 12,
+    "teamChromium": 4,
+    "teamWebKit": 4,
+    "finalLayout": "13 signed-in Figma screens captured at320/390/768/1280 plus Sign In at390 in Chromium and WebKit; screenshots inspected. Fixed native-select overflow and task/file control layout.",
+    "testIsolation": "Disposable data and per-suite servers; Secure cookies and sign-in limits unchanged. Group A API moved only in test config via environment to3013 to avoid existing3003 service."
+  },
+  "screenshots": [
+    "web/artifacts/figma-20260919/work-chromium-390.png",
+    "web/artifacts/figma-20260919/add-task-webkit-390.png",
+    "web/artifacts/figma-20260919/project-chromium-390.png",
+    "web/artifacts/figma-20260919/menu-webkit-320.png",
+    "web/artifacts/figma-20260919/calendar-webkit-768.png",
+    "web/artifacts/redesign/after/figma-files-webkit-390.png",
+    "web/artifacts/screenshots/figma-updates-webkit-390.png"
+  ],
+  "limitations": [
+    "Physical iPhone/Safari device not tested; separate automated Playwright WebKit coverage passed",
+    "Live AI provider calls were not exercised; owner-configured credentials/allowances preserved",
+    "No off-VPS backup destination configured; local complete backups retained"
+  ],
+  "previousDeploymentRecord": {
+    "verifiedAt": "2026-09-18T15:52:28.850054+00:00",
+    "status": "Live design update; frontend-only publish with authenticated read-only production checks passed",
+    "target": "https://pirata.andresinbox.tech",
+    "audience": "owner plus up to four enabled employees",
+    "webReleaseId": "20260918T155018Z-e47e98e6",
+    "apiReleaseId": "20260918T081813Z-a8592c71",
+    "previousWebReleaseId": "20260918T082402Z-61595674",
+    "previousApiReleaseId": "20260918T081813Z-a8592c71",
+    "scope": "Frontend design, navigation and dialog behavior; API, schema, business records, identities and AI configuration unchanged",
+    "runtimeSha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+    "files": {
+      "assets/index-BXtJaH19.css": "9f55416cea64735546d2387de3244acacd2a0b12e62bd4141c802cd04092baf4",
+      "assets/index-BjEClP3K.js": "337b23634f1f714c76aafb87be7ed9d48a48eaec7c425ea5f810fc5c66f530f1",
+      "favicon.svg": "e20b5029ce6808cd5bbfc2f2b039cb062d921245a5c5780a5174b12bc01b73a8",
+      "index.html": "d2f64eeda28855b2027b5cbc7c07279ac41a79ba65227e8995f057e813532eb4"
+    },
+    "webManifest": "/var/backups/pirata/20260918T155018Z-e47e98e6.json",
+    "apiManifest": "/var/backups/pirata/team-upgrade-20260918T081813Z-a8592c71/upgrade.json",
+    "migration": {
+      "version": 2,
+      "checksums": {
+        "001-foundation.sql": "2d201c8615f2eb7b74543ee285c77909b8bfe45002a5e940bb41060014d85c71",
+        "002-team.sql": "7169b94a50f157ac39b6783ff4e83fdcb99b2019b160f149ec73a2a42dc8da60"
+      },
+      "historicalRecords": "Every original column and row compared equal in both preflight and closed-window migrated scratch copies"
+    },
+    "backup": {
+      "database": "/var/backups/pirata/database/20260918T155003Z-cca5918303d54d4bb74d238998aa1c18.sqlite",
+      "sha256": "34c45008f7bcfb512b627245fb00e89325013fc3b52680a1a7a89d7ecec145e1",
+      "includes": "Matching .files directory and .manifest.json; all three must travel together",
+      "scratchRestore": "/var/backups/pirata/redesign-restore-20260918T155003",
+      "result": "Passed with current API CLI; database integrity, relationships, hashes and forward migration compatibility verified. No live uploads existed; populated photo/PDF recovery covered by isolated tests."
+    },
+    "rollback": {
+      "kind": "Schema-compatible code-only frontend rollback; retain live database/uploads and existing API",
+      "command": "sudo bash web/deploy/deploy.sh rollback 20260918T082402Z-61595674",
+      "previousReleaseRetained": true,
+      "instructions": "web/deploy/TEAM-RECOVERY.md"
+    },
+    "authentication": "Public static sign-in shell; authorized application sessions required for all business APIs and files; old Basic Auth file retained privately but no longer imported by Pirata",
+    "checks": {
+      "https": "Normal certificate/hostname verification; exact HTTP 308 redirect; public sign-in shell and security headers passed",
+      "assets": "All four live release files match the verified local build SHA256 hashes",
+      "liveOwner": "Read-only Work, Projects, all four Calendar modes, task file control geometry, Menu search, page refresh/Back and 320/390/768/1280 navigation passed. Temporary five-minute session revoked finally.",
+      "privateData": "Anonymous snapshot/export/admin/download rejected with 401; source/config/database/upload static paths rejected with 404",
+      "productionWrites": "No business writes, sample records or employee accounts created; temporary verification session minted then revoked",
+      "services": "Pirata API, Caddy and backup timer active and enabled; API release unchanged; Research retains HTTPS 401",
+      "backup": "Fresh complete online backup restored successfully into a separate private directory before publication",
+      "ai": "Owner reports key configured; existing configuration preserved. No paid provider request made during redesign.",
+      "networkVantage": "Automated live checks originated on VPS; actual password entry and physical iPhone/device checks were not performed"
+    },
+    "tests": {
+      "workspaceLint": "Passed; existing Fast Refresh export warning remains",
+      "workspaceBuild": "Passed; final frontend production build passed after final layout correction; existing bundle-size advisory remains",
+      "server": 150,
+      "frontendUnit": 68,
+      "deploymentBackupRecovery": 26,
+      "demoChromium": 46,
+      "legacyIntegratedChromium": 11,
+      "legacyClientsProjectsChromium": 11,
+      "projectResponsiveChromium": 1,
+      "calendarResponsiveChromium": 1,
+      "calendarResponsiveWebKit": 1,
+      "teamChromium": 2,
+      "teamWebKit": 2,
+      "redesignChromium": 8,
+      "redesignWebKit": 8,
+      "finalLayout": "Final populated redesign suites passed separately on Chromium and WebKit, including root-scroll/Add/nav geometry, files, drafts, repeated settings saves, routes and rapid capture",
+      "testIsolation": "Disposable data; suites run separately to retain production sign-in rate limiting. Interrupted Vite reload cases were rerun after shared builds finished."
+    },
+    "screenshots": [
+      "web/artifacts/redesign/after/work-curated-390.png",
+      "web/artifacts/redesign/after/work-curated-1280.png",
+      "web/artifacts/redesign/after/menu-curated-390.png",
+      "web/artifacts/redesign/after/task-files-webkit-390.png",
+      "web/artifacts/redesign/comparison-390.png"
+    ],
+    "limitations": [
+      "Physical iPhone/Safari device not tested; separate automated Playwright WebKit coverage passed",
+      "Live AI provider calls were not exercised; owner-configured credentials/allowances preserved",
+      "No off-VPS backup destination configured; local complete backups retained"
+    ],
+    "previousDeploymentRecord": {
+      "verifiedAt": "2026-09-18T08:24:52.342389+00:00",
+      "status": "Live private team release; application authentication, migration and read-only production browser checks verified",
+      "target": "https://pirata.andresinbox.tech",
+      "audience": "owner plus up to four enabled employees",
+      "webReleaseId": "20260918T082402Z-61595674",
+      "apiReleaseId": "20260918T081813Z-a8592c71",
+      "previousWebReleaseId": "20260918T081815Z-82bb2677",
+      "previousApiReleaseId": "20260918T081813Z-a8592c71",
+      "runtimeSha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "files": {
+        "favicon.svg": "e20b5029ce6808cd5bbfc2f2b039cb062d921245a5c5780a5174b12bc01b73a8",
+        "index.html": "19c0806ec04f6a7dc07283855c25849a8edabc88842ed68a3b86b19d6529c39f",
+        "assets/index-BZiOfQO7.js": "bcc805166a08932c646290bcfeea85d0218c70a45e7e14dd91be379f368182d4",
+        "assets/index-BhqXidHs.css": "5b97be3cf9dd970f6e63e98ce966b0afd1e47dbb6adfb88702b4b07d7f9f0fdd"
+      },
+      "apiManifest": "/var/backups/pirata/team-upgrade-20260918T081813Z-a8592c71/upgrade.json",
+      "migration": {
+        "version": 2,
+        "checksums": {
+          "001-foundation.sql": "2d201c8615f2eb7b74543ee285c77909b8bfe45002a5e940bb41060014d85c71",
+          "002-team.sql": "7169b94a50f157ac39b6783ff4e83fdcb99b2019b160f149ec73a2a42dc8da60"
+        },
+        "historicalRecords": "Every original column and row compared equal in both preflight and closed-window migrated scratch copies"
+      },
+      "preMigrationBackup": "/var/backups/pirata/database/20260918T081815Z-e71a353a6e7549eba9df70762aa07e84.sqlite",
+      "postDeploymentBackup": "/var/backups/pirata/database/20260918T082005Z-a2a46f2e933d44989bc6ff2d594254d1.sqlite",
+      "postDeploymentBackupSha256": "af0e970faaae48ae0aa6fe9da3aba37fa7f440775591439dd0a5e3f5e5b46beb",
+      "scratchRestore": "/var/backups/pirata/team-postdeploy-restore-20260918T0820",
+      "configurationBackup": "/var/backups/pirata/team-upgrade-20260918T081813Z-a8592c71",
+      "originalDatabaseRetained": "/var/lib/pirata/upgrade-recovery-20260918T081813Z-a8592c71/previous.sqlite",
+      "authentication": "Public static sign-in shell; authorized application sessions required for all business APIs and files; old Basic Auth file retained privately but no longer imported by Pirata",
+      "checks": {
+        "http": "308 to exact HTTPS origin",
+        "https": "Normal certificate and hostname verification passed from VPS in urllib and Chromium",
+        "anonymous": "shell/assets200; snapshot/export/admin/files401; source/config/database/upload static paths404",
+        "liveOwner": "Read-only Work, Projects, all four Calendar modes and authorized snapshot passed; five-minute server-minted owner session revoked finally; actual password entry not part of this check",
+        "productionWrites": "No test business records or employee accounts created; existing data retained",
+        "research": "Expected401 retained before and after; shared Caddyfile, DNS, firewall and unrelated services unchanged",
+        "services": "Pirata API,Caddy,backup timer active and enabled; API127.0.0.1:3001,Caddyadmin127.0.0.1:2019,existingpreview127.0.0.1:4173;no5173listener",
+        "backup": "Installed daily backup operation successfully produced DB+files manifest; exact scratch restore passed; no production attachments yet, populated image/PDF recovery covered by isolated tests",
+        "integrity": "SQLite integrity_check ok; foreign_key_check0issues",
+        "ai": "Disabled; no enabled allowance and no live provider calls made",
+        "cutoverForwardFix": "New static directory permissions initially0700 from private coordinator umask caused403. Only new release/assets directories corrected0755; publisher now forces modes with regression test. Database never rolled back.",
+        "networkVantage": "Automated production checks originated on VPS; physical iPhone and independent external device check remain unavailable"
+      },
+      "tests": {
+        "server": 150,
+        "frontendUnit": 65,
+        "demoChromium": 46,
+        "legacyIntegratedChromium": 11,
+        "taskCalendarWebKit": 17,
+        "teamChromium": 2,
+        "teamWebKit": 2,
+        "deploymentBackupRecovery": 25,
+        "sealedRealCaddyTeam": "Passed on final candidateb"
+      },
+      "screenshots": [
+        "web/artifacts/screenshots/team-proxy-320.png",
+        "web/artifacts/screenshots/team-proxy-390.png",
+        "web/artifacts/screenshots/team-proxy-768.png",
+        "web/artifacts/screenshots/team-proxy-1280.png",
+        "web/artifacts/screenshots/quick-add-phone.png",
+        "web/artifacts/screenshots/quick-add-desktop.png"
+      ],
+      "limitations": [
+        "Physical iPhone/Safari device not tested; Playwright WebKit coverage passed",
+        "No live AI provider request without owner key and configured allowance",
+        "No off-VPS backup destination configured; local complete backups retained"
+      ],
+      "previousDeploymentRecord": {
+        "verifiedAt": "2026-09-18T06:40:09.026665+00:00",
+        "status": "HTTPS active and owner-protected; requested black/grey/white theme deployed",
+        "target": "https://pirata.andresinbox.tech",
+        "audience": "owner-only",
+        "webReleaseId": "20260918T063858Z-771a3541",
+        "apiReleaseId": "20260918T050658Z-df2fe6d4",
+        "previousWebReleaseId": "20260918T062638Z-e23356f7",
+        "previousApiReleaseId": "20260917T232225Z-7a234718",
+        "runtimeSha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "files": {
+          "assets/index-BRb9QitJ.css": "9149a936930533008d735937b0f6d0ef8348c7e319d28d54e0908a34f8d644fd",
+          "assets/index-Pb4KHSUM.js": "bb519a38203688ad2f340042549c4be5af168ad0bd2effdf6fe04f22cf59e989",
+          "favicon.svg": "e20b5029ce6808cd5bbfc2f2b039cb062d921245a5c5780a5174b12bc01b73a8",
+          "index.html": "93561a5c376c4e3de0c2cd7ec7643054dd654d52ae2d5bb0ed924fcaacba3bdc"
+        },
+        "apiManifest": "/var/backups/pirata/20260918T050658Z-df2fe6d4-backend.json",
+        "migration": {
+          "version": 1,
+          "checksum": "2d201c8615f2eb7b74543ee285c77909b8bfe45002a5e940bb41060014d85c71"
+        },
+        "verifiedColdBackup": "/var/backups/pirata/database/20260918T005152Z-4655922e3eca44b3b0e13d69f67704a1.sqlite",
+        "scratchRestore": "/var/backups/pirata/restore-check-25b3669c99fc4e648df8377f1f52301e.sqlite",
+        "ownerSetup": "completed by owner",
+        "activatedAt": "2026-09-18T05:16:45Z",
+        "configurationBackup": "/var/backups/pirata/activation-20260918T051645Z-ead13f40",
+        "externalCheck": "Owner reports app use. Independent automated outside-VPS probes remain unavailable; network/device not established by the report.",
+        "checks": {
+          "dns": "both authoritatives and1.1.1.1 return2.25.184.103 TTL300",
+          "http": "308 to exact HTTPS origin",
+          "https": "trusted TLS1.3; hostname verified; Lets Encrypt YE2",
+          "certificateNotAfter": "2026-12-17T04:18:16Z",
+          "anonymousGate": "401 on page, JS, CSS, session/snapshot/health APIs",
+          "research": "expected401 preserved",
+          "api": "healthy; active/enabled;127.0.0.1:3001",
+          "caddy": "active/enabled;admin127.0.0.1:2019",
+          "preview": "127.0.0.1:4173",
+          "backup": "scheduled run September18 05:21:55UTC exited0; timer active/enabled;next September19 05:23:03UTC",
+          "networkVantage": "Latest automated redirect/TLS/page/new-asset gate checks from VPS; no new independent external probe",
+          "authenticatedLiveUI": "Owner-reported successful use before navigation update; latest navigation authenticated behavior verified with disposable integration data"
+        },
+        "ownerReportedUse": "September 18: owner says the app is working and provided Quick Add feedback; device/browser and detailed live CRUD verification not specified",
+        "navigationUpdate": {
+          "publishedAt": "2026-09-18T06:26:38Z",
+          "scope": "Frontend only; no API, database, access policy, DNS or Caddy changes",
+          "checks": "Workspace lint/build, 120 API and 63 frontend unit tests, 11 integrated Chromium tests; reviewed phone/desktop screenshots; deployed files match tested build; redirect and anonymous page/new JS rejection verified",
+          "screenshots": [
+            "artifacts/screenshots/quick-add-phone.png",
+            "artifacts/screenshots/quick-add-desktop.png"
+          ]
+        },
+        "themeUpdate": {
+          "publishedAt": "2026-09-18T06:38:58Z",
+          "scope": "CSS theme and browser theme-color only; API and business records unchanged",
+          "checks": "Lint/build passed; 11 integrated Chromium tests passed; built-output preview verified sign-in, sample import, five navigation pages, Add forms and dialog families; screenshots inspected; no page errors; deployed files match build; trusted HTTPS redirect and anonymous new CSS rejection passed from VPS",
+          "screenshots": [
+            "artifacts/screenshots/live-today-phone.png",
+            "artifacts/screenshots/dark-today-desktop.png",
+            "artifacts/screenshots/dark-add-menu-phone.png",
+            "artifacts/screenshots/quick-add-phone.png"
+          ],
+          "limitations": "Production authenticated browser not automated; physical Android and WebKit remain unverified"
+        }
+      },
+      "preMigrationPair": {
+        "webReleaseId": "20260918T063858Z-771a3541",
+        "apiReleaseId": "20260918T050658Z-df2fe6d4",
+        "schemaVersion": 1
+      },
+      "initialTeamWebReleaseId": "20260918T081815Z-82bb2677",
+      "metadataUpdate": {
+        "publishedAt": "2026-09-18T08:24:02Z",
+        "scope": "Static HTML title and description only; API/assets/business data unchanged",
+        "manifest": "/var/backups/pirata/20260918T082402Z-61595674.json",
+        "checks": "Frontend typecheck/build,10publisher tests, trustedHTTPS/full public authentication/path checks, exact deployed HTML checksum"
+      }
+    },
+    "accountMaintenance": {
+      "verifiedAt": "2026-09-18T18:13:30.449985+00:00",
+      "action": "Existing owner login username changed from owner to andre; display name Andres retained",
+      "preserved": "Account/business IDs, password hashes, other members, sessions, timers, business records and AI settings",
+      "preChangeBackup": "/var/backups/pirata/database/20260918T181109Z-a50c1ffc6bda43d58197080061d7d2a6.sqlite",
+      "scratchRestore": "/var/backups/pirata/username-restore-20260918T181109",
+      "validation": "Case-insensitive uniqueness and unchanged-row/foreign-key checks passed within transaction; authenticated live /me verified andre/Andres/owner; temporary verification session revoked. Actual password entry not performed.",
+      "releaseImpact": "None; existing web/API releases retained"
+    }
+  },
+  "accountMaintenance": {
+    "verifiedAt": "2026-09-18T18:13:30.449985+00:00",
+    "action": "Existing owner login username changed from owner to andre; display name Andres retained",
+    "preserved": "Account/business IDs, password hashes, other members, sessions, timers, business records and AI settings",
+    "preChangeBackup": "/var/backups/pirata/database/20260918T181109Z-a50c1ffc6bda43d58197080061d7d2a6.sqlite",
+    "scratchRestore": "/var/backups/pirata/username-restore-20260918T181109",
+    "validation": "Case-insensitive uniqueness and unchanged-row/foreign-key checks passed within transaction; authenticated live /me verified andre/Andres/owner; temporary verification session revoked. Actual password entry not performed.",
+    "releaseImpact": "None; existing web/API releases retained"
+  },
+  "sourceRecovery": {
+    "backup": "/home/andre/Desktop/LargeConcierge/Morgan el Pirata/backups/before-figma-20260919T014254Z",
+    "archiveSha256": "5db632558d7f7c50ec29002fc7f64f3503bd03c04e0cb75a68e1754b299619cd",
+    "verified": "179 baseline source/test/docs hashes matched the archive; integration.json records changed source hashes"
+  }
+}

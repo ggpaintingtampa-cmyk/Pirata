@@ -1,0 +1,40 @@
+# Import this Pirata-only site from the existing shared Caddyfile.
+# The sign-in shell is public; every business API and file checks app sessions.
+pirata.andresinbox.tech {
+    root * /srv/pirata/current
+    encode zstd gzip
+    header {
+        -Server
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Cache-Control no-store
+        Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+        Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    }
+    # 25 MiB PDF limit plus bounded multipart metadata; the API applies exact
+    # 20 MiB image/25 MiB PDF limits after authenticating each upload.
+    request_body {
+        max_size 27MB
+    }
+    route {
+        handle /api/* {
+            reverse_proxy 127.0.0.1:3001 {
+                header_up -Authorization
+                flush_interval -1
+            }
+        }
+        @unsupported not method GET HEAD
+        respond @unsupported 405
+        @entry path / /index.html /favicon.svg
+        handle @entry {
+            file_server
+        }
+        handle /assets/* {
+            root * /srv/pirata/shared
+            file_server
+        }
+        # Uploads, database, source and configuration never have a static route.
+        respond 404
+    }
+}

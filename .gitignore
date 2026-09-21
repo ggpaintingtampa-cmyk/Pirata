@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env*
+*.sqlite*
+*.db*
+server/var/
+
+web/tests/integration/results/
+web/tests/modules/**/artifacts/results/
+web/tests/modules/**/artifacts/build/
+web/tests/modules/**/artifacts/report/
+backups/
+uploads/
+*.pem
+*.key
+web/tests/team/results/

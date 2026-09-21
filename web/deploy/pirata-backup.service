@@ -1,0 +1,24 @@
+[Unit]
+Description=Verified private Pirata database backup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /srv/pirata/operations/backup.py
+TimeoutStartSec=15min
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+# Node opens the live DB as pirata, including any necessary WAL/SHM files.
+# Root only coordinates private staging and the final verified publication.
+ReadWritePaths=/var/lib/pirata /var/backups/pirata
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX
+IPAddressDeny=any

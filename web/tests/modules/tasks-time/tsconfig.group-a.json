@@ -1,0 +1,5 @@
+{
+  "extends": "../../../tsconfig.app.json",
+  "compilerOptions": { "types": ["node", "vite/client"], "tsBuildInfoFile": "./artifacts/group-a.tsbuildinfo" },
+  "include": ["../../../src/features/tasks-time", "../../../src/features/planning", "./**/*.ts", "./**/*.tsx", "../planning/**/*.ts"]
+}

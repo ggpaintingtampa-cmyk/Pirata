@@ -1,0 +1,73 @@
+import { expect, test, type Page, type BrowserContext } from '@playwright/test';
+import { createDemoState } from '../../src/data/demo';
+import type { BusinessSnapshot, BusinessCommand } from '@pirata/contracts/index';
+import { mkdir } from 'node:fs/promises';
+const key='morgan-el-pirata:home-prototype:v1';
+let page:Page,context:BrowserContext,original:string;
+async function snapshot(p=page):Promise<BusinessSnapshot>{return p.evaluate(async()=>{const r=await fetch('/api/v1/snapshot');if(!r.ok)throw new Error('Snapshot unavailable');return r.json();});}
+async function mutate(p:Page,command:BusinessCommand){return p.evaluate(async command=>{const session=await(await fetch('/api/v1/session')).json(),s=await(await fetch('/api/v1/snapshot')).json();const r=await fetch('/api/v1/commands',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},body:JSON.stringify({requestId:crypto.randomUUID(),baseRevision:s.revision,command})});if(!r.ok)throw new Error(await r.text());return r.json();},command);}
+async function signIn(p:Page){await p.goto('/');await p.getByLabel('Username',{exact:true}).fill('owner');await p.getByLabel('Pirata password').fill('isolated-harness-password');await p.getByRole('button',{name:'Sign in',exact:true}).click();await expect(p.getByRole('heading',{name:'Work.',exact:true})).toBeVisible();}
+async function nav(name:string,p=page){
+ const destination=name==='More'?'Menu':name,navigation=p.getByRole('navigation',{name:'Main navigation'});
+ if(await navigation.isVisible()){
+  if(['Work','Ask','Updates','Menu'].includes(destination)){await navigation.getByRole('button',{name:destination,exact:true}).click();return;}
+  await navigation.getByRole('button',{name:'Menu',exact:true}).click();await p.getByRole('main').getByRole('button',{name:destination,exact:true}).click();return;
+ }
+ const sidebar=p.getByRole('navigation',{name:'Workspace navigation'});await expect(sidebar).toBeVisible();
+ await sidebar.getByRole('link',{name:destination==='Menu'?'Account & more':destination==='Ask'?'Ask Morgan':destination,exact:true}).click();
+}
+async function quick(name:string){await page.locator('.add-button').click();if(name!=='Task'){await page.getByRole('button',{name:'Back to Add menu',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:new RegExp('^'+name)}).click();}}
+async function save(){await page.getByRole('dialog').getByRole('button',{name:'Save',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);}
+test.describe.serial('integrated owner workspace',()=>{
+ test.beforeAll(async({browser})=>{context=await browser.newContext({viewport:{width:390,height:844},timezoneId:'America/New_York'});page=await context.newPage();});
+ test.afterAll(async()=>{await context.close();});
+ test('starts empty, imports deliberately and preserves original local storage',async()=>{
+  await signIn(page);expect((await snapshot()).tasks).toHaveLength(0);expect(await page.evaluate(key=>localStorage.getItem(key),key)).toBeNull();
+  original=JSON.stringify(createDemoState(Date.now()));await page.evaluate(({key,original})=>localStorage.setItem(key,original),{key,original});await nav('More');await page.getByRole('button',{name:"Read this browser's demo",exact:true}).click();await page.getByRole('button',{name:'Preview import',exact:true}).click();await expect(page.getByRole('heading',{name:'Import preview',exact:true})).toBeVisible();expect((await snapshot()).tasks).toHaveLength(0);await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Confirm import',exact:true}).click();await expect(page.getByText('Import completed.',{exact:false})).toBeVisible();await nav('Today');
+  for(const heading of ["Today's objectives",'Current task',"Today's schedule",'Needs attention','Spent today'])await expect(page.getByRole('heading',{name:heading,exact:true})).toBeVisible();await expect(page.getByText('$84.60',{exact:true})).toBeVisible();await expect(page.getByText('Logged 45m',{exact:false})).toBeVisible();expect(await page.evaluate(key=>localStorage.getItem(key),key)).toBe(original);
+ });
+ test('objective completion and purchase editing survive reload without duplicate records',async()=>{
+  await page.getByRole('button',{name:'Edit objectives'}).click();await page.getByLabel('Objective 1 status').selectOption('done');await save();await page.reload();await nav('Today');await expect(page.getByText('1 of 3 complete',{exact:false})).toBeVisible();
+  await quick('Expense');await page.getByLabel('Description',{exact:true}).fill('Integration brushes');await page.getByLabel('Amount ($)',{exact:true}).fill('25');await save();await expect(page.getByText('$109.60',{exact:true})).toBeVisible();await page.getByRole('button',{name:/Integration brushes/}).click();await page.getByLabel('Amount ($)',{exact:true}).fill('30');await save();await expect(page.getByText('$114.60',{exact:true})).toBeVisible();expect((await snapshot()).expenses.filter(e=>e.description==='Integration brushes')).toHaveLength(1);
+ });
+ test('all quick forms update Today; stock is separate from spending; follow-up and maintenance clear attention',async()=>{
+  await quick('Task');await page.getByLabel('Task title',{exact:true}).fill('Integration touch up');await page.getByText('More task details',{exact:true}).click();await page.getByLabel('Estimated minutes (optional)',{exact:true}).fill('45');await save();await page.getByLabel('Choose task',{exact:true}).selectOption({label:'Integration touch up'});
+  await quick('Time entry');await page.getByLabel('Task',{exact:true}).selectOption({label:'Integration touch up'});await page.getByLabel('Duration in whole minutes').fill('15');await save();await expect(page.getByText('Logged 15m',{exact:false})).toBeVisible();
+  const spending=(await snapshot()).expenses;await quick('Material adjustment');await page.getByLabel('Material',{exact:true}).selectOption('m-paint');await page.getByLabel('Signed quantity adjustment').fill('3');await save();expect((await snapshot()).expenses).toEqual(spending);await expect(page.getByText(/Need 3 gallons/)).toHaveCount(0);
+  await quick('Lead');await page.getByLabel('Name',{exact:true}).fill('Future Rowan');await page.getByLabel('Work description').fill('Porch painting');await save();await expect(page.getByRole('status').filter({hasText:'Lead saved: Future Rowan'})).toBeVisible();expect((await snapshot()).leads.some(l=>l.name==='Future Rowan')).toBe(true);
+  const attention=page.getByRole('region',{name:'Needs attention',exact:true});await attention.getByRole('button',{name:/View Clean the sprayer/}).click();await page.getByRole('button',{name:'Complete maintenance',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Complete maintenance',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(attention.getByText('Clean the sprayer',{exact:true})).toHaveCount(0);
+  await attention.getByRole('button',{name:/View Follow up/}).click();await page.getByLabel('Follow-up note').fill('Spoke with Casey; no reminder needed.');await page.getByRole('dialog').getByRole('button',{name:'Record follow-up',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(attention.getByText(/Follow up with/)).toHaveCount(0);
+ });
+ test('running timer survives reload; switch and completion leave no hidden active session',async()=>{
+  await page.getByLabel('Choose task',{exact:true}).selectOption('t-prep');await page.getByRole('button',{name:'Start timer',exact:true}).click();await page.getByRole('button',{name:'Confirm start timer'}).click();await expect(page.getByRole('dialog')).toHaveCount(0);const first=(await snapshot()).runningTimer!;await page.reload();await nav('Today');await expect(page.getByRole('button',{name:'Pause timer',exact:true})).toBeVisible();expect((await snapshot()).runningTimer?.sessionId).toBe(first.sessionId);
+  await page.getByLabel('Choose task',{exact:true}).selectOption('t-coat');await page.getByRole('button',{name:'Start timer',exact:true}).click();await page.getByRole('button',{name:'Confirm switch timer'}).click();await expect(page.getByRole('dialog')).toHaveCount(0);expect((await snapshot()).runningTimer?.taskId).toBe('t-coat');expect((await snapshot()).timeEntries.filter(e=>e.id===first.sessionId)).toHaveLength(1);
+  await page.getByRole('button',{name:'Finish task',exact:true}).click();await page.getByRole('button',{name:'Confirm finish task'}).click();await expect(page.getByRole('dialog')).toHaveCount(0);expect((await snapshot()).runningTimer).toBeNull();await page.reload();expect((await snapshot()).runningTimer).toBeNull();
+ });
+ test('conflicts are visible across independent browsers even after background refresh',async({browser})=>{
+  const other=await browser.newContext(),second=await other.newPage();await signIn(second);
+  await nav('Clients');await page.getByRole('button',{name:/Alex Smith/}).click();await page.getByRole('button',{name:'Edit client',exact:true}).click();await page.getByLabel('Notes (optional)').fill('Draft from first browser');const client=(await snapshot()).clients.find(c=>c.name==='Alex Smith')!;
+  await mutate(second,{type:'client.update',id:client.id,name:client.name,phone:'555-0109',email:client.email,note:'Updated elsewhere'});
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await expect.poll(async()=>page.evaluate(async()=> (await(await fetch('/api/v1/snapshot')).json()).revision)).toBe((await snapshot(second)).revision);
+  await page.getByRole('dialog').getByRole('button',{name:'Save',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:'Records changed'})).toBeVisible();expect((await snapshot()).clients.find(c=>c.id===client.id)?.phone).toBe('555-0109');await page.getByRole('button',{name:'Load latest records'}).click();await page.getByLabel('Phone (optional)').fill('555-0109');await save();
+  await second.evaluate(()=>window.dispatchEvent(new Event('focus')));await nav('Clients',second);await expect(second.getByText('555-0109',{exact:false})).toBeVisible();await other.close();
+ });
+ test('uncertain expense save keeps one request through retry, and acknowledged save only retries refresh',async()=>{
+  await nav('Today');await quick('Expense');await page.getByLabel('Description',{exact:true}).fill('Lost response purchase');await page.getByLabel('Amount ($)').fill('8');let requests=0;await page.route('**/api/v1/commands',async route=>{requests++;const response=await route.fetch();expect(response.ok()).toBe(true);await route.abort();},{times:1});await page.getByRole('dialog').getByRole('button',{name:'Save',exact:true}).click();await expect(page.getByRole('button',{name:'Retry same save'})).toBeVisible();for(const name of ['Back to Add menu','Close dialog']){await page.getByRole('button',{name,exact:true}).click();await expect(page.getByRole('dialog',{name:'Add purchase',exact:true})).toBeVisible();}await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toBeVisible();await page.getByRole('button',{name:'Retry same save'}).click();await expect(page.getByRole('dialog')).toHaveCount(0);expect(requests).toBe(1);expect((await snapshot()).expenses.filter(e=>e.description==='Lost response purchase')).toHaveLength(1);
+ });
+ test('schedule overlap warns without moving plans; dirty dialog cancellation and Escape restore focus',async()=>{
+  await page.getByRole('region',{name:"Today's schedule",exact:true}).getByRole('button',{name:/Prepare north wall/}).click();await page.getByRole('button',{name:'Schedule / reschedule'}).click();await page.getByLabel('Start time',{exact:true}).fill('08:00');await page.getByLabel('End time',{exact:true}).fill('10:00');await expect(page.getByRole('alert').filter({hasText:'overlaps'})).toBeVisible();const before=(await snapshot()).schedule;await page.getByRole('button',{name:'Cancel',exact:true}).click();await expect(page.getByRole('heading',{name:'Discard unsaved changes?'})).toBeVisible();await page.getByRole('button',{name:'Discard changes',exact:true}).click();expect((await snapshot()).schedule).toEqual(before);
+  const add=page.locator('.add-button');await add.focus();await page.keyboard.press('Enter');await expect(page.getByRole('dialog')).toBeVisible();await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'Quick Add',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);await expect(add).toBeFocused();
+ });
+ test('phone and desktop layouts fit, private export works, sign-out removes business state',async()=>{
+  await nav('Today');await mkdir('artifacts/screenshots',{recursive:true});
+  for(const [width,height] of [[320,844],[390,844],[768,1024],[1280,900]]){
+   await page.setViewportSize({width,height});await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('.content-viewport').evaluate(el=>el.scrollTop=el.scrollHeight);
+   const add=page.locator('.add-button');await expect(add).toBeVisible();const addBox=(await add.boundingBox())!;
+   expect(addBox.width).toBeGreaterThanOrEqual(44);expect(addBox.height).toBeGreaterThanOrEqual(44);expect(addBox.x).toBeGreaterThanOrEqual(0);expect(addBox.x+addBox.width).toBeLessThanOrEqual(width);expect(addBox.y+addBox.height).toBeLessThanOrEqual(height);
+   if(width<1100){const navigation=page.getByRole('navigation',{name:'Main navigation',exact:true});await expect(navigation).toBeVisible();const navBox=(await navigation.boundingBox())!;expect(addBox.y+addBox.height).toBeLessThanOrEqual(navBox.y);}
+   else {const navigation=page.getByRole('navigation',{name:'Workspace navigation',exact:true});await expect(navigation).toBeVisible();const navBox=(await navigation.boundingBox())!;expect(navBox.x+navBox.width).toBeLessThanOrEqual(addBox.x);}
+   await page.locator('.content-viewport').evaluate(el=>el.scrollTop=0);if(width===390||width===1280)await page.screenshot({path:'artifacts/screenshots/live-today-'+(width===390?'phone':'desktop')+'.png'});
+  }
+  await nav('More');const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download business export'}).click();expect((await download).suggestedFilename()).toBe('pirata-business-v2.json');expect(await page.evaluate(key=>localStorage.getItem(key),key)).toBe(original);await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByLabel('Pirata password')).toBeVisible();await expect(page.getByText('Smith exterior painting',{exact:true})).toHaveCount(0);expect(await page.evaluate(async()=>(await fetch('/api/v1/snapshot')).status)).toBe(401);
+ });
+});

@@ -1,0 +1,23 @@
+{
+  "name": "morgan-el-pirata",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=24.19.0 <25"
+  },
+  "scripts": {
+    "build": "pnpm --filter @pirata/domain build && pnpm --filter @pirata/contracts build && pnpm --filter @pirata/server build && pnpm --filter morgan-el-pirata-web build",
+    "test": "pnpm --filter @pirata/server test && pnpm --filter morgan-el-pirata-web test",
+    "lint": "eslint server packages && pnpm --filter morgan-el-pirata-web lint"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.10.0",
+    "globals": "17.12.0",
+    "typescript-eslint": "8.70.0",
+    "typescript": "6.0.2",
+    "@types/node": "24.13.3"
+  }
+}

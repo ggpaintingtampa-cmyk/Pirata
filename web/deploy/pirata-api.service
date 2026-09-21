@@ -1,0 +1,40 @@
+[Unit]
+Description=Pirata private team workspace API
+After=network.target
+[Service]
+Type=simple
+User=pirata
+Group=pirata
+WorkingDirectory=/srv/pirata/api-current
+Environment=NODE_ENV=production
+Environment=PIRATA_DB_PATH=/var/lib/pirata/pirata.sqlite
+Environment=PIRATA_ORIGIN=https://pirata.andresinbox.tech
+Environment=PIRATA_PORT=3001
+Environment=PIRATA_UPLOADS_PATH=/var/lib/pirata/uploads
+Environment=PIRATA_STORAGE_LIMIT_BYTES=2147483648
+ExecStart=/srv/pirata/runtime/node /srv/pirata/api-current/dist/main.js
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/pirata
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+# One bounded HEIC decoder can temporarily hold RGBA, encoded JPEG and native
+# image buffers. Keep the whole service bounded without killing valid photos.
+MemoryMax=1G
+TasksMax=128
+[Install]
+WantedBy=multi-user.target

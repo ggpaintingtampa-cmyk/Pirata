@@ -1,0 +1,22 @@
+{
+  "name": "@pirata/contracts",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "4.6.5",
+    "@pirata/domain": "workspace:*"
+  },
+  "files": [
+    "dist"
+  ]
+}

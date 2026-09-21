@@ -1,0 +1,5 @@
+{
+  "extends": "../../../tsconfig.tests.json",
+  "compilerOptions": { "tsBuildInfoFile": "./artifacts/group-b.tsbuildinfo" },
+  "include": ["../../../src/features/spending", "../../../src/features/inventory", "./*.ts", "./*.tsx", "../inventory/*.ts"]
+}

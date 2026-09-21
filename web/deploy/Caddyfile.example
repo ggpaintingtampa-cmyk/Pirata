@@ -1,0 +1,39 @@
+# Import this site explicitly into the existing Caddyfile. Other sites remain intact.
+pirata.andresinbox.tech {
+    root * /srv/pirata/current
+    encode zstd gzip
+    header {
+        -Server
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Cache-Control no-store
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    }
+    request_body {
+        max_size 2MB
+    }
+    route {
+        # Whole-site gate, including API and every direct asset. Missing file fails closed.
+        import /etc/caddy/pirata-access.caddy
+        handle /api/* {
+            reverse_proxy 127.0.0.1:3001 {
+                # Credentials for the outer gate never reach application logs or handlers.
+                header_up -Authorization
+            }
+        }
+        @unsupported not method GET HEAD
+        respond @unsupported 405
+        @entry path / /index.html /favicon.svg
+        handle @entry {
+            file_server
+        }
+        handle /assets/* {
+            root * /srv/pirata/shared
+            file_server
+        }
+        # No SPA fallback: private/missing paths never receive index.html.
+        respond 404
+    }
+}

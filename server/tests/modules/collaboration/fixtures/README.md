@@ -1,0 +1,1 @@
+HEIC decoder integration fixture from libheif, https://github.com/strukturag/libheif/blob/master/examples/example.heic. Downloaded September 18, 2026. Public example image, used solely for conversion verification; not business data. libheif project copyright/licensing: https://github.com/strukturag/libheif/blob/master/COPYING.

@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.tests.json",
+  "compilerOptions": {
+    "paths": {
+      "@pirata/contracts/*": ["../../../../packages/contracts/src/*"],
+      "@pirata/domain/*": ["../../../../packages/domain/src/*"]
+    }
+  }
+}

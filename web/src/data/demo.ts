@@ -1,0 +1,50 @@
+import type { AppState } from '../domain/types';
+import { businessDate } from '../lib/dates';
+export function createDemoState(now: number): AppState {
+  const day = businessDate(now);
+  return {
+    schemaVersion: 1, timezone: 'America/New_York', currency: 'USD', seededOn: day,
+    projects: [
+      { id: 'p-smith', name: 'Smith exterior painting', clientName: 'Alex Smith', status: 'open' },
+      { id: 'p-rivera', name: 'Rivera living room', clientName: 'Jordan Rivera', status: 'open' },
+    ],
+    tasks: [
+      { id: 't-prep', projectId: 'p-smith', title: 'Prepare north wall', estimatedMinutes: 120, status: 'open', note: '', createdAt: now - 4000 },
+      { id: 't-coat', projectId: 'p-smith', title: 'Apply first coat', estimatedMinutes: 180, status: 'open', note: '', createdAt: now - 3000 },
+      { id: 't-estimate', projectId: null, title: 'Send Taylor estimate', estimatedMinutes: 30, status: 'open', note: '', createdAt: now - 2000 },
+      { id: 't-rivera', projectId: 'p-rivera', title: 'Mask living room', estimatedMinutes: 60, status: 'open', note: '', createdAt: now - 1000 },
+    ],
+    objectives: [
+      { id: 'o-prep', date: day, title: 'Finish preparing the north wall', taskId: 't-prep', status: 'open', note: '', rank: 0 },
+      { id: 'o-coat', date: day, title: 'Apply the first coat', taskId: 't-coat', status: 'open', note: '', rank: 1 },
+      { id: 'o-estimate', date: day, title: 'Send the estimate', taskId: 't-estimate', status: 'open', note: '', rank: 2 },
+    ],
+    schedule: [
+      { id: 's-supply', date: day, startMinute: 480, endMinute: 510, kind: 'supply_run', title: 'Pick up supplies', taskId: null },
+      { id: 's-travel', date: day, startMinute: 510, endMinute: 540, kind: 'travel', title: 'Travel to Smith project', taskId: null },
+      { id: 's-prep', date: day, startMinute: 540, endMinute: 660, kind: 'task', title: 'Prepare north wall', taskId: 't-prep' },
+      { id: 's-visit', date: day, startMinute: 660, endMinute: 720, kind: 'appointment', title: 'Site walk-through', taskId: null },
+      { id: 's-lunch', date: day, startMinute: 720, endMinute: 750, kind: 'break', title: 'Lunch', taskId: null },
+      { id: 's-coat', date: day, startMinute: 750, endMinute: 930, kind: 'task', title: 'Apply first coat', taskId: 't-coat' },
+      { id: 's-clean', date: day, startMinute: 930, endMinute: 960, kind: 'cleanup', title: 'Pack and clean up', taskId: null },
+      { id: 's-estimate', date: day, startMinute: 960, endMinute: 990, kind: 'task', title: 'Send Taylor estimate', taskId: 't-estimate' },
+    ],
+    timeEntries: [{ id: 'time-prep', taskId: 't-prep', source: 'manual', date: day, durationSeconds: 2700, note: 'Earlier preparation work' }],
+    runningTimer: null,
+    expenses: [
+      { id: 'e-materials', purchaseDate: day, description: 'Supplies', category: 'materials', amountCents: 6240, projectId: 'p-smith', createdAt: now - 60000 },
+      { id: 'e-fuel', purchaseDate: day, description: 'Fuel', category: 'fuel', amountCents: 2220, projectId: null, createdAt: now - 120000 },
+    ],
+    materials: [
+      { id: 'm-paint', name: 'Exterior white paint', product: 'Exterior paint', color: 'White', finish: 'Satin', unit: 'gal', stockMinor: 200 },
+      { id: 'm-tape', name: 'Masking tape', product: 'Painter’s tape', color: '', finish: '', unit: 'piece', stockMinor: 400 },
+    ],
+    materialRequirements: [
+      { id: 'r-paint', materialId: 'm-paint', projectId: 'p-smith', neededMinor: 500, reservedMinor: 200 },
+      { id: 'r-tape', materialId: 'm-tape', projectId: 'p-smith', neededMinor: 200, reservedMinor: 0 },
+    ],
+    materialAdjustments: [],
+    maintenance: [{ id: 'maint-sprayer', equipmentName: 'Airless sprayer', title: 'Clean the sprayer', dueDate: day, completedAt: null }],
+    leads: [{ id: 'l-taylor', name: 'Casey Taylor', phone: '', email: '', workDescription: 'Cabinet painting', nextFollowUpDate: day, followUps: [] }],
+  };
+}

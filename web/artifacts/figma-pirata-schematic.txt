@@ -1,0 +1,98 @@
+Morgan el Pirata app schematic
+Generated: 2026-09-18
+Production: https://pirata.andresinbox.tech
+
+Purpose
+Morgan el Pirata is a private team operations app for a small painting / service business. It supports owner and employee accounts, shared work planning, project execution, photos and PDFs, updates, clients, inventory, shopping, cleanup reminders, time tracking, and an owner-controlled AI assistant.
+
+Primary navigation
+Bottom tabs:
+- Work: default landing page. Shows the signed-in person's daily progress, active timer, current goals, important tasks, and fast access to Projects.
+- Ask: natural-language assistant for finding and editing business records through server-approved operations.
+- Updates: shared project activity, human-written messages, recent changes, and file/photo context.
+- Menu: grouped access to Projects, Calendar, Progress, Today, Inventory, Clients, Shopping, Files, Team accounts, Settings, and owner-only administration.
+
+Core screens and connections
+Sign In
+- Authenticates a team member.
+- Current owner username is andre.
+- Routes to Work after success.
+
+Work
+- Landing screen after sign-in.
+- Links to Projects, Calendar, Tasks, Today, active task detail, and Add.
+- Shows daily completion based on up to three deliberate goals, not every incidental task.
+- Shows the current running timer for the signed-in user.
+
+Projects
+- Lists projects with completion, client context, and task counts.
+- Opens Project Detail.
+- Project Detail connects to Tasks, Updates, Notes, Files, Client, and Add Task.
+
+Tasks
+- Supports name-only task creation.
+- Supports one practical level of subtasks.
+- Subtasks inherit parent assignment unless changed.
+- Opens Task Detail for status, subtasks, timer actions, schedule, files, and notes.
+
+Calendar
+- Day, week, month, and time-grid views.
+- Filters by owner, employee, selected people, or everyone.
+- Shows compact person colors and overlap warnings.
+
+Progress
+- Supportive team progress view.
+- Daily progress is based on selected daily goals.
+- Project progress is based on top-level tasks with subtask fractions, avoiding double counting.
+
+Files
+- Photos and PDFs attach directly to task, project, or client.
+- Hierarchy display is Task -> Project -> Client without duplicating binaries.
+- Files are stored on the server outside the public web root and require authenticated downloads.
+- Removed files are recoverable where practical.
+
+Updates
+- Shows recent project activity and user-authored updates.
+- Live sync keeps open sessions current.
+- Updates can include attached photos/files.
+
+Clients
+- Shared client records.
+- Client detail connects to Projects and Files.
+
+Inventory, Shopping, Equipment Cleanup
+- Inventory and shopping remain separate from spending.
+- Shopping item completion does not create expenses or alter stock.
+- Equipment usage can create cleanup obligations based on configured duration and deadline.
+
+Settings and Admin
+- Owner can manage team accounts, credential reset, disabled access, AI provider settings, and usage controls.
+- Everyone can manage shared work records.
+- Financial/spending data, account administration, and AI usage controls are owner-only.
+
+Data and server architecture
+- Frontend: React, TypeScript, Vite, pnpm.
+- Backend: Fastify server.
+- Persistence: SQLite database.
+- Shared packages: domain logic and contracts.
+- Production storage: /var/lib/pirata/pirata.sqlite and /var/lib/pirata/uploads.
+- Production URL: https://pirata.andresinbox.tech.
+
+Security boundaries
+- App is private to authorized team members.
+- Server enforces permissions for APIs, snapshots, downloads, live updates, and AI tools.
+- Uploaded files are permission checked.
+- AI has allowlisted business operations only and no shell, SQL, host, filesystem, or admin access.
+- API key is server-side only and not exposed in frontend code or VITE variables.
+
+Important implementation notes for future design work
+- Preserve the dark Pirata theme: black background, dark grey surfaces, white text, visible focus, and high contrast.
+- Preserve fast task capture: task name alone is enough.
+- Preserve the small floating Add button on main screens.
+- Add dialog child Back, X, Cancel, or Escape returns to the previous Add step and preserves dirty-input protection.
+- Keep Work as the landing screen and Projects prominent.
+- Keep Today available through Menu, not as a bottom tab.
+- Keep the product focused and operational rather than marketing-like.
+
+Suggested Figma AI prompt
+Use the schematic text panel named "Pirata app schematic" as product context. Review the screenshots and connected-flow map in this Figma file. Propose improvements that make the app faster for a painting crew on phones, while preserving the current dark theme, private team workflow, fast task capture, and bottom navigation: Work, Ask, Updates, Menu.

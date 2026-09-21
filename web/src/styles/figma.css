@@ -1,0 +1,92 @@
+/* Figma revision uf6F2FArS37ia2QSMtSbNT — September 19, 2026.
+   Shared chrome only; feature layouts live alongside their components. */
+/* Use the authored button treatment instead of WebKit’s native bevel. */
+button { appearance: none; }
+button.primary:hover:not(:disabled), .primary:hover:not(:disabled),
+.live-app .add-button:hover, .iv-module button.primary:hover, .sp-module button.primary:hover {
+  background: #f3bc55; color: var(--color-on-primary);
+}
+::selection { background: var(--color-primary); color: var(--color-on-primary); }
+.live-app h1 { font-size: clamp(32px, 3.5vw, 42px); font-weight: 800; letter-spacing: -.04em; }
+.live-app .brand-inner { padding-inline: 16px; }
+.live-app .brand { font-size: 19px; font-weight: 800; letter-spacing: -.035em; }
+.live-app .brand-subtle { font-weight: inherit; }
+.live-app .brand small { font-size: 9px; letter-spacing: .08em; }
+.live-app .brand-mark { width: 36px; height: 36px; border: 0; border-radius: 10px; background: var(--color-accent-soft); }
+.live-app .owner-label { border: 1px solid var(--color-border); padding: 0 10px; border-radius: 99px; background: var(--color-surface); gap: 6px; }
+.account-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-primary); flex-shrink: 0; }
+.live-app .page { padding-inline: 16px; }
+.workspace-shortcuts { margin-inline: -16px; gap: 8px; padding: 7px 16px 16px; margin-bottom: 20px; }
+.workspace-shortcuts a { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text); }
+.workspace-shortcuts a.selected { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
+.live-app .page-title { margin-bottom: 4px; }
+.live-app .heading-dot { color: var(--color-text); }
+.live-app .page-caption { font-size: 15px; margin-bottom: 20px; }
+.live-app .page-title .eyebrow { display: none; }
+.live-app .card { border-radius: 20px; padding: 18px; }
+.live-app .nav-item.active { background: rgb(255 255 255 / 4%); color: var(--color-primary); }
+.live-app .nav-inner { gap: 10px; padding-inline: 16px; }
+.live-app .nav-item { border-radius: 12px; }
+.live-app .add-button { padding: 12px 16px; font-weight: 750; }
+.directory-search { margin-bottom: 22px; background: var(--color-surface); }
+.directory-group { margin: 22px 0; break-inside: avoid; }
+.directory-group > h2 { letter-spacing: .08em; margin-bottom: 8px; }
+.directory-grid { grid-template-columns: minmax(0,1fr); gap: 0; border: 1px solid var(--color-border); border-radius: 16px; overflow: hidden; }
+.directory-grid > button { display: flex; align-items: center; gap: 12px; min-height: 65px; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; padding: 13px 14px; }
+.directory-grid > button:last-child { border-bottom: 0; }
+.directory-grid .directory-icon { width: 32px; height: 32px; display: grid; place-items: center; flex: 0 0 32px; border-radius: 8px; background: var(--color-accent-soft); color: var(--color-primary); }
+.directory-grid .directory-icon svg { width: 17px; height: 17px; }
+.directory-grid > button > span:nth-child(2) { flex: 1; }
+.directory-grid strong { font-size: 15px; font-weight: 700; }
+.directory-grid small { font-size: 12px; margin-top: 3px; }
+.directory-grid > button > svg:last-child { flex-shrink: 0; }
+.directory-count { color: var(--color-primary); font-variant-numeric: tabular-nums; }
+.workspace-account { display: flex; gap: 12px; align-items: center; }
+.workspace-account .person-initial { width: 44px; height: 44px; background: var(--color-accent-soft); border-color: transparent; color: var(--color-primary); font-size: 18px; }
+.workspace-account > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.workspace-account h2 { margin: 0; font-size: 17px; }
+.workspace-account p { font-size: 12px; color: var(--color-muted); }
+.workspace-account-actions { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
+.settings-links { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 12px; margin-top: 20px; }
+.settings-links button { min-height: 64px; justify-content: flex-start; text-align: left; background: var(--color-surface); border: 1px solid var(--color-border); }
+.settings-links button > svg { color: var(--color-primary); }
+.settings-links small { display: block; font-size: 12px; font-weight: 400; }
+.signin { max-width: 450px; margin: clamp(30px,9vh,90px) auto 32px; padding: 24px; text-align: center; }
+.signin-brand { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 34px; }
+.signin .brand-mark { width: 80px; height: 80px; margin: 0 0 6px; border: 0; border-radius: 24px; background: var(--color-accent-soft); }
+.signin h1 { font-size: 28px; font-weight: 800; letter-spacing: -.04em; max-width: none; margin: 0; line-height: 1.2; }
+.signin-brand p { margin: 0; color: var(--color-muted); text-transform: uppercase; font-size: 12px; font-weight: 600; letter-spacing: .1em; }
+.signin form { text-align: left; margin: 0; gap: 8px; }
+.signin form label { margin-top: 12px; font-size: 12px; color: var(--color-muted); }
+.signin form input { background: var(--color-surface); min-height: 52px; }
+.signin form button { width: 100%; min-height: 52px; margin: 20px 0; }
+.signin-help summary { color: var(--color-primary); text-decoration: underline; cursor: pointer; padding: 10px; min-height: 44px; font-size: 14px; list-style: none; }
+.signin-help p { background: var(--color-surface); padding: 14px; border-radius: 12px; color: var(--color-muted); font-size: 13px; }
+.signin .signin-private { display: flex; align-items: flex-start; justify-content: center; gap: 8px; font-size: 12px; line-height: 1.6; margin: 32px 0 0; }
+.signin-private svg { margin-top: 3px; }
+.signin > a { font-size: 12px; color: var(--color-muted); margin-top: 16px; }
+.work-dialog .quick-choices > button:first-child small { color: #453214; }
+@media (max-width: 380px) {
+  .live-app .brand { font-size: 16px; gap: 8px; }
+  .live-app .brand small { font-size: 8px; }
+  .live-app .brand-inner { padding-inline: 12px; gap: 8px; }
+  .live-app .owner-label { padding-inline: 8px; max-width: 75px; }
+  .live-app .page { padding-inline: 14px; }
+  .workspace-shortcuts { margin-inline: -14px; padding-inline: 14px; }
+  .live-app .today-date { font-size: 10px; }
+}
+@media (min-width: 700px) {
+  .live-app .page { padding-inline: 32px; }
+  .workspace-shortcuts { margin-inline: -32px; padding-inline: 32px; }
+  .workspace-directory { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; gap: 0 22px; }
+  .directory-search { grid-column: 1/-1; width: 100%; max-width: 560px; }
+  .directory-group { margin-top: 0; }
+}
+@media (min-width: 1100px) {
+  .live-app .page { padding: 32px 40px 96px; }
+  .live-app .brand-inner { padding-inline: 28px; }
+  .live-app .brand { font-size: 20px; }
+  .workspace-sidebar a.selected { background: var(--color-accent-soft); color: var(--color-primary); }
+  .live-app .page-title .eyebrow { display: block; }
+  .directory-grid > button { min-height: 72px; padding: 16px; }
+}

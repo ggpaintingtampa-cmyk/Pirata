@@ -1,0 +1,32 @@
+.ask-view.ask-figma { display: grid; gap: 20px; width: 100%; max-width: 760px; margin: 0; min-width: 0; }
+.ask-figma .ask-intro { padding: 0; }
+.ask-figma .ask-intro h2 { margin: 0 0 4px; font-size: 32px; font-weight: 800; line-height: 1.15; letter-spacing: -.7px; }
+.ask-figma .ask-intro > p:last-child { font-size: 15px; line-height: 1.45; margin: 0; }
+.ask-figma .ask-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.ask-figma .ask-suggestions button { padding: 8px 14px; min-height: 44px; font-size: 13px; font-weight: 700; flex-direction: row; align-items: center; border-radius: 12px; }
+.ask-figma .ask-conversation { display: grid; gap: 12px; min-width: 0; }
+.ask-figma .ask-question { justify-self: end; max-width: min(90%, 500px); padding: 13px 15px; margin: 0; border-radius: 16px 16px 4px 16px; background: var(--color-surface); font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ask-figma .ask-result { margin: 0; padding: 16px; min-width: 0; border-color: var(--color-primary); border-radius: 16px 16px 16px 4px; }
+.ask-figma .ask-answer-label { color: var(--color-primary); font-size: 14px; font-weight: 700; margin: 0 0 10px; }
+.ask-figma .ask-result > p { font-size: 14px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
+.ask-figma .ask-result-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.ask-figma .ask-result-actions button { margin: 0; }
+.ask-figma .ask-proposal { overflow-wrap: anywhere; }
+.ask-figma .ask-records h3 { text-transform: capitalize; font-size: 14px; margin-top: 18px; }
+.ask-figma .ask-records article { padding: 12px 0; }
+.ask-figma .ask-records article p, .ask-figma .ask-records > p { margin-top: 6px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ask-figma .ask-welcome { display: grid; justify-items: start; gap: 10px; border: 1px solid var(--color-border); border-radius: 20px; padding: 24px; background: var(--color-surface); }
+.ask-figma .ask-welcome > svg { color: var(--color-primary); }
+.ask-figma .ask-welcome h3 { font-size: 18px; margin: 0; }
+.ask-figma .ask-welcome p { color: var(--color-muted); font-size: 14px; line-height: 1.6; margin: 0; }
+.ask-figma .ask-configuration { display: grid; gap: 8px; padding: 16px; border: 1px solid #e5a93b33; border-radius: 16px; background: #e5a93b14; }
+.ask-figma .ask-configuration strong { color: var(--color-primary); font-size: 14px; }
+.ask-figma .ask-configuration p { margin: 0; color: var(--color-muted); font-size: 12px; line-height: 1.5; }
+.ask-view.ask-figma .ask-composer { border: 0; background: transparent; padding: 0; margin: 0; border-radius: 0; gap: 8px; overflow: visible; }
+.ask-figma .ask-composer > label { font-size: 12px; font-weight: 600; color: var(--color-muted); }
+.ask-figma .ask-input-row { display: flex; align-items: flex-end; gap: 10px; min-width: 0; }
+.ask-figma .ask-composer textarea { min-height: 64px; flex: 1; min-width: 0; padding: 12px; resize: vertical; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); font-size: 16px; }
+.ask-figma .ask-composer .ask-send { width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 12px; border-radius: 12px; flex-shrink: 0; }
+.ask-figma .ask-privacy { margin: -8px 0 0; color: var(--color-muted); font-size: 11px; line-height: 1.6; }
+.ask-figma .ask-busy { color: var(--color-primary); font-size: 12px; margin: 0; }
+.ask-figma .ask-error { border: 1px solid var(--color-danger); padding: 12px; border-radius: 12px; font-size: 14px; overflow-wrap: anywhere; }

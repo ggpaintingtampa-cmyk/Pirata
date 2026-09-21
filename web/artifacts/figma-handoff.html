@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Morgan el Pirata Figma Handoff</title>
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --surface: #101010;
+        --panel: #171717;
+        --line: #3d3d3d;
+        --text: #f6f5ef;
+        --muted: #c9c5b9;
+        --gold: #b8a35a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main {
+        width: 2280px;
+        padding: 56px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 56px;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+      h2 {
+        margin: 0 0 20px;
+        font-size: 30px;
+        letter-spacing: 0;
+      }
+      p {
+        margin: 0;
+      }
+      .sub {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 24px;
+      }
+      .header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 48px;
+        margin-bottom: 48px;
+      }
+      .url {
+        color: #e6e1cf;
+        font-size: 22px;
+        padding: 16px 20px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #111;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 390px) 560px;
+        gap: 32px;
+        align-items: start;
+      }
+      .phone {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+      }
+      .phone h3 {
+        margin: 0 0 14px;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+      .phone img {
+        display: block;
+        width: 358px;
+        height: auto;
+        border-radius: 8px;
+        border: 1px solid #2d2d2d;
+      }
+      .wide {
+        grid-column: span 2;
+      }
+      .wide img {
+        width: 820px;
+      }
+      .schematic {
+        grid-column: 5;
+        grid-row: 1 / span 2;
+        min-height: 1280px;
+        padding: 28px;
+        border: 1px solid #5a5130;
+        border-radius: 8px;
+        background: #12110d;
+      }
+      .schematic pre {
+        white-space: pre-wrap;
+        margin: 0;
+        color: #e8e4d7;
+        font: 18px/1.45 Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .flow {
+        margin-top: 44px;
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0d0d0d;
+      }
+      .flow-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 18px;
+      }
+      .node {
+        min-height: 72px;
+        border: 1px solid #4b4b4b;
+        border-radius: 8px;
+        background: #171717;
+        padding: 18px;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .node.gold {
+        background: #292313;
+        border-color: var(--gold);
+      }
+      .edges {
+        margin-top: 22px;
+        color: var(--muted);
+        font-size: 20px;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="header">
+        <div>
+          <h1>Morgan el Pirata</h1>
+          <p class="sub">Screenshots, navigation map, and product schematic for design iteration</p>
+        </div>
+        <p class="url">https://pirata.andresinbox.tech</p>
+      </section>
+
+      <section class="grid">
+        <article class="phone">
+          <h3>Work landing</h3>
+          <img src="redesign/after/work-curated-390.png" alt="Work landing screen" />
+        </article>
+        <article class="phone">
+          <h3>Projects</h3>
+          <img src="redesign/after/projects-chromium-390.png" alt="Projects screen" />
+        </article>
+        <article class="phone">
+          <h3>Project detail</h3>
+          <img src="screenshots/redesign/project-overview-390.png" alt="Project detail screen" />
+        </article>
+        <article class="phone">
+          <h3>Tasks</h3>
+          <img src="redesign/after/tasks-chromium-390.png" alt="Tasks screen" />
+        </article>
+
+        <article class="phone">
+          <h3>Ask</h3>
+          <img src="redesign/after/ask-chromium-390.png" alt="Ask screen" />
+        </article>
+        <article class="phone">
+          <h3>Menu</h3>
+          <img src="redesign/after/more-chromium-390.png" alt="Menu screen" />
+        </article>
+        <article class="phone">
+          <h3>Files and uploads</h3>
+          <img src="redesign/after/task-files-uploaded-chromium-390.png" alt="Files and uploads screen" />
+        </article>
+        <article class="phone">
+          <h3>Calendar</h3>
+          <img src="screenshots/team-calendar-chromium-390.png" alt="Calendar screen" />
+        </article>
+
+        <aside class="schematic">
+          <h2>Pirata app schematic</h2>
+          <pre>Morgan el Pirata is a private team operations app for a small painting / service business.
+
+Bottom tabs:
+- Work: daily progress, active timer, current goals, important tasks, and Projects.
+- Ask: natural-language assistant for business records through server-approved operations.
+- Updates: shared project activity, human-written messages, recent changes, and file/photo context.
+- Menu: grouped access to Projects, Calendar, Progress, Today, Inventory, Clients, Shopping, Files, Team accounts, Settings, and owner-only administration.
+
+Core flow:
+Sign In -> Work -> Projects -> Project Detail -> Tasks, Updates, Notes, Files, Client.
+Work -> Tasks -> Task Detail -> Subtasks, Timer, Schedule, Files, Notes.
+Work -> Calendar -> Progress.
+Menu exposes the full app.
+
+Security:
+Private to authorized team members. Server enforces permissions for APIs, snapshots, downloads, live updates, and AI tools. Uploaded files are stored outside the public web root and require authenticated downloads.
+
+Design:
+Preserve the dark Pirata theme, fast task capture, small floating Add button, Work landing screen, prominent Projects access, and bottom navigation. Keep it operational, polished, and phone-friendly for a painting crew.
+
+Prompt for Figma AI:
+Use this schematic and the screenshots in this file as context. Propose improvements that make the app faster for a painting crew on phones while preserving the current dark theme, private team workflow, fast task capture, and bottom navigation: Work, Ask, Updates, Menu.</pre>
+        </aside>
+      </section>
+
+      <section class="flow">
+        <h2>Connected Screen Map</h2>
+        <div class="flow-grid">
+          <div class="node">Sign In</div>
+          <div class="node gold">Work</div>
+          <div class="node">Projects</div>
+          <div class="node">Project Detail</div>
+          <div class="node">Tasks</div>
+          <div class="node">Task Detail</div>
+          <div class="node">Ask</div>
+          <div class="node">Updates</div>
+          <div class="node">Menu</div>
+          <div class="node">Calendar</div>
+          <div class="node">Progress</div>
+          <div class="node">Settings/Admin</div>
+        </div>
+        <p class="edges">Main connections: Sign In to Work. Work to Projects, Tasks, Calendar, Ask, and Add. Projects to Project Detail. Project Detail to Tasks, Updates, Notes, Files, and Client. Tasks to Task Detail. Menu to the full app: Projects, Calendar, Progress, Today, Inventory, Clients, Shopping, Files, Team, Settings, and owner-only admin.</p>
+      </section>
+    </main>
+  </body>
+</html>

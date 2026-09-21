@@ -1,0 +1,10 @@
+import { z } from 'zod';
+import { appStateSchema } from '@pirata/domain/domain/schema';
+import { mutationResultSchema, safeInteger } from './index.js';
+export const importInputSchema=z.object({state:appStateSchema,timerChoice:z.enum(['carry','discard'])}).strict();
+export const importRequestSchema=importInputSchema.extend({requestId:z.uuid(),baseRevision:safeInteger,confirmed:z.literal(true)}).strict();
+export type ImportInput=z.infer<typeof importInputSchema>;
+export type ImportRequest=z.infer<typeof importRequestSchema>;
+export const importPreviewSchema=z.object({counts:z.record(z.string(),safeInteger),warnings:z.array(z.string()),activeTimer:z.boolean(),baseRevision:safeInteger}).strict();
+export type ImportPreview=z.infer<typeof importPreviewSchema>;
+export const importResultSchema=mutationResultSchema;

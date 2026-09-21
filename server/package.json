@@ -1,0 +1,42 @@
+{
+  "name": "@pirata/server",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.tests.json",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "migrate": "node --import tsx src/cli.ts migrate",
+    "owner:setup": "node --import tsx src/cli.ts setup",
+    "owner:recover": "node --import tsx src/cli.ts recover",
+    "backup": "node --import tsx src/cli.ts backup",
+    "restore:scratch": "node --import tsx src/cli.ts restore",
+    "harness": "node --import tsx tests/harness.ts",
+    "lint": "eslint src tests",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json"
+  },
+  "dependencies": {
+    "@fastify/cookie": "11.1.2",
+    "@pirata/contracts": "workspace:*",
+    "@pirata/domain": "workspace:*",
+    "argon2": "0.45.1",
+    "better-sqlite3": "12.11.1",
+    "fastify": "5.12.5",
+    "heic-convert": "^2.1.0",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.35.4",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/heic-convert": "^2.1.1",
+    "tsx": "4.23.13",
+    "vitest": "5.0.1"
+  },
+  "files": [
+    "dist",
+    "src/db/migrations"
+  ]
+}

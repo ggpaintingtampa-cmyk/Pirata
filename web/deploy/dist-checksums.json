@@ -1,0 +1,10 @@
+{
+  "status": "deployed-and-verified",
+  "webReleaseId": "20260918T155018Z-e47e98e6",
+  "files": {
+    "assets/index-BXtJaH19.css": "9f55416cea64735546d2387de3244acacd2a0b12e62bd4141c802cd04092baf4",
+    "assets/index-BjEClP3K.js": "337b23634f1f714c76aafb87be7ed9d48a48eaec7c425ea5f810fc5c66f530f1",
+    "favicon.svg": "e20b5029ce6808cd5bbfc2f2b039cb062d921245a5c5780a5174b12bc01b73a8",
+    "index.html": "d2f64eeda28855b2027b5cbc7c07279ac41a79ba65227e8995f057e813532eb4"
+  }
+}

@@ -1,0 +1,2 @@
+import type {ModuleProps} from './moduleProps';
+export async function teamRequest(app:Pick<ModuleProps,'service'>,path:string,body?:unknown){const session=await app.service.session();const res=await fetch('/api/v1/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',headers:body===undefined?{}:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await res.json();if(!res.ok)throw new Error(data.error?.message??'Unable to save.');return data;}

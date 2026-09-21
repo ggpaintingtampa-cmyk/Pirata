@@ -1,0 +1,52 @@
+.team-settings.team-figma { max-width: 880px; padding: 22px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-surface); min-width: 0; }
+.team-figma .team-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.team-figma .team-section-heading > div { min-width: 0; }
+.team-figma .team-eyebrow { color: var(--color-primary); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 8px; }
+.team-figma .team-section-heading h2 { font-size: 23px; letter-spacing: -.5px; }
+.team-figma .team-counter { padding: 6px 10px; border-radius: 8px; color: var(--color-primary); background: #e5a93b20; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.team-figma .team-description { color: var(--color-muted); font-size: 14px; line-height: 1.6; }
+.team-figma .team-member-list { list-style: none; padding: 0; margin: 20px 0; border: 1px solid var(--color-border); border-radius: 16px; overflow: hidden; }
+.team-figma .team-member-list > li { padding: 15px; border-top: 1px solid var(--color-border); }
+.team-figma .team-member-list > li:first-child { border-top: 0; }
+.team-figma .team-member-heading { display: flex; align-items: center; gap: 12px; }
+.team-figma .team-member-heading > div { min-width: 0; }
+.team-figma .team-member-heading strong { font-size: 15px; }
+.team-figma .team-member-heading p { margin: 3px 0 0; color: var(--color-muted); font-size: 12px; }
+.team-figma .team-member-avatar { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; border-radius: 50%; background: #127bab30; font-weight: 700; }
+.team-figma .team-member-avatar.is-owner { background: #e5a93b30; color: var(--color-primary); }
+.team-figma .team-owner-mark { margin-left: auto; flex-shrink: 0; color: var(--color-primary); }
+.team-figma .team-member-list .live-actions { margin: 12px 0 0; gap: 8px; }
+.team-figma .team-member-list button { font-size: 12px; min-height: 44px; padding: 8px 10px; }
+.live-app .team-settings.team-figma form { padding-top: 20px; max-width: none; gap: 16px; }
+.team-figma .team-form-heading { display: flex; align-items: center; gap: 10px; }
+.team-figma .team-form-heading svg { color: var(--color-primary); }
+.team-figma .team-form-heading h3, .team-figma .team-usage h3 { margin: 0; font-size: 17px; }
+.team-figma .team-form-help { color: var(--color-muted); font-size: 13px; line-height: 1.5; margin: 0; }
+.team-figma .team-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.team-figma label { font-size: 13px; font-weight: 600; min-width: 0; }
+.team-figma input { font-size: 16px; }
+.team-figma form > .live-actions { margin: 0; }
+.team-figma form > button { justify-self: start; }
+.team-figma .team-key-status { display: flex; align-items: start; gap: 12px; margin: 20px 0; padding: 15px; background: #e5a93b12; border: 1px solid #e5a93b30; border-radius: 12px; }
+.team-key-status > svg { flex-shrink: 0; color: var(--color-primary); }
+.team-key-status strong { font-size: 13px; }
+.team-key-status p { font-size: 12px; color: var(--color-muted); margin: 7px 0 0; line-height: 1.5; }
+.team-figma .team-advanced { border: 1px solid var(--color-border); border-radius: 12px; padding: 0 14px; }
+.team-advanced summary { cursor: pointer; min-height: 44px; padding: 13px 0; font-size: 13px; }
+.team-advanced > p { color: var(--color-muted); font-size: 12px; line-height: 1.6; margin: 0 0 14px; }
+.team-advanced > label { margin-bottom: 14px; }
+.team-figma .team-enabled { min-height: 44px; align-items: center; }
+.team-figma .team-usage { display: grid; gap: 14px; margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--color-border); }
+.team-figma .team-usage-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.team-usage-metrics > div { display: grid; gap: 4px; padding: 12px 8px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-field); min-width: 0; }
+.team-usage-metrics strong { font-size: 22px; font-weight: 700; color: var(--color-primary); overflow-wrap: anywhere; }
+.team-usage-metrics span { font-size: 11px; color: var(--color-muted); }
+.team-figma .team-usage-list { padding: 0; list-style: none; margin: 0; }
+.team-usage-list li > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 12px; }
+.team-usage-list li > div > span { color: var(--color-primary); }
+.team-usage-list li > p { color: var(--color-muted); font-size: 12px; margin-bottom: 0; }
+.team-figma .team-error { border: 1px solid var(--color-danger); padding: 12px; border-radius: 12px; font-size: 14px; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .team-settings.team-figma { padding: 16px; }
+  .team-figma .team-form-grid { grid-template-columns: minmax(0, 1fr); }
+}

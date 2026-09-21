@@ -1,0 +1,40 @@
+.signin { max-width: 440px; margin: 8vh auto; padding: 24px; }
+.signin .eyebrow { margin-top:24px; }
+.signin h1 { margin:12px 0; }
+.signin p { margin:16px 0; }
+.signin form { display:grid; gap:12px; margin:28px 0; }
+.signin .primary { min-height:48px; }
+.owner-label { color:var(--color-primary); border:1px solid var(--color-border); border-radius:20px; padding:8px 12px; font-size:14px; white-space:nowrap; }
+.live-actions { display:flex; gap:10px; flex-wrap:wrap; margin:16px 0; }
+.live-app .page > .card { margin:20px 0; }
+.live-app .card > p { margin:12px 0; }
+.live-records { margin:16px 0; }
+.live-records > li { border-top:1px solid var(--color-border); padding:16px 0; overflow-wrap:anywhere; }
+.live-records p { margin:8px 0; }
+.live-app .action-inner { align-items:center; gap:12px; }
+.live-announcement { margin-right:auto; }
+.live-announcement:not(:empty) { padding:6px 12px; border:1px solid var(--color-success-text); background:var(--color-success-bg); border-radius:12px; display:flex; align-items:center; gap:8px; font-size:14px; max-width:520px; }
+.live-announcement span { flex:1; overflow-wrap:anywhere; }
+.data-tools { margin:20px 0; }
+.data-tools > p, .data-tools label { margin:12px 0; display:block; }
+.data-tools input[type=file] { max-width:100%; }
+.data-tools pre { max-height:200px; overflow:auto; white-space:pre-wrap; font-size:14px; }
+.data-tools .counts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.data-tools .counts div { border-bottom:1px solid var(--color-border); padding:8px 0; }
+.data-tools label:has(input[type=checkbox]) { display:flex; align-items:start; gap:10px; }
+.data-tools input[type=checkbox] { width:22px; min-height:22px; flex-shrink:0; }
+.live-app .inline-warning { overflow-wrap:anywhere; }
+@media(max-width:360px) { .owner-label { padding:7px; font-size:12px; }.live-app .nav-item { font-size:12px; }.data-tools .counts {grid-template-columns:1fr;} }
+
+.dialog-back { display: inline-flex; align-items: center; gap: 8px; }
+
+.sp-modal .dialog-back { margin-bottom: 12px; }
+.team-settings form,.ask-view form{display:grid;gap:1rem;max-width:38rem}.team-settings label{display:grid;gap:.4rem}.team-settings input,.ask-view textarea{max-width:100%;min-width:0;box-sizing:border-box}.team-settings .check-row{display:flex;align-items:center;gap:.7rem}.team-settings .check-row input{width:auto}.ask-view pre{white-space:pre-wrap;overflow-wrap:anywhere}.menu-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.menu-links button{text-align:left;min-height:52px}.live-app .nav-inner{grid-template-columns:repeat(4,1fr)}.live-app .add-button{min-width:64px;border-radius:999px}.ask-view textarea{width:100%}
+/* Keep capture reachable without reserving a full extra phone toolbar. */
+.live-app.app-layout{grid-template-rows:auto minmax(0,1fr) auto}
+.live-app .action-bar{position:fixed;z-index:15;left:0;right:0;bottom:calc(92px + env(safe-area-inset-bottom));border:0;background:transparent;pointer-events:none;padding:0 16px}
+.live-app .action-inner{min-height:44px;align-items:flex-end}
+.live-app .action-inner>*{pointer-events:auto}
+.live-app .add-button{min-height:44px;padding:10px 16px;flex-shrink:0;border:1px solid #686868;box-shadow:0 4px 18px #000b}
+.live-app .page{padding-bottom:88px}
+.live-app .live-announcement:not(:empty){max-width:min(520px,calc(100vw - 136px))}
