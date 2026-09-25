@@ -1,0 +1,46 @@
+.hours-view{display:grid;gap:12px}
+.hours-tabs{display:flex;gap:6px}
+.hours-view .day-date{align-items:flex-end;gap:6px;flex-wrap:wrap}
+.hours-view .day-date>a{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
+.shift-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.shift-row{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 12px;display:grid;gap:6px}
+.shift-row.status-rejected{border-color:rgba(255,99,99,.4)}
+.shift-main{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.shift-main strong:last-child{margin-left:auto}
+.shift-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.shift-meta small{opacity:.75}
+.shift-times{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media (max-width:480px){.shift-times{grid-template-columns:1fr 1fr}}
+.hours-grid-wrap{overflow-x:auto}
+.hours-grid{border-collapse:collapse;min-width:100%}
+.hours-grid th,.hours-grid td{padding:4px 6px;text-align:center;border-bottom:1px solid rgba(255,255,255,.08);white-space:nowrap}
+.hours-grid tbody th{text-align:left}
+.hours-grid td button{min-width:44px;min-height:40px}
+.hours-grid td button.is-filled{background:rgba(240,180,41,.25);border-color:rgba(240,180,41,.5)}
+.hours-grid td button.is-pending{background:rgba(240,180,41,.12);border-style:dashed}
+.hours-summary{border-collapse:collapse;width:100%}
+.hours-summary th{text-align:left;padding:4px 6px}
+.hours-summary td{padding:4px 6px}
+.pay-rates{display:grid;gap:12px}
+.pay-person{display:grid;gap:6px}
+.pay-history{list-style:none;margin:0;padding:0;font-size:.9rem;opacity:.85}
+.pay-history li{display:flex;justify-content:space-between;gap:8px}
+.report-view{display:grid;gap:12px}
+.report-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:480px){.report-filters{grid-template-columns:1fr}}
+.report-section summary{cursor:pointer;font-weight:600;padding:8px 0;display:flex;justify-content:space-between}
+.report-section ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.report-section li{background:rgba(255,255,255,.04);border-radius:10px;padding:6px 10px}
+.report-section li small{display:block;opacity:.7}
+.insights-view{display:grid;gap:12px}
+.insights-blocks{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.insights-block{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 12px}
+.insights-block h3{margin:0 0 6px}
+.insights-block ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.insights-block li small{display:block;opacity:.7}
+.insights-money table{width:100%;border-collapse:collapse}
+.insights-money td{padding:3px 0}
+.insights-money td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.insights-money tr.profit td{font-weight:700;border-top:1px solid rgba(255,255,255,.15)}
+.insights-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.insights-list button{width:100%;display:flex;justify-content:space-between;gap:8px;align-items:center;min-height:48px}

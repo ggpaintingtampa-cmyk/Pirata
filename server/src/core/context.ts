@@ -1,6 +1,6 @@
-import type { BusinessCommand, CommandOf, CommandType } from '@pirata/contracts/index';
+import type { BusinessCommand, CommandOf, CommandType, Role } from '@pirata/contracts/index';
 import type { Repositories } from './repositories.js';
-export interface TransactionContext {readonly ownerId:string;readonly userId:string;readonly role:'owner'|'employee';readonly serverNow:number;readonly revision:number;readonly repo:Repositories;newId():string}
+export interface TransactionContext {readonly ownerId:string;readonly userId:string;readonly role:Role;readonly serverNow:number;readonly revision:number;readonly repo:Repositories;newId():string}
 export interface HandlerResult {changed:boolean;result:{kind:string;id?:string}}
 export type CommandHandler<T extends CommandType=CommandType>=(ctx:TransactionContext,command:CommandOf<T>)=>HandlerResult;
 export type HandlerMap = {[T in CommandType]:CommandHandler<T>};

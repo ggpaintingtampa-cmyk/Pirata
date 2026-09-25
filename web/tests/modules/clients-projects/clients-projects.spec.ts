@@ -83,7 +83,7 @@ test('phone client/project create and edit, linked job navigation and reload per
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Browser exterior repaint' })).toBeVisible();
-  await expect(page.getByText('12 Sample Lane')).toBeVisible();
+  await expect(page.getByText('12 Sample Lane').first()).toBeVisible();
   expect((await snapshot(page)).projects.filter(p => p.id === project.id)).toHaveLength(1);
   await page.getByRole('button', { name: 'Browser Alex Smith', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Client: ' + client.id);
@@ -147,11 +147,11 @@ test('lead create/edit, due reminder, follow-up history and conversion work in o
 
 test('project list filters and complete/reopen persist', async ({ page }) => {
   await openModule(page, 'clients-projects', 'ProjectsView');
-  await page.getByRole('button', { name: 'Add project', exact: true }).click();
-  await page.getByLabel('Project name', { exact: true }).fill('Status porch');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  const id = (await snapshot(page)).projects.find(p => p.name === 'Status porch')!.id;
+  // Update 2026-09-25: Add project is the on-site capture flow (covered by the team suite); seed the record directly.
+  const statusClient = await command(page, clientInput('Status client'));
+  const id = (await command(page, projectInput('Status porch', statusClient.result.id))).result.id as string;
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Status porch', exact: true })).toBeVisible();
   await openModule(page, 'clients-projects', 'ProjectDetail', { projectId: id });
   await page.getByRole('button', { name: 'Add task', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Add task: ' + id);
@@ -163,7 +163,7 @@ test('project list filters and complete/reopen persist', async ({ page }) => {
   await page.getByRole('dialog').getByRole('button', { name: 'Complete project', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();
-  await expect(page.getByText('Completed project', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reopen project', exact: true })).toBeVisible();
   await openModule(page, 'clients-projects', 'ProjectsView');
   await expect(page.getByRole('heading', { name: 'Status porch', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /^Completed / }).click();
@@ -172,7 +172,7 @@ test('project list filters and complete/reopen persist', async ({ page }) => {
   await page.getByRole('button', { name: 'Reopen project', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Reopen project', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  expect((await snapshot(page)).projects.find(p => p.id === id)!.status).toBe('open');
+  expect((await snapshot(page)).projects.find(p => p.id === id)!.status).toBe('scheduled');
 });
 
 test('keyboard validation, Escape, dirty cancellation and focus restoration', async ({ page }) => {
@@ -279,7 +279,7 @@ test('project summary derives integer spending and time including the active int
   await openClients(page);
   const s = await snapshot(page), base = { createdAt: s.serverNow, updatedAt: s.serverNow };
   const fixture: BusinessSnapshot = { ...s,
-    projects: [{ ...base, id: 'summary-project', name: 'Summary job', clientId: null, clientName: '', address: '', note: '', status: 'open' }],
+    projects: [{ ...base, id: 'summary-project', name: 'Summary job', clientId: null, clientName: '', address: '', note: '', status: 'scheduled' }],
     tasks: [{ ...base, id: 'summary-task', projectId: 'summary-project', title: 'Paint', estimatedMinutes: 60, status: 'open', note: '' }],
     timeEntries: [{ ...base, id: 'summary-entry', taskId: 'summary-task', source: 'manual', date: businessDate(s.serverNow), durationSeconds: 1800, note: '' }],
     runningTimer: { taskId: 'summary-task', sessionId: 'summary-running', startedAt: s.serverNow - 120000 },
@@ -312,8 +312,9 @@ test('client and project layouts fit 320, 390, 768 and 1280px with usable dialog
     const dialog = page.getByRole('dialog');
     const box = (await dialog.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width); expect(box.height).toBeLessThanOrEqual(height);
-    await expect(page.getByLabel('Project name', { exact: true })).toBeFocused();
-    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
+    // Update 2026-09-25: Add project opens the on-site capture flow (client, name, address, then tasks).
+    await expect(page.getByLabel('Project name', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start walking the job', exact: true })).toBeVisible();
     await page.keyboard.press('Escape'); await expect(button).toBeFocused();
   }
   expect(consoleErrors).toEqual([]);

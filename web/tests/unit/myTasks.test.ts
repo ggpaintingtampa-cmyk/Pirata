@@ -7,7 +7,7 @@ const task = (id:string, values:Partial<Task>={}):Task => ({
   status:'open', note:'', assigneeId:'owner', archivedAt:null, ...values,
 });
 const owner:TeamMember={id:'owner',name:'Andres',username:'andre',role:'owner',disabledAt:null};
-const employee:TeamMember={id:'employee',name:'Jose',username:'jose',role:'employee',disabledAt:null};
+const employee:TeamMember={id:'employee',name:'Jose',username:'jose',role:'worker',disabledAt:null};
 const fixture=(tasks:Task[],extra:Partial<BusinessSnapshot>={}):BusinessSnapshot=>({
   schemaVersion:2,timezone:'America/New_York',currency:'USD',revision:0,serverNow:1000,
   capabilities:{'clients-projects':'ready','tasks-time':'ready',planning:'ready',spending:'ready',inventory:'ready'},

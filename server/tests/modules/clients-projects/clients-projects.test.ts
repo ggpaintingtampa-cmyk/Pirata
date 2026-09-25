@@ -83,13 +83,13 @@ describe('clients and projects through authenticated real SQLite API', () => {
     f.repo.insert('materials', { ...base, id: 'paint', name: 'Paint', product: '', color: 'White', finish: 'Satin', unit: 'gal', stockMinor: 300 });
     f.repo.insert('material_requirements', { ...base, id: 'req', materialId: 'paint', projectId: p, neededMinor: 500, reservedMinor: 200 });
     const before = await snapshot();
-    for (const status of ['completed', 'open'] as const) {
+    for (const status of ['completed', 'scheduled'] as const) {
       await save({ type: 'project.setStatus', id: p, status });
       const after = await snapshot();
       for (const key of ['tasks', 'timeEntries', 'schedule', 'expenses', 'materials', 'materialRequirements', 'runningTimer'] as const) expect(after[key]).toEqual(before[key]);
       expect(after.projects[0].status).toBe(status);
     }
-    expect((await save({ type: 'project.setStatus', id: p, status: 'open' })).changed).toBe(false);
+    expect((await save({ type: 'project.setStatus', id: p, status: 'scheduled' })).changed).toBe(false);
   });
   it('rejects wrong-owner client/project/lead IDs and references through actual handlers', async () => {
     // Production is singleton-owner. Test-only CHECK bypass creates a second fixture owner;
@@ -99,12 +99,12 @@ describe('clients and projects through authenticated real SQLite API', () => {
     finally { f.db.pragma('ignore_check_constraints = OFF'); }
     const other = new Repositories(f.db, 'other'), base = { createdAt: NOW, updatedAt: NOW };
     other.insert('clients', { ...base, id: 'foreign-client', name: 'Foreign', phone: '', email: '', note: '', archivedAt: null });
-    other.insert('projects', { ...base, id: 'foreign-project', name: 'Foreign project', clientId: 'foreign-client', clientName: 'Foreign', address: '', note: '', status: 'open' });
+    other.insert('projects', { ...base, id: 'foreign-project', name: 'Foreign project', clientId: 'foreign-client', clientName: 'Foreign', address: '', note: '', status: 'scheduled' });
     other.insert('leads', { ...base, id: 'foreign-lead', name: 'Foreign lead', phone: '', email: '', workDescription: 'Paint', nextFollowUpDate: null, convertedClientId: null });
     const ownLead = (await save(lead)).result.id!;
     for (const command of [project('foreign-client'), { ...client, type: 'client.update', id: 'foreign-client' }, { type: 'client.archive', id: 'foreign-client', archived: true }, { type: 'project.setStatus', id: 'foreign-project', status: 'completed' }, { type: 'lead.followUp', id: 'foreign-lead', note: 'No access', nextFollowUpDate: null }, { type: 'lead.convertToClient', id: ownLead, clientId: 'foreign-client' }] as BusinessCommand[]) expect((await send(command)).response.statusCode).toBe(404);
     expect((await snapshot()).clients).toEqual([]);
-    expect(other.require('projects', 'foreign-project').status).toBe('open');
+    expect(other.require('projects', 'foreign-project').status).toBe('scheduled');
   });
   it('rejects invalid emails, impossible dates and blank notes without saving', async () => {
     for (const command of [{ ...client, email: 'bad@' }, { ...client, name: '  ' }, { ...lead, nextFollowUpDate: '2026-02-30' }, { ...lead, nextFollowUpDate: '2025-02-29' }]) expect((await send(command)).response.statusCode).toBe(400);

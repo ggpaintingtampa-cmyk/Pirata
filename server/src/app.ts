@@ -14,8 +14,9 @@ import type { PartialHandlers } from './core/context.js';
 import { ApiError } from './core/errors.js';
 import { executeCommand } from './core/commands.js';
 import { readSnapshot } from './core/snapshot.js';
-import { COOKIE_NAME, checkMutation, findSession, newSession, rateLimit, requireOwner, requireSession, revokeSession } from './auth/sessions.js';
+import { checkMutation, clearSessionCookie, findSession, newSession, rateLimit, requireOwner, requireSession, revokeSession, touchSession } from './auth/sessions.js';
 import { verifyPassword } from './auth/password.js';
+import { registerExports } from './routes/export.js';
 export interface AppOptions {storagePath?:string;storageLimitBytes?:number;fetcher?:typeof fetch;db:Sqlite;origin:string;now?:()=>number;audit?:(event:{event:'request';method:string;status:number})=>void;handlers?:PartialHandlers}
 export function createApp(options:AppOptions) {
   const {db,origin}=options,now=options.now??Date.now;
@@ -36,12 +37,12 @@ export function createApp(options:AppOptions) {
   app.get('/api/v1/health',async()=>({status:'ok'}));
   app.get('/api/v1/session',async(req,reply)=>{
     let s=findSession(db,req,now());
-    if(!s){rateLimit(db,'session:'+req.ip,now(),60);s=newSession(db,reply,null,now());}
+    if(!s){rateLimit(db,'session:'+req.ip,now(),60);s=newSession(db,reply,null,now());}else touchSession(db,req,reply,s,now());
     return {authenticated:!!s.owner_id,csrfToken:s.csrf_token,expiresAt:s.expires_at,...(s.owner_id?{user:new Repositories(db,s.owner_id).team().find(m=>m.id===s.user_id)}:{})};
   });
   app.post('/api/v1/login',async(req,reply)=>{
     const session=findSession(db,req,now());checkMutation(req,session,origin);
-    rateLimit(db,'login:'+req.ip,now(),10);rateLimit(db,'login:global',now(),30);
+    rateLimit(db,'login:'+req.ip,now(),10);rateLimit(db,'login:global',now(),100);
     const {password,username}=z.object({password:z.string().min(1).max(128),username:z.string().trim().toLowerCase().max(40).default('owner')}).strict().parse(req.body);
     const owner=db.prepare('SELECT id,owner_id,password_hash FROM team_members WHERE username=? AND disabled_at IS NULL').get(username) as {id:string;owner_id:string;password_hash:string}|undefined;
     if(!owner||!await verifyPassword(owner.password_hash,password))throw new ApiError(401,'INVALID_CREDENTIALS','Unable to sign in.');
@@ -56,7 +57,7 @@ export function createApp(options:AppOptions) {
   app.post('/api/v1/logout',async(req,reply)=>{
     const s=requireSession(db,req,now());checkMutation(req,s,origin);
     z.object({}).strict().parse(req.body??{});revokeSession(db,s);
-    reply.clearCookie(COOKIE_NAME,{path:'/',secure:true,httpOnly:true,sameSite:'strict'});return reply.code(204).send();
+    clearSessionCookie(reply);return reply.code(204).send();
   });
   app.get('/api/v1/snapshot',async(req)=>{const s=requireSession(db,req,now());return readSnapshot(db,s.owner_id,capabilities,now(),s.user_id,s.role);});
   app.get('/api/v1/export',async(req,reply)=>{const s=requireOwner(db,req,now());reply.header('Content-Disposition','attachment; filename="pirata-business-v2.json"');return readSnapshot(db,s.owner_id,capabilities,now(),s.user_id,s.role);});
@@ -76,5 +77,6 @@ export function createApp(options:AppOptions) {
   registerTeam(app,{db,origin,now});
   registerFiles(app,{db,origin,now,storagePath:options.storagePath??process.env.PIRATA_UPLOADS_PATH,storageLimitBytes:options.storageLimitBytes??Number(process.env.PIRATA_STORAGE_LIMIT_BYTES??2147483648)});
   registerAsk(app,{db,origin,now,fetcher:options.fetcher});
+  registerExports(app,{db,now});
   return app;
 }

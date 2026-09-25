@@ -10,7 +10,7 @@ pirata.andresinbox.tech {
         Referrer-Policy no-referrer
         Cache-Control no-store
         Permissions-Policy "camera=(self), microphone=(), geolocation=()"
-        Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+        Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
     }
     # 25 MiB PDF limit plus bounded multipart metadata; the API applies exact
     # 20 MiB image/25 MiB PDF limits after authenticating each upload.
@@ -26,8 +26,11 @@ pirata.andresinbox.tech {
         }
         @unsupported not method GET HEAD
         respond @unsupported 405
-        @entry path / /index.html /favicon.svg
+        @entry path / /index.html /favicon.svg /manifest.webmanifest /sw.js
         handle @entry {
+            file_server
+        }
+        handle /icons/* {
             file_server
         }
         handle /assets/* {

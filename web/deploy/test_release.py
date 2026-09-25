@@ -47,6 +47,27 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(release.current_release(self.root), first['releaseId'])
         self.assertTrue((self.root / 'shared/assets/index-BBBBBB.js').exists())
 
+    def test_installable_shell_files_publish_with_fixed_names(self):
+        self.build('AAAAAA')
+        (self.dist / 'manifest.webmanifest').write_text('{"name":"Morgan el Pirata"}')
+        (self.dist / 'sw.js').write_text('self.addEventListener("fetch", () => {});')
+        (self.dist / 'icons').mkdir()
+        (self.dist / 'icons' / 'icon-192.png').write_bytes(b'\x89PNG')
+        (self.dist / 'index.html').write_text(
+            '<title>Morgan el Pirata</title><link rel="manifest" href="./manifest.webmanifest">'
+            '<link rel="apple-touch-icon" href="./icons/icon-192.png"><script src="./assets/index-AAAAAA.js"></script>'
+            '<link rel="stylesheet" href="./assets/index-AAAAAA.css">')
+        manifest = release.publish(self.dist, self.root, self.backups)
+        current = self.root / 'current'
+        for name in ('manifest.webmanifest', 'sw.js', 'icons/icon-192.png'):
+            self.assertIn(name, manifest['files'])
+            self.assertEqual((current / name).stat().st_mode & 0o777, 0o644)
+        self.assertEqual((current / 'icons').stat().st_mode & 0o777, 0o755)
+        self.assertFalse((self.root / 'shared' / 'icons').exists())
+        (self.dist / 'icons' / 'notes.txt').write_text('x')
+        with self.assertRaisesRegex(ValueError, 'Unexpected build file'):
+            release.inspect_dist(self.dist)
+
     def test_unexpected_private_file_rejected_before_switch(self):
         first = release.publish(self.dist, self.root, self.backups)
         (self.dist / '.env').write_text('test-only placeholder')

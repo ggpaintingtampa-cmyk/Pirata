@@ -18,7 +18,7 @@ let repo:Repositories;
 
 function seedRelationships() {
   repo.insert('clients',{...record('client'),name:'Test Client',phone:'',email:'',note:'',archivedAt:null});
-  repo.insert('projects',{...record('project'),name:'Test Project',clientId:'client',clientName:'Test Client',address:'',note:'',status:'open'});
+  repo.insert('projects',{...record('project'),name:'Test Project',clientId:'client',clientName:'Test Client',address:'',note:'',status:'scheduled'});
   repo.insert('tasks',{...record('task'),projectId:'project',title:'Paint',estimatedMinutes:60,status:'open',note:''});
   repo.insert('objectives',{...record('objective'),date:'2026-09-17',title:'Finish',taskId:'task',status:'open',note:'',rank:0});
   repo.insert('schedule_blocks',{...record('block'),date:'2026-09-17',startMinute:540,endMinute:600,kind:'task',title:'Paint',taskId:'task'});
@@ -75,7 +75,7 @@ describe('normalized SQLite foundation',() => {
     expect(other.list('clients')).toEqual([]);
     expect(other.get('projects','project')).toBeUndefined();
     expect(()=>other.require('projects','project')).toThrow();
-    expect(()=>other.insert('projects',{...record('other-project'),name:'Other',clientId:'client',clientName:'',address:'',note:'',status:'open'})).toThrow(/FOREIGN KEY/);
+    expect(()=>other.insert('projects',{...record('other-project'),name:'Other',clientId:'client',clientName:'',address:'',note:'',status:'scheduled'})).toThrow(/FOREIGN KEY/);
     expect(()=>other.insert('tasks',{...record('other-task'),projectId:'project',title:'Other',estimatedMinutes:1,status:'open',note:''})).toThrow(/FOREIGN KEY/);
     expect(()=>other.insert('material_requirements',{...record('other-requirement'),projectId:'project',materialId:'material',neededMinor:1,reservedMinor:0})).toThrow(/FOREIGN KEY/);
     expect(repo.get('projects','project')?.clientId).toBe('client');

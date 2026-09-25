@@ -1,3 +1,4 @@
+import { can } from '@pirata/contracts/permissions';
 import type { BusinessSnapshot, Task } from '@pirata/contracts/index';
 
 export interface WorkTaskFilters {
@@ -15,7 +16,7 @@ export const defaultWorkFilters: WorkTaskFilters = {
 /** Today selects goals and scheduled work; viewing/filtering never changes the plan. */
 export function selectWorkTasks(snapshot: BusinessSnapshot, date: string, filters: WorkTaskFilters) {
   const byId = new Map(snapshot.tasks.map(task => [task.id, task]));
-  const owner = snapshot.currentUser?.role === 'owner';
+  const owner = can(snapshot.currentUser?.role, 'plan.others');
   const personalGoals = new Set((snapshot.dailyGoals ?? []).filter(goal => goal.date === date && goal.userId === snapshot.currentUser?.id).map(goal => goal.taskId));
   const dailyIds = new Set([
     ...(snapshot.dailyGoals ?? []).filter(goal => goal.date === date && (owner || goal.userId === snapshot.currentUser?.id)).map(goal => goal.taskId),

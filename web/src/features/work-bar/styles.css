@@ -1,0 +1,9 @@
+.work-bar{position:sticky;top:0;z-index:30;background:rgba(10,10,10,.96);border-bottom:1px solid rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:6px 16px}
+.work-bar-idle{opacity:.7}
+.work-bar-pill{display:flex;align-items:center;gap:10px;width:100%;max-width:960px;margin:0 auto;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:inherit;text-align:left;min-height:44px}
+.work-bar-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.work-bar-clock{font-variant-numeric:tabular-nums;color:#f0b429}
+.work-bar-details{max-width:960px;margin:8px auto 4px;display:grid;gap:8px}
+.work-bar-totals{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem;opacity:.85}
+.work-bar-actions{display:flex;gap:8px;flex-wrap:wrap}
+.work-bar-actions button{display:inline-flex;align-items:center;gap:6px;min-height:40px}

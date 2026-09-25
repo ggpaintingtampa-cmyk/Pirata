@@ -19,7 +19,7 @@ export function convertLegacy(input:ImportInput,now:number):BusinessSnapshot {
   const ranks=new Map<string,number>();
   const snapshot=snapshotSchema.parse({schemaVersion:2,timezone:s.timezone,currency:s.currency,revision:0,serverNow:now,capabilities:ready,
     clients:s.projects.map((p,i)=>({...base({id:'legacy-client-'+i},i),name:p.clientName,phone:'',email:'',note:'Imported from project '+p.name+'. Separate identity retained; matching names were not merged.',archivedAt:null})),
-    projects:s.projects.map((p,i)=>({...p,...base(p,i),clientId:'legacy-client-'+i,address:'',note:''})),
+    projects:s.projects.map((p,i)=>({...p,...base(p,i),clientId:'legacy-client-'+i,address:'',note:'',status:p.status==='completed'?'completed' as const:'scheduled' as const})),
     tasks:s.tasks.map((t,i)=>({...t,...base(t,i)})),
     objectives:objectives.map((o,i)=>{const rank=ranks.get(o.date)??0;ranks.set(o.date,rank+1);return {...o,...base(o,i),rank};}),
     schedule:s.schedule.map((b,i)=>({...b,...base(b,i)})),

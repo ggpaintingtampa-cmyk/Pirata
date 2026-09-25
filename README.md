@@ -7,6 +7,29 @@ The current team version extends the existing application. Historical
 `HOME-SCREEN-SPEC.md` and implementation packets describe earlier versions; the
 September 18 team requirements supersede their home-screen/owner-only boundaries.
 
+## September 25 team update
+
+Four roles now share the business: owner, manager, sales and worker (2/5/5/10
+active accounts). Everyone sees the same work; money stays with the office roles
+and pay rates with the owner. **Daily** replaces Work and Today: the night before,
+a manager or the owner plans each person's ordered list for a date; workers open
+the same list, expand tasks into subtasks and tiny steps, tick what is done (with
+who and when, and a ten-minute undo), and ask a question on any step. Hours are
+entered as in/out times or days worked, approved by a manager, and priced with
+per-person pay rates; the Daily report, Hours and Project insights pages and CSV
+exports use them. Sales reps capture a job on site (client, address, photos,
+price, notes) and the office reviews it before it is scheduled. Projects carry a
+facts card (gate code, paint, store job name and more), templates seed nested task
+trees, materials requests replace Shopping, tools are signed out and returned
+with per-person sprayer cleaning cycles and broken reports, files take tags and
+comments, the app installs to the phone home screen, sessions slide for 30 days,
+and every screen is available in Spanish from the account menu.
+
+The build spec and per-chunk handoffs live in [update09-25-26](update09-25-26/SKILL.md).
+Schema version 3 (`003-update-2026-09-25.sql`) adds tables and columns only and
+never rewrites historical values: the legacy role `employee` and project status
+`open` stay stored as they are and are read as `worker` and `scheduled`.
+
 ## September 21 Work update
 
 Work now offers all assignments or Today, active/completed/all statuses, search
@@ -39,14 +62,16 @@ See [redesign guide and screenshots](web/REDESIGN.md) and [visual QA](design-qa.
 
 ## Application
 
-- **Work** opens with personal daily completion, independent current timer,
-  practical checklists, projects, quick capture and cleanup reminders.
+- **Daily** opens on the signed-in person's ordered list for the day: the
+  three-level task tree, completion with undo, questions, the current timer,
+  project shortcuts and cleanup reminders. Office roles pick whose list to plan.
 - **Ask** provides allowlisted business assistance, with owner-managed model,
   request and spending allowances. Live calls stay disabled until configured.
 - **Updates** shows team activity, human messages and project files.
-- **Menu** includes Projects, Calendar, team Progress, Today, Inventory, Clients,
-  Shopping, tasks and role-appropriate settings. Spending/account/API controls
-  belong to the owner.
+- **Menu** includes Projects, Calendar, All tasks, Templates, Daily report,
+  Project insights, Hours, Pay rates, Clients, Materials requests, Tools,
+  Inventory, Files and role-appropriate settings. Spending, pay rates, account
+  and API controls belong to the owner; approvals to managers and the owner.
 
 A title alone saves an unfiled task. Add one level of subtasks, assign a responsible
 person, paste several lines, save another, or reuse a list template. Up to three
@@ -93,11 +118,13 @@ The owner's display name is **Andres**. The username changed from `owner` on
 September 18 without changing account IDs, passwords or business records. If the
 sign-in form or password manager still fills `owner`, replace it with `andre`.
 The old browser Basic Auth prompt is replaced by application authentication after
-the team deployment. In **Menu → Team accounts**, create an employee's name,
-username and unique password of at least 15 characters. Share credentials privately.
-There can be four enabled employees. The same screen resets passwords or disables
-access; sessions are revoked and active employee work is saved/stopped on disable.
-Owner recovery uses the existing concealed-input server CLI.
+the team deployment. In **Menu → Team accounts**, create a person's name, username,
+role (owner, manager, sales or worker) and unique password of at least 15
+characters. Share credentials privately. Up to 2 owners, 5 managers, 5 sales reps
+and 10 workers may be enabled. The same screen changes roles, resets passwords or
+disables access; sessions are revoked and active work is saved/stopped on disable.
+Each person picks English or Spanish from the account menu. Owner recovery uses
+the existing concealed-input server CLI.
 
 Everyone shares the existing business; accounts do not create new businesses.
 Server checks protect finances, account administration, exports/imports and AI

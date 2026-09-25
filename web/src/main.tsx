@@ -9,6 +9,7 @@ import { createBusinessService } from './services/api';
 import { createServerStore } from './state/serverStore';
 import { ServerProvider } from './state/serverProvider';
 import { LiveApp } from './live/LiveApp';
+import { LocaleProvider } from './i18n';
 import './styles/tokens.css';
 import './styles/global.css';
 import './styles/app.css';
@@ -16,11 +17,13 @@ import './live/live.css';
 import './styles/redesign.css';
 import './styles/figma.css';
 const root=createRoot(document.getElementById('root')!);
+// Install-to-home-screen shell cache (update 2026-09-25). Production only; the API is never cached.
+if(import.meta.env.PROD&&'serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{/* the app works without it */});});
 if(new URLSearchParams(window.location.search).get('demo')==='1'){
  const store=createAppStore(localStorageRepository());store.initialize();
  if(import.meta.hot)import.meta.hot.dispose(()=>store.dispose());
  root.render(<StrictMode><ErrorBoundary><AppProvider store={store}><App/></AppProvider></ErrorBoundary></StrictMode>);
 }else{
  const store=createServerStore(createBusinessService());void store.initialize();
- root.render(<StrictMode><ErrorBoundary><ServerProvider store={store}><LiveApp/></ServerProvider></ErrorBoundary></StrictMode>);
+ root.render(<StrictMode><ErrorBoundary><ServerProvider store={store}><LocaleProvider><LiveApp/></LocaleProvider></ServerProvider></ErrorBoundary></StrictMode>);
 }

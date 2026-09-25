@@ -88,6 +88,10 @@ def main():
     status, _, body = request(ORIGIN + args.asset, authorization)
     check(status == 200 and bool(body), 'Authorized direct asset loads')
     print('Asset SHA256: ' + hashlib.sha256(body).hexdigest())
+    if args.access == 'team':
+        for path, kind in [('/manifest.webmanifest', b'"name"'), ('/sw.js', b'addEventListener'), ('/icons/icon-192.png', b'\x89PNG')]:
+            status, _, body = request(ORIGIN + path, authorization)
+            check(status == 200 and body.startswith(kind) if kind == b'\x89PNG' else status == 200 and kind in body, 'Installable app file is served: ' + path)
     for path in ['/assets/does-not-exist.js', '/.env', '/.git/config', '/src/main.tsx',
                  '/deploy/README.md', '/backups/', '/uploads/', '/package.json', '/unknown-page']:
         status, _, _ = request(ORIGIN + path, authorization)

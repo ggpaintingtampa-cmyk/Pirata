@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import {isLocalDate} from '@pirata/domain/lib/dates';
+import {ROLES} from './permissions.js';
 const id=z.string().min(1).max(100), nullableId=id.nullable(), stamp=z.number().int().nonnegative(), title=z.string().trim().min(1).max(160), note=z.string().trim().max(4000), text=z.string().trim().max(160).default('');
 const record={id,createdAt:stamp,updatedAt:stamp};
-export const teamMemberSchema=z.object({id,name:z.string(),username:z.string(),role:z.enum(['owner','employee']),disabledAt:stamp.nullable()}).strict();
+export const teamMemberSchema=z.object({id,name:z.string(),username:z.string(),role:z.enum(ROLES),disabledAt:stamp.nullable(),locale:z.enum(['en','es']).optional()}).strict();
 export type TeamMember=z.infer<typeof teamMemberSchema>;
 export const dailyGoalSchema=z.object({...record,date:z.string(),userId:id,taskId:id,position:z.number().int().min(0).max(2)}).strict();
 export type DailyGoal=z.infer<typeof dailyGoalSchema>;
-export const taskTemplateSchema=z.object({...record,name:title,titles:z.string()}).strict();
+export const taskTemplateSchema=z.object({...record,name:title,titles:z.string(),tree:z.string().nullable().optional()}).strict();
 export type TaskTemplate=z.infer<typeof taskTemplateSchema>;
 export const attachmentSchema=z.object({...record,parentType:z.enum(['task','project','client']),parentId:id,name:z.string(),mimeType:z.string(),size:stamp,removedAt:stamp.nullable(),uploadedBy:id}).strict();
 export type Attachment=z.infer<typeof attachmentSchema>;
@@ -15,9 +16,9 @@ export const activitySchema=z.object({...record,userId:id,projectId:nullableId,t
 export type Activity=z.infer<typeof activitySchema>;
 export const projectNoteSchema=z.object({...record,projectId:id,title,body:note,pinned:z.number(),product:z.string(),color:z.string(),colorCode:z.string(),finish:z.string(),quantity:z.string(),store:z.string(),labelAttachmentId:nullableId,createdBy:id}).strict();
 export type ProjectNote=z.infer<typeof projectNoteSchema>;
-export const shoppingItemSchema=z.object({...record,title,note,projectId:nullableId,sourceNoteId:nullableId,checkedAt:stamp.nullable(),createdBy:id}).strict();
+export const shoppingItemSchema=z.object({...record,title,note,projectId:nullableId,sourceNoteId:nullableId,checkedAt:stamp.nullable(),createdBy:id,quantity:z.string().optional(),taskId:nullableId.optional(),forUserId:nullableId.optional(),receivedAt:stamp.nullable().optional(),receivedBy:nullableId.optional(),archivedAt:stamp.nullable().optional()}).strict();
 export type ShoppingItem=z.infer<typeof shoppingItemSchema>;
-export const cleanupObligationSchema=z.object({...record,equipmentId:id,userId:id,taskId:nullableId,firstUsedAt:stamp,deadlineAt:stamp,dueAt:stamp,cleaningMinutes:z.number(),completedAt:stamp.nullable()}).strict();
+export const cleanupObligationSchema=z.object({...record,equipmentId:id,userId:id,taskId:nullableId,firstUsedAt:stamp,deadlineAt:stamp,dueAt:stamp,cleaningMinutes:z.number(),completedAt:stamp.nullable(),completedBy:nullableId.optional()}).strict();
 export type CleanupObligation=z.infer<typeof cleanupObligationSchema>;
 export const cleanupSnoozeSchema=z.object({...record,obligationId:id,userId:id,fromDueAt:stamp,toDueAt:stamp}).strict();
 export type CleanupSnooze=z.infer<typeof cleanupSnoozeSchema>;

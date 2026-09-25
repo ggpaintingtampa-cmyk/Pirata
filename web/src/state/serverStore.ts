@@ -38,7 +38,8 @@ export function createServerStore(api:PirataService,clock=Date.now){
     generation++;minimumRevision=0;refreshing=null;publish({data:null,status:'signed-out',error:'',busy:false,clockOffset:0,receivedAt:performance.now()});
   }
   return {service,getSnapshot:()=>state,subscribe(listener:()=>void){listeners.add(listener);return()=>{listeners.delete(listener);};},refresh,login,logout,
-    initialize(){if(!boot)boot=refresh().catch(()=>{if(!state.data&&state.status==='signed-out')publish({error:''});else if(!state.data)publish({status:'error'});});return boot;},
+    /** A cold start without network (phone waking up) keeps trying instead of showing the sign-in form (R-X-3). */
+    initialize(){if(!boot)boot=(async()=>{for(let attempt=0;;attempt++){try{await refresh();return;}catch(e){if(state.data)return;if(state.status==='signed-out'){publish({error:''});return;}const offline=e instanceof ServiceError&&e.status===0;if(!offline||attempt>=12){publish({status:'error'});return;}publish({status:'loading',error:'Reconnecting…'});await new Promise(resolve=>setTimeout(resolve,Math.min(5000,1000*(attempt+1))));}}})();return boot;},
   };
 }
 export type ServerStore=ReturnType<typeof createServerStore>;
