@@ -4,7 +4,45 @@ This runbook supersedes the historical owner-only access and database-only backu
 instructions for the team release. `deployed-release.json` records what is
 actually deployed; source files alone do not establish production status.
 
-## Current Work release — September 21, 17:58 UTC
+## Current team update release — September 25, TBD-TIME UTC
+
+Web `TBD-WEB` and API `TBD-API` are live and verified with schema 003
+(`003-update-2026-09-25.sql`). This release adds four roles (owner, manager, sales,
+worker), the Daily page with ordered day lists and the three-level task tree,
+questions, day notes, nested templates, work shifts with approval and pay rates,
+the Daily report, Hours and Project insights pages, CSV exports, the sales capture
+flow with review gate, job facts, file tags/comments, materials requests, tool
+sign-outs with per-person cleaning cycles and broken reports, the installable app
+shell (manifest, service worker, icons), sliding 30-day sessions and Spanish.
+Accounts, credentials, business data, uploads, timers and AI configuration were
+preserved; the migration adds tables and columns only. The legacy role `employee`
+and project status `open` remain stored unchanged and are read as `worker` and
+`scheduled`.
+
+Before publication, the complete online backup was:
+`/var/backups/pirata/database/20260925T144917Z-cb173e39e9ac402caad4a4057e202409.sqlite`,
+plus its matching `.files` and `.manifest.json`. The noninterrupting preflight
+(`team-preflight-TBD-PREFLIGHT`) migrated a scratch copy of that backup with the
+candidate CLI and compared every historical column and row. The cutover repeated
+the check with the fresh closed-window backup recorded in
+`/var/backups/pirata/team-upgrade-TBD-UPGRADE/upgrade.json`; the pre-migration
+database and sidecars are retained in `/var/lib/pirata/upgrade-recovery-TBD-UPGRADE/`.
+
+The previous compatible pair is web `20260921T175808Z-35477776` with API
+`20260918T081813Z-a8592c71` on schema 002. The old API rejects schema 003, so a
+code-only rollback of this release is not compatible with the migrated database;
+recovery of the old state follows the full procedure below (close writes, back up,
+restore the retained pre-migration database and uploads, select the old pair).
+
+Root build/typechecks, lint, 176 server/API tests, 87 frontend tests, five team
+Chromium cases, six integrated cases, 46 demo cases, the scoped module harness,
+11 release, 5 team-release and 10 backup tests, the sealed candidate smoke and
+CLI operations passed. The Caddy snippet now also serves `/manifest.webmanifest`,
+`/sw.js` and `/icons/*` and allows `manifest-src`/`worker-src 'self'`.
+
+Post-publish verification: TBD-VERIFY
+
+## Historical Work release — September 21, 17:58 UTC
 
 Web `20260921T175808Z-35477776` is live and verified. API
 `20260918T081813Z-a8592c71` and schema 002 are unchanged. This release adds Work

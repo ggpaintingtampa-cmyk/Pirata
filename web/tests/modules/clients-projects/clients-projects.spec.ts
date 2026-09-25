@@ -147,11 +147,11 @@ test('lead create/edit, due reminder, follow-up history and conversion work in o
 
 test('project list filters and complete/reopen persist', async ({ page }) => {
   await openModule(page, 'clients-projects', 'ProjectsView');
-  await page.getByRole('button', { name: 'Add project', exact: true }).click();
-  await page.getByLabel('Project name', { exact: true }).fill('Status porch');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  const id = (await snapshot(page)).projects.find(p => p.name === 'Status porch')!.id;
+  // Update 2026-09-25: Add project is the on-site capture flow (covered by the team suite); seed the record directly.
+  const statusClient = await command(page, clientInput('Status client'));
+  const id = (await command(page, projectInput('Status porch', statusClient.result.id))).result.id as string;
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Status porch', exact: true })).toBeVisible();
   await openModule(page, 'clients-projects', 'ProjectDetail', { projectId: id });
   await page.getByRole('button', { name: 'Add task', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Add task: ' + id);
@@ -163,7 +163,7 @@ test('project list filters and complete/reopen persist', async ({ page }) => {
   await page.getByRole('dialog').getByRole('button', { name: 'Complete project', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();
-  await expect(page.getByText('Completed project', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reopen project', exact: true })).toBeVisible();
   await openModule(page, 'clients-projects', 'ProjectsView');
   await expect(page.getByRole('heading', { name: 'Status porch', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /^Completed / }).click();
@@ -172,7 +172,7 @@ test('project list filters and complete/reopen persist', async ({ page }) => {
   await page.getByRole('button', { name: 'Reopen project', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Reopen project', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  expect((await snapshot(page)).projects.find(p => p.id === id)!.status).toBe('open');
+  expect((await snapshot(page)).projects.find(p => p.id === id)!.status).toBe('scheduled');
 });
 
 test('keyboard validation, Escape, dirty cancellation and focus restoration', async ({ page }) => {
