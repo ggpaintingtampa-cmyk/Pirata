@@ -2,7 +2,7 @@ import {expect,test,type Page} from '@playwright/test';
 import {mkdir} from 'node:fs/promises';
 const engine=process.env.PIRATA_TEST_WEBKIT?'webkit':'chromium';
 const password='isolated-team-browser-password';
-async function login(page:Page,username='owner'){await page.goto('/');await page.getByLabel('Username',{exact:true}).fill(username);await page.getByLabel('Pirata password').fill(password);await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Work.',exact:true})).toBeVisible();}
+async function login(page:Page,username='owner'){await page.goto('/');await page.getByLabel('Username',{exact:true}).fill(username);await page.getByLabel('Pirata password').fill(password);await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Daily.',exact:true})).toBeVisible();}
 async function menu(page:Page,name:string){await page.getByRole('navigation').getByRole('button',{name:'Menu',exact:true}).click();await page.getByRole('button',{name,exact:true}).click();}
 async function snapshot(page:Page){return page.evaluate(async()=> (await fetch('/api/v1/snapshot')).json());}
 async function command(page:Page,command:unknown){return page.evaluate(async command=>{const session=await(await fetch('/api/v1/session')).json(),snap=await(await fetch('/api/v1/snapshot')).json();const r=await fetch('/api/v1/commands',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},body:JSON.stringify({requestId:crypto.randomUUID(),baseRevision:snap.revision,command})});if(!r.ok)throw new Error(await r.text());return r.json();},command);}

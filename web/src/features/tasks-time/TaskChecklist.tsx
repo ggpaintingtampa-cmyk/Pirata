@@ -1,13 +1,17 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { Check, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import type { BusinessCommand, Task } from '@pirata/contracts/index';
-import { completionPercent, projectCompletion, taskCompletion } from '@pirata/contracts/progress';
+import { orderedChildren, taskDepth } from '@pirata/contracts/index';
+import { completionPercent, projectCompletion } from '@pirata/contracts/progress';
 import { formatDuration } from '@pirata/domain/lib/time';
 import type { ModuleProps } from '../../services/moduleProps';
 import { createMutation, createSubmission, ServiceError } from '../../services/api';
+import { useT } from '../../i18n';
 import { WorkDialog } from './WorkDialog';
 import { WorkForm } from './WorkForm';
 import { CompletionRing } from './CompletionRing';
+import { runCommand } from '../work/commands';
+import { affectedSession, canEditDone, treeCompletion } from '../work/dayList';
 
 /** Retains a request through uncertain responses, including a successful write whose refresh failed. */
 export function CommandButton({ app, command, children, message, disabled = false, onSuccess }: { app: ModuleProps; command: BusinessCommand; children: ReactNode; message: string; disabled?: boolean; onSuccess?(): void }) {
@@ -19,10 +23,10 @@ export function CommandButton({ app, command, children, message, disabled = fals
     if (phase === 'conflict') { try { await app.refresh(); pending.current = null; setPhase('idle'); setError('Latest records loaded. Review and try the action again.'); } catch { setError('Could not refresh. Try again.'); } finally { lock.current = false; } return; }
     pending.current ??= createSubmission(app.service, createMutation(command,app.snapshot.revision));
     setPhase('busy'); setError('');
-    try { if(refreshSession.current){const session=await app.service.session();if(!session.authenticated){setPhase('retry');setError('Sign in in another tab, then retry this same action.');return;}refreshSession.current=false;} if (!acknowledged.current) { await pending.current.submit(); acknowledged.current = true; } await app.refresh(); app.onSaved(message); pending.current = null; acknowledged.current = false; setPhase('idle'); onSuccess?.(); }
+    try { if(refreshSession.current){const session=await app.service.session();if(!session.authenticated){setPhase('retry');setError('Sign in again, then retry this same action.');return;}refreshSession.current=false;} if (!acknowledged.current) { await pending.current.submit(); acknowledged.current = true; } await app.refresh(); app.onSaved(message); pending.current = null; acknowledged.current = false; setPhase('idle'); onSuccess?.(); }
     catch (cause) {
       if (!acknowledged.current && cause instanceof ServiceError && cause.code === 'REVISION_CONFLICT') { setPhase('conflict'); setError('Records changed. Load the latest records and review.'); }
-      else if(!acknowledged.current&&cause instanceof ServiceError&&[401,403].includes(cause.status)){refreshSession.current=true;setPhase('retry');setError('Your sign-in needs refreshing. Retry the same action.');}
+      else if(!acknowledged.current&&cause instanceof ServiceError&&[401,403].includes(cause.status)){refreshSession.current=cause.status===401;setPhase(cause.status===401?'retry':'idle');pending.current=cause.status===401?pending.current:null;setError(cause.status===401?'Your sign-in needs refreshing. Retry the same action.':cause.message);}
       else if (!acknowledged.current && cause instanceof ServiceError && [400,404,409,422].includes(cause.status)) { pending.current = null; setPhase('idle'); setError(cause.message); }
       else { setPhase('retry'); setError(acknowledged.current ? 'Saved. Retry to refresh the result.' : 'Response not confirmed. Retry this same action safely.'); }
     } finally { lock.current = false; }
@@ -32,43 +36,66 @@ export function CommandButton({ app, command, children, message, disabled = fals
 }
 
 export function QuickTaskCapture({ app, projectId = null, parentTaskId = null }: { app: ModuleProps; projectId?: string | null; parentTaskId?: string | null }) {
-  const [generation,setGeneration] = useState(0), [template,setTemplate] = useState(false);
-  const label = parentTaskId ? 'Subtasks' : 'Tasks';
+  const t = useT(), [generation,setGeneration] = useState(0), [template,setTemplate] = useState(false);
+  const depth = parentTaskId ? taskDepth(app.snapshot.tasks, parentTaskId) + 1 : 0;
+  const label = depth === 0 ? 'Tasks' : depth === 1 ? t('tasks.subtasks') : t('tasks.tiny');
   return <details className="quick-task-capture"><summary><span><Plus size={17} aria-hidden="true"/>Add {label.toLowerCase()} quickly</span><ChevronDown size={16} aria-hidden="true"/></summary>
     <WorkForm key={generation} app={app} initial={{titles:''}} includeCancel={false} submitLabel="Save and add another"
       command={v => ({type:'task.batchCreate',titles:v.titles.split('\n').map(title=>title.trim()).filter(Boolean),projectId,parentTaskId,assigneeId:null})}
       message={label+' saved.'} done={() => setGeneration(n=>n+1)}>
-      {d => d.field('titles',parentTaskId ? 'Subtask names — one per line' : 'Task names — one per line',{type:'textarea',hint:'A name is enough. Add up to 50 items together; details can wait.'})}
+      {d => d.field('titles',label+' — one per line',{type:'textarea',hint:'A name is enough. Add up to 50 items together; details can wait.'})}
     </WorkForm>
-    {(app.snapshot.taskTemplates ?? []).map(item => <CommandButton key={item.id} app={app} command={{type:'taskTemplate.apply',templateId:item.id,projectId,parentTaskId}} message="Template tasks added.">Use {item.name}</CommandButton>)}
+    {depth < 2 && (app.snapshot.taskTemplates ?? []).map(item => <CommandButton key={item.id} app={app} command={item.tree ? {type:'taskTemplate.applyTree',templateId:item.id,projectId:projectId ?? '',parentTaskId} : {type:'taskTemplate.apply',templateId:item.id,projectId,parentTaskId}} message="Template tasks added." disabled={Boolean(item.tree) && !projectId}>Use {item.name}</CommandButton>)}
     <button type="button" onClick={()=>setTemplate(true)}>Save a reusable list</button>
     {template && <WorkDialog title="Save task template" onClose={()=>setTemplate(false)}><WorkForm app={app} initial={{name:'',titles:''}} command={v=>({type:'taskTemplate.save',name:v.name,titles:v.titles.split('\n').map(title=>title.trim()).filter(Boolean)})} message="Task template saved." done={()=>setTemplate(false)}>{d=><>{d.field('name','Template name')}{d.field('titles','Task names — one per line',{type:'textarea'})}</>}</WorkForm></WorkDialog>}
   </details>;
 }
 
+/** Up/down within the sibling list, persisted as positions (task.reorder). */
+export function ReorderButtons({ app, task }: { app: ModuleProps; task: Task }) {
+  const t = useT(), [busy, setBusy] = useState(false);
+  if (!task.projectId) return null;
+  const siblings = orderedChildren(app.snapshot.tasks, task.parentTaskId ?? null, task.projectId), index = siblings.findIndex(item => item.id === task.id);
+  const move = async (delta: number) => { const ids = siblings.map(item => item.id); const target = index + delta; if (target < 0 || target >= ids.length) return; [ids[index], ids[target]] = [ids[target], ids[index]]; setBusy(true); const message = await runCommand(app, { type: 'task.reorder', projectId: task.projectId!, parentTaskId: task.parentTaskId ?? null, orderedIds: ids }); setBusy(false); if (message) app.onSaved(message); };
+  return <span className="task-reorder"><button type="button" aria-label={t('tasks.moveUp')} disabled={busy || index <= 0} onClick={() => void move(-1)}><ArrowUp size={13} aria-hidden="true" /></button><button type="button" aria-label={t('tasks.moveDown')} disabled={busy || index >= siblings.length - 1} onClick={() => void move(1)}><ArrowDown size={13} aria-hidden="true" /></button></span>;
+}
+
 export function TaskCheck({ app, task, showEstimate = false }: { app: ModuleProps; task: Task; showEstimate?: boolean }) {
-  const [confirm,setConfirm] = useState(false);
-  const children = app.snapshot.tasks.filter(child=>child.parentTaskId===task.id&&!child.archivedAt), fraction = taskCompletion(task,app.snapshot.tasks);
+  const t = useT(), [confirm,setConfirm] = useState(false);
+  const children = orderedChildren(app.snapshot.tasks, task.id, task.projectId ?? null), completion = treeCompletion(app.snapshot.tasks, task.id);
   const finishing = task.status !== 'done', timer=app.snapshot.runningTimer;
-  const affectedTimer = timer && (timer.taskId===task.id || children.some(child=>child.id===timer.taskId));
-  const command:BusinessCommand={type:'task.setStatus',id:task.id,status:finishing?'done':'open',expectedSessionId:finishing&&affectedTimer?timer.sessionId:null};
+  const sessionId = affectedSession(app.snapshot, task.id), affectedTimer = Boolean(timer && sessionId);
+  const editable = canEditDone(task, app.snapshot.currentUser?.id, app.snapshot.currentUser?.role, app.snapshot.serverNow);
+  const command:BusinessCommand={type:'task.setStatus',id:task.id,status:finishing?'done':'open',expectedSessionId:finishing?sessionId:null};
   const label=(finishing?'Complete ':'Reopen ')+task.title;
   return <div className={"task-check-row "+(task.status==='done'?'task-check-complete':'')}>
-    {finishing&&(children.some(child=>child.status!=='done')||affectedTimer) ? <button type="button" aria-label={label} onClick={()=>setConfirm(true)}><span className="task-check-box" aria-hidden="true"/></button> : <CommandButton app={app} command={command} message={finishing?'Task complete.':'Task reopened.'}><span className="task-check-box" aria-hidden="true">{!finishing&&<Check size={15}/>}</span><span className="visually-hidden">{label}</span></CommandButton>}
-    <button className="task-name" aria-label={task.title} onClick={()=>app.onOpenTask(task.id)}><span>{task.title}<small>{children.length ? completionPercent(fraction)+'% · '+children.filter(child=>child.status==='done').length+'/'+children.length+' subtasks' : task.status==='done'?'Complete':task.status==='blocked'?'Blocked':''}</small></span>{showEstimate&&task.estimatedMinutes>0?<span className="task-estimate-badge">{formatDuration(task.estimatedMinutes*60000)}</span>:<ChevronRight size={16} aria-hidden="true"/>}</button>
-    {confirm && <WorkDialog title="Complete task and checklist" onClose={()=>setConfirm(false)}><WorkForm app={app} initial={{}} command={()=>command} message="Task and checklist complete." done={()=>setConfirm(false)} submitLabel="Complete task and remaining subtasks">{()=> <p>Complete “{task.title}”{children.length?' and all remaining subtasks':''}{affectedTimer?', saving and stopping your running timer':''}?</p>}</WorkForm></WorkDialog>}
+    {!finishing && !editable ? <span className="task-check-box is-locked" title={t('tasks.locked')} aria-label={t('tasks.locked')}><Check size={15}/></span>
+      : finishing&&(completion.done<completion.total&&completion.total>1||affectedTimer) ? <button type="button" aria-label={label} onClick={()=>setConfirm(true)}><span className="task-check-box" aria-hidden="true"/></button>
+      : <CommandButton app={app} command={command} message={finishing?'Task complete.':'Task reopened.'}><span className="task-check-box" aria-hidden="true">{!finishing&&<Check size={15}/>}</span><span className="visually-hidden">{label}</span></CommandButton>}
+    <button className="task-name" aria-label={task.title} onClick={()=>app.onOpenTask(task.id)}><span>{task.title}{task.description&&<small>{task.description}</small>}<small>{children.length ? completionPercent(completion.fraction)+'% · '+completion.done+'/'+completion.total : task.status==='done'?'Complete':task.status==='blocked'?'Blocked':''}</small></span>{showEstimate&&task.estimatedMinutes>0?<span className="task-estimate-badge">{formatDuration(task.estimatedMinutes*60000)}</span>:<ChevronRight size={16} aria-hidden="true"/>}</button>
+    <ReorderButtons app={app} task={task} />
+    {confirm && <WorkDialog title="Complete task and checklist" onClose={()=>setConfirm(false)}><WorkForm app={app} initial={{}} command={()=>command} message="Task and checklist complete." done={()=>setConfirm(false)} submitLabel="Complete task and remaining steps">{()=> <p>Complete “{task.title}”{children.length?' and every step under it':''}{affectedTimer?', saving and stopping your running timer':''}?</p>}</WorkForm></WorkDialog>}
   </div>;
 }
 
+/** Three levels: the list under a task shows subtasks and their tiny tasks; each level can add children while depth allows. */
 export function TaskChecklist(app: ModuleProps & { parentTaskId?: string; compact?: boolean }) {
-  const tasks=app.snapshot.tasks.filter(task=>!task.archivedAt&&(app.parentTaskId?task.parentTaskId===app.parentTaskId:!task.parentTaskId)&&(!app.selection?.projectId||task.projectId===app.selection.projectId));
-  const progress=app.selection?.projectId?projectCompletion(app.selection.projectId,app.snapshot.tasks):null;
-  const parent=app.snapshot.tasks.find(task=>task.id===app.parentTaskId);
-  return <section className={'work-module task-checklist'+(app.parentTaskId?' task-subtask-list':'')} aria-label={app.parentTaskId?'Subtasks':'Project tasks'}>
-    {parent&&!app.compact&&<div className="task-checklist-summary"><CompletionRing fraction={taskCompletion(parent,app.snapshot.tasks)} label="Task completion" size={64}/><div><h3>Subtask checklist</h3><p>{tasks.length?`${tasks.filter(task=>task.status==='done').length} of ${tasks.length} steps completed`:'Break it into a few simple steps.'}</p></div></div>}
-    <div className="task-checklist-heading"><h3>{app.parentTaskId?'Subtasks':'Tasks'}</h3>{progress!==null&&!app.parentTaskId&&<span>Project completion: {completionPercent(progress)}%</span>}{!app.parentTaskId&&<button className="work-primary" onClick={()=>app.onAddTask(app.selection?.projectId??null)}><Plus size={16} aria-hidden="true"/>Add task</button>}</div>
-    {!tasks.length&&<p>{app.parentTaskId?'Add the practical steps for this task.':'Add the next piece of work.'}</p>}
-    {tasks.map(task=><div key={task.id}><TaskCheck app={app} task={task} showEstimate={Boolean(app.parentTaskId)}/>{!app.parentTaskId&&!app.compact&&app.snapshot.tasks.filter(child=>child.parentTaskId===task.id&&!child.archivedAt).map(child=><div className="task-child" key={child.id}><TaskCheck app={app} task={child}/></div>)}</div>)}
-    <QuickTaskCapture app={app} projectId={app.selection?.projectId??null} parentTaskId={app.parentTaskId??null}/>
+  const t = useT(), all = app.snapshot.tasks;
+  const parent = all.find(task => task.id === app.parentTaskId), parentDepth = parent ? taskDepth(all, parent.id) : -1;
+  const tasks = parent ? orderedChildren(all, parent.id, parent.projectId ?? null) : all.filter(task=>!task.archivedAt&&!task.parentTaskId&&(!app.selection?.projectId||task.projectId===app.selection.projectId)).sort((a,b)=>(a.position??0)-(b.position??0)||a.createdAt-b.createdAt);
+  const progress=app.selection?.projectId?projectCompletion(app.selection.projectId,all):null;
+  const completion = parent ? treeCompletion(all, parent.id) : null;
+  const heading = parentDepth === 1 ? t('tasks.tiny') : parent ? t('tasks.subtasks') : 'Tasks';
+  return <section className={'work-module task-checklist'+(parent?' task-subtask-list':'')} aria-label={heading}>
+    {parent&&completion&&!app.compact&&<div className="task-checklist-summary"><CompletionRing fraction={completion.fraction} label="Task completion" size={64}/><div><h3>{heading}</h3><p>{completion.total>1?`${completion.done} of ${completion.total} steps completed`:'Break it into a few simple steps.'}</p></div></div>}
+    <div className="task-checklist-heading"><h3>{heading}</h3>{progress!==null&&!parent&&<span>Project completion: {completionPercent(progress)}%</span>}{!parent&&<button className="work-primary" onClick={()=>app.onAddTask(app.selection?.projectId??null)}><Plus size={16} aria-hidden="true"/>Add task</button>}</div>
+    {!tasks.length&&<p>{parent?'Add the practical steps for this task.':'Add the next piece of work.'}</p>}
+    {tasks.map(task=><div key={task.id}><TaskCheck app={app} task={task} showEstimate={Boolean(parent)}/>
+      {taskDepth(all, task.id) < 2 && !app.compact && orderedChildren(all, task.id, task.projectId ?? null).map(child=><div className="task-child" key={child.id}><TaskCheck app={app} task={child}/>
+        {taskDepth(all, child.id) < 2 && orderedChildren(all, child.id, child.projectId ?? null).map(grandchild=><div className="task-child task-grandchild" key={grandchild.id}><TaskCheck app={app} task={grandchild}/></div>)}
+      </div>)}
+      {parent && parentDepth === 0 && !app.compact && <div className="task-child"><QuickTaskCapture app={app} projectId={task.projectId ?? null} parentTaskId={task.id}/></div>}
+    </div>)}
+    {(!parent || parentDepth < 2) && <QuickTaskCapture app={app} projectId={parent?.projectId ?? app.selection?.projectId ?? null} parentTaskId={parent?.id ?? null}/>}
   </section>;
 }

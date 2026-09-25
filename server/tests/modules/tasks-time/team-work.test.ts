@@ -24,7 +24,8 @@ it('accepts a title alone and rapid multiline capture without inventing relation
   const task=f.repo.require('tasks',response.json().result.id);expect(task).toMatchObject({title:'Capture now',projectId:null,estimatedMinutes:0,parentTaskId:null,assigneeId:null});
   await children(task.id);expect(f.repo.list('tasks')).toHaveLength(3);expect(f.repo.list('projects')).toHaveLength(0);expect(f.repo.list('daily_goals')).toHaveLength(0);
   const child=f.repo.list('tasks').find(item=>item.parentTaskId)!;
-  expect((await f.send({type:'task.batchCreate',titles:['Too deep'],projectId:null,parentTaskId:child.id,assigneeId:null})).statusCode).toBe(400);
+  const tiny=await f.send({type:'task.batchCreate',titles:['Tiny step'],projectId:null,parentTaskId:child.id,assigneeId:null});expect(tiny.statusCode).toBe(200);
+  expect((await f.send({type:'task.batchCreate',titles:['Too deep'],projectId:null,parentTaskId:tiny.json().result.id,assigneeId:null})).statusCode).toBe(400);
 });
 it('calculates equal daily/project fractions and retains deliberate goals after incidental creation',async()=>{
   const project=(await f.save({type:'project.create',name:'Doors',clientId:null,clientName:'',address:'',note:''})).result.id!;
