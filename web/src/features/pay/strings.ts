@@ -1,3 +1,5 @@
 import type { Strings } from '../../i18n';
-/** Feature strings: keys are `namespace.key`; English and Spanish. Merged automatically by web/src/i18n. */
-export const strings:Strings={en:{},es:{}};
+export const strings:Strings={
+  en:{'pay.intro':'Rates are owner-only. Labor cost = approved hours × the rate in effect that day (a daily rate counts 8 hours per day).','pay.set':'Set rate','pay.change':'Change rate','pay.hourly':'Hourly','pay.daily':'Daily','pay.since':'since {date}','pay.none':'No rate yet.','pay.monthCost':'Labor cost this month','pay.remove':'Remove','pay.removeConfirm':'Remove this future rate?','pay.dialog':'Pay rate','pay.kind':'Rate type','pay.amount':'Amount (USD)','pay.from':'Effective from','pay.save':'Save rate','pay.saved':'Pay rate saved.','pay.badAmount':'Enter an amount like 22.50.'},
+  es:{'pay.intro':'Las tarifas solo las ve el dueño. Costo de mano de obra = horas aprobadas × la tarifa vigente ese día (una tarifa diaria cuenta 8 horas por día).','pay.set':'Definir tarifa','pay.change':'Cambiar tarifa','pay.hourly':'Por hora','pay.daily':'Por día','pay.since':'desde {date}','pay.none':'Sin tarifa aún.','pay.monthCost':'Costo de mano de obra este mes','pay.remove':'Quitar','pay.removeConfirm':'¿Quitar esta tarifa futura?','pay.dialog':'Tarifa de pago','pay.kind':'Tipo de tarifa','pay.amount':'Monto (USD)','pay.from':'Vigente desde','pay.save':'Guardar tarifa','pay.saved':'Tarifa guardada.','pay.badAmount':'Escribe un monto como 22.50.'},
+};
