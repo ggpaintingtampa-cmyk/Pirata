@@ -1,0 +1,17 @@
+.materials-view{display:grid;gap:12px}
+.materials-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.materials-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 12px}
+.materials-row.is-received{opacity:.7}
+.materials-row .live-actions{grid-column:1/-1}
+.materials-main{display:grid;gap:2px;min-width:0}
+.materials-main small{opacity:.75}
+.materials-received{color:#9ff0b8}
+.tools-view{display:grid;gap:12px}
+.tool-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tool-row{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 12px;display:grid;gap:6px}
+.tool-row.is-broken{border-color:rgba(255,99,99,.5)}
+.tool-row.is-out{border-color:rgba(240,180,41,.4)}
+.tool-status{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.9rem}
+.tool-broken{color:#ff8a8a}
+.tool-history{font-size:.85rem;opacity:.8;list-style:none;margin:0;padding:0}
+.install-hint{display:grid;gap:6px;margin-top:8px}

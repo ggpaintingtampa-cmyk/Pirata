@@ -17,6 +17,8 @@ import './live/live.css';
 import './styles/redesign.css';
 import './styles/figma.css';
 const root=createRoot(document.getElementById('root')!);
+// Install-to-home-screen shell cache (update 2026-09-25). Production only; the API is never cached.
+if(import.meta.env.PROD&&'serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{/* the app works without it */});});
 if(new URLSearchParams(window.location.search).get('demo')==='1'){
  const store=createAppStore(localStorageRepository());store.initialize();
  if(import.meta.hot)import.meta.hot.dispose(()=>store.dispose());

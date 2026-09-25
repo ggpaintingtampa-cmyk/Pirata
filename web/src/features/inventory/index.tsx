@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ToolStatus } from '../tools';
 import { toLegacyState } from '@pirata/contracts/compatibility';
 import { materialShortages, quantityLabel } from '@pirata/domain/domain/selectors';
 import type { ModuleProps } from '../../services/moduleProps';
@@ -26,7 +27,7 @@ function MaterialContent({ app, id, navigate }: { app: ModuleProps; id?: string;
 function EquipmentContent({ app, id, navigate }: { app: ModuleProps; id?: string; navigate(mode: InventoryMode): void }) {
   const equipment = app.snapshot.equipment.find(e => e.id === id);
   if (!equipment) return <p>Equipment unavailable.</p>;
-  return <div className="iv-details"><h3>{equipment.name}</h3><p>{equipment.archivedAt === null ? 'Active equipment' : 'Archived — history retained'}</p><p className="iv-note">{equipment.note || 'No note'}</p><div className="iv-actions"><button data-navigate onClick={() => navigate({ type: 'equipment-edit', id })}>Edit equipment</button><button data-navigate onClick={() => navigate({ type: 'archive', id })}>{equipment.archivedAt === null ? 'Archive equipment' : 'Restore equipment'}</button><button data-navigate onClick={() => navigate({ type: 'maintenance-edit', equipmentId: id })}>Add maintenance</button></div><EquipmentCleanup app={app} equipmentId={equipment.id} /><h3>Maintenance history</h3><ul className="iv-records">{app.snapshot.maintenance.filter(m => m.equipmentId === id).map(m => <li key={m.id}><button data-navigate onClick={() => navigate({ type: 'maintenance', id: m.id })}>{m.title} · {m.completedAt === null ? 'Due ' + m.dueDate : 'Completed'}</button></li>)}</ul></div>;
+  return <div className="iv-details"><h3>{equipment.name}</h3><p>{equipment.archivedAt === null ? 'Active equipment' : 'Archived — history retained'}</p><p className="iv-note">{equipment.note || 'No note'}</p><div className="iv-actions"><button data-navigate onClick={() => navigate({ type: 'equipment-edit', id })}>Edit equipment</button><button data-navigate onClick={() => navigate({ type: 'archive', id })}>{equipment.archivedAt === null ? 'Archive equipment' : 'Restore equipment'}</button><button data-navigate onClick={() => navigate({ type: 'maintenance-edit', equipmentId: id })}>Add maintenance</button></div><ToolStatus app={app} tool={equipment} compact /><EquipmentCleanup app={app} equipmentId={equipment.id} /><h3>Maintenance history</h3><ul className="iv-records">{app.snapshot.maintenance.filter(m => m.equipmentId === id).map(m => <li key={m.id}><button data-navigate onClick={() => navigate({ type: 'maintenance', id: m.id })}>{m.title} · {m.completedAt === null ? 'Due ' + m.dueDate : 'Completed'}</button></li>)}</ul></div>;
 }
 function MaintenanceContent({ app, id, navigate }: { app: ModuleProps; id?: string; navigate(mode: InventoryMode): void }) {
   const item = app.snapshot.maintenance.find(m => m.id === id);

@@ -35,7 +35,7 @@ describe('safe cleanup cycles', () => {
   it('records the snoozing person; preserves original responsibility and immutable deadline', async () => {
     const id = await equipment(); await f.save({ type: 'equipment.cleanupRule', id, cleaningMinutes: 15, maxCleaningDelayMinutes: 1440 }); await f.save({ type: 'equipment.use', id, taskId: null });
     const first = f.repo.list('cleanup_obligations')[0], employee = randomUUID();
-    f.db.prepare("INSERT INTO team_members VALUES (?,?,'A teammate',?,'worker','hash',NULL,?,?)").run(employee, f.ownerId, employee, NOW, NOW);
+    f.db.prepare("INSERT INTO team_members VALUES (?,?,'A teammate',?,'worker','hash',NULL,?,?,'en')").run(employee, f.ownerId, employee, NOW, NOW);
     const snooze = { type: 'cleanup.snooze' as const, id: first.id, dueAt: first.dueAt + 3600000 };
     executeCommand(f.db, f.ownerId, f.envelope(snooze, f.revision()), handlers, () => NOW + 1000, employee, 'worker');
     expect(f.repo.require('cleanup_obligations', first.id)).toMatchObject({ userId: f.ownerId, deadlineAt: first.deadlineAt, dueAt: snooze.dueAt });

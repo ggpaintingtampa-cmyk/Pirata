@@ -16,6 +16,18 @@ export function workdayEnd(now: number, minute: number, timezone: string): numbe
   return Math.max(now, at);
 }
 
+/** One open cleaning cycle per tool AND person (update 2026-09-25): each person who takes a tool gets their own reminder.
+ * Multi-day rules (3 days for a sprayer) are due by the end of the workday before the deadline, leaving room to snooze; same-day rules are due by the end of today's workday. */
+export function openCleanupCycle(ctx: TransactionContext, tool: { id: string; cleaningMinutes?: number | null; maxCleaningDelayMinutes?: number | null }, taskId: string | null): HandlerResult {
+  const existing = ctx.repo.list('cleanup_obligations').find(item => item.equipmentId === tool.id && item.userId === actor(ctx) && item.completedAt === null);
+  if (existing) return result('cleanup', existing.id);
+  if (tool.cleaningMinutes == null || tool.maxCleaningDelayMinutes == null) return result('cleanupRuleNeeded', tool.id);
+  const settings = ctx.repo.settings(), deadlineAt = ctx.serverNow + tool.maxCleaningDelayMinutes * 60000;
+  const dueAt = Math.min(deadlineAt, workdayEnd(tool.maxCleaningDelayMinutes >= 1440 ? deadlineAt - 1440 * 60000 : ctx.serverNow, settings.workdayEndMinute, settings.timezone));
+  const item = { ...record(ctx), equipmentId: tool.id, userId: actor(ctx), taskId, firstUsedAt: ctx.serverNow, deadlineAt, dueAt, cleaningMinutes: tool.cleaningMinutes, completedAt: null, completedBy: null };
+  ctx.repo.insert('cleanup_obligations', item); return result('cleanup', item.id);
+}
+
 export const handlers = {
   'update.post': (ctx, c) => {
     project(ctx, c.projectId);
@@ -46,7 +58,7 @@ export const handlers = {
   },
   'shopping.check': (ctx, c) => {
     const previous = ctx.repo.require('shopping_items', c.id), changed = (previous.checkedAt !== null) !== c.checked;
-    if (changed) ctx.repo.update('shopping_items', c.id, { checkedAt: c.checked ? ctx.serverNow : null, updatedAt: ctx.serverNow });
+    if (changed) ctx.repo.update('shopping_items', c.id, { checkedAt: c.checked ? ctx.serverNow : null, receivedAt: c.checked ? ctx.serverNow : null, receivedBy: c.checked ? actor(ctx) : null, updatedAt: ctx.serverNow });
     return result('shopping', c.id, changed);
   },
   'equipment.cleanupRule': (ctx, c) => {
@@ -59,12 +71,7 @@ export const handlers = {
     if (tool.archivedAt !== null) invalid('Restore this equipment before recording new use.');
     const task = c.taskId ? ctx.repo.require('tasks', c.taskId) : null;
     ctx.repo.insert('activity', { ...record(ctx), userId: actor(ctx), projectId: task?.projectId ?? null, taskId: c.taskId, kind: 'equipment.use', body: `Used ${tool.name}${tool.cleaningMinutes == null || tool.maxCleaningDelayMinutes == null ? ' — cleanup rule needs setup.' : '.'}` });
-    const existing = ctx.repo.list('cleanup_obligations').find(item => item.equipmentId === tool.id && item.completedAt === null);
-    if (existing) return result('cleanup', existing.id);
-    if (tool.cleaningMinutes == null || tool.maxCleaningDelayMinutes == null) return result('cleanupRuleNeeded', tool.id);
-    const settings = ctx.repo.settings(), deadlineAt = ctx.serverNow + tool.maxCleaningDelayMinutes * 60000;
-    const item = { ...record(ctx), equipmentId: tool.id, userId: actor(ctx), taskId: c.taskId, firstUsedAt: ctx.serverNow, deadlineAt, dueAt: Math.min(workdayEnd(ctx.serverNow, settings.workdayEndMinute, settings.timezone), deadlineAt), cleaningMinutes: tool.cleaningMinutes, completedAt: null };
-    ctx.repo.insert('cleanup_obligations', item); return result('cleanup', item.id);
+    return openCleanupCycle(ctx, tool, c.taskId);
   },
   'cleanup.snooze': (ctx, c) => {
     const item = ctx.repo.require('cleanup_obligations', c.id);
@@ -76,7 +83,7 @@ export const handlers = {
   },
   'cleanup.complete': (ctx, c) => {
     const item = ctx.repo.require('cleanup_obligations', c.id), changed = item.completedAt === null;
-    if (changed) ctx.repo.update('cleanup_obligations', item.id, { completedAt: ctx.serverNow, updatedAt: ctx.serverNow });
+    if (changed) ctx.repo.update('cleanup_obligations', item.id, { completedAt: ctx.serverNow, completedBy: actor(ctx), updatedAt: ctx.serverNow });
     return result('cleanup', item.id, changed);
   },
 } satisfies Pick<HandlerMap, 'update.post' | 'note.save' | 'shopping.add' | 'shopping.check' | 'equipment.cleanupRule' | 'equipment.use' | 'cleanup.snooze' | 'cleanup.complete'>;
