@@ -1,5 +1,8 @@
 import type { HandlerMap, HandlerResult, TransactionContext } from '../../core/context.js';
-import { conflict } from '../../core/errors.js';
+import { PROJECT_TRANSITIONS, can, isOfficeRole } from '@pirata/contracts/index';
+import { ApiError } from '../../core/errors.js';
+const forbidden = (message: string): never => { throw new ApiError(403, 'FORBIDDEN', message); };
+import { conflict, invalid } from '../../core/errors.js';
 
 export const capability: 'blocked' | 'ready' = 'ready';
 const record = (ctx: TransactionContext) => ({ id: ctx.newId(), createdAt: ctx.serverNow, updatedAt: ctx.serverNow });
@@ -30,7 +33,10 @@ export const handlers = {
   'project.create': (ctx, c) => {
     // Linked clients supply their own display name. Unlinked imported names are retained.
     const clientName = c.clientId === null ? c.clientName : ctx.repo.require('clients', c.clientId).name;
-    const project = { ...record(ctx), name: c.name, clientId: c.clientId, clientName, address: c.address, note: c.note, status: 'scheduled' as const };
+    if (!can(ctx.role, 'money.sales') && (c.salesPriceCents != null || c.materialsPriceCents != null || c.laborPriceCents != null)) forbidden('Only the office can set prices.');
+    // A sales rep's project starts as a draft and goes through review; the office's own projects are scheduled at once.
+    const status = ctx.role === 'sales' ? 'draft' as const : 'scheduled' as const;
+    const project = { ...record(ctx), name: c.name, clientId: c.clientId, clientName, address: c.address, note: c.note, status, startDate: c.startDate ?? null, endDate: c.endDate ?? null, salesPriceCents: c.salesPriceCents ?? null, materialsPriceCents: c.materialsPriceCents ?? null, laborPriceCents: c.laborPriceCents ?? null, salesNote: c.salesNote ?? '', salesRepId: ctx.userId, reviewNote: '', soldAt: null, scheduledAt: status === 'scheduled' ? ctx.serverNow : null, completedAt: null };
     ctx.repo.insert('projects', project);
     return result('project', project.id);
   },
@@ -40,17 +46,23 @@ export const handlers = {
     const clientName = c.clientId === previous.clientId && c.clientId !== null
       ? previous.clientName
       : linkedClient?.name ?? c.clientName;
-    const patch = { name: c.name, clientId: c.clientId, clientName, address: c.address, note: c.note };
+    if (previous.status === 'completed' && !isOfficeRole(ctx.role)) forbidden('Only the office can edit a completed project.');
+    const sales = can(ctx.role, 'money.sales');
+    if (!sales && ((c.salesPriceCents !== undefined && c.salesPriceCents !== (previous.salesPriceCents ?? null)) || (c.materialsPriceCents !== undefined && c.materialsPriceCents !== (previous.materialsPriceCents ?? null)) || (c.laborPriceCents !== undefined && c.laborPriceCents !== (previous.laborPriceCents ?? null)) || (c.salesNote !== undefined && c.salesNote !== (previous.salesNote ?? '')))) forbidden('Only the office can change prices.');
+    const patch = { name: c.name, clientId: c.clientId, clientName, address: c.address, note: c.note, startDate: c.startDate === undefined ? previous.startDate ?? null : c.startDate, endDate: c.endDate === undefined ? previous.endDate ?? null : c.endDate, ...(sales ? { salesPriceCents: c.salesPriceCents === undefined ? previous.salesPriceCents ?? null : c.salesPriceCents, materialsPriceCents: c.materialsPriceCents === undefined ? previous.materialsPriceCents ?? null : c.materialsPriceCents, laborPriceCents: c.laborPriceCents === undefined ? previous.laborPriceCents ?? null : c.laborPriceCents, salesNote: c.salesNote === undefined ? previous.salesNote ?? '' : c.salesNote } : {}) };
     const changed = differs(previous, patch);
     if (changed) ctx.repo.update('projects', c.id, { ...patch, updatedAt: ctx.serverNow });
     return result('project', c.id, changed);
   },
   'project.setStatus': (ctx, c) => {
     const previous = ctx.repo.require('projects', c.id);
-    const changed = previous.status !== c.status;
+    if (previous.status === c.status) return result('project', c.id, false);
+    if (!PROJECT_TRANSITIONS[previous.status].includes(c.status)) invalid(`A ${previous.status} project cannot become ${c.status}.`, { status: 'Not allowed from ' + previous.status + '.' });
+    if (previous.status === 'sold' && !can(ctx.role, 'project.review')) forbidden('Only a manager or owner reviews sold projects.');
+    if (c.status === 'draft' && !(c.note ?? '').trim()) invalid('Say why the project goes back to the sales rep.', { note: 'A note is required.' });
     // Project status never mutates its work, timer, expenses or stock reservations.
-    if (changed) ctx.repo.update('projects', c.id, { status: c.status, updatedAt: ctx.serverNow });
-    return result('project', c.id, changed);
+    ctx.repo.update('projects', c.id, { status: c.status, updatedAt: ctx.serverNow, ...(c.status === 'sold' ? { soldAt: ctx.serverNow, reviewNote: '' } : {}), ...(c.status === 'scheduled' ? { scheduledAt: ctx.serverNow, completedAt: null } : {}), ...(c.status === 'draft' ? { reviewNote: (c.note ?? '').trim() } : {}), ...(c.status === 'completed' ? { completedAt: ctx.serverNow } : {}) });
+    return result('project', c.id);
   },
   'lead.create': (ctx, c) => {
     const lead = { ...record(ctx), name: c.name, phone: c.phone, email: c.email, workDescription: c.workDescription, nextFollowUpDate: c.nextFollowUpDate, convertedClientId: null };

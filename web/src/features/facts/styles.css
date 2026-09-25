@@ -1,0 +1,33 @@
+.cp-facts{display:grid;gap:4px}
+.facts-row{display:grid;grid-template-columns:150px 1fr auto auto;gap:6px;align-items:center;margin:6px 0}
+.facts-row input{min-height:40px}
+.facts-row-label{font-size:.85rem;opacity:.8}
+.facts-hide{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;white-space:nowrap}
+@media (max-width:600px){.facts-row{grid-template-columns:1fr auto}.facts-row-label,.facts-row input:first-child{grid-column:1/-1}}
+.cp-lifecycle{display:grid;gap:8px}
+.cp-lifecycle-note{display:flex;gap:6px;align-items:center;color:#f5d38a;margin:0}
+.cp-sales{display:grid;gap:6px}
+.cp-sales-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:0}
+.cp-sales-grid dt{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
+.cp-sales-grid dd{margin:0;font-weight:600}
+.cp-badge.cp-status-draft{background:rgba(255,255,255,.12)}
+.cp-badge.cp-status-sold{background:rgba(240,180,41,.25);color:#f5d38a}
+.cp-badge.cp-status-partial{background:rgba(240,180,41,.18)}
+.cp-badge.cp-status-assigned,.cp-badge.cp-status-completed{background:rgba(80,200,120,.2);color:#9ff0b8}
+.cp-card-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 0;font-size:.85rem;opacity:.85}
+.capture-tasks{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.capture-task{background:rgba(255,255,255,.04);border-radius:10px;padding:8px 10px;display:grid;gap:6px}
+.capture-task-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.capture-task-row strong{flex:1;min-width:0}
+.capture-task-sub{padding-left:14px;border-left:2px solid rgba(240,180,41,.35);opacity:.9}
+.capture-add{display:flex;gap:6px}
+.capture-add input{flex:1;min-height:44px}
+.file-extras{display:grid;gap:6px;margin:4px 0}
+.file-tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.file-tag{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 8px;background:rgba(240,180,41,.18);font-size:.8rem}
+.file-tag button{background:none;border:0;color:inherit;padding:0;display:inline-flex}
+.file-tags select,.file-tags input{min-height:34px;font-size:.85rem}
+.file-comments{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:.9rem}
+.file-comments li small{opacity:.7;margin-left:6px}
+.file-comment-add{display:flex;gap:6px}
+.file-comment-add input{flex:1}

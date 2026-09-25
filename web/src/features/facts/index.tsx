@@ -1,2 +1,2 @@
-/** Chunk C: job facts card. Foundation placeholder. */
-export {};
+/** Chunk C: job facts card. */
+export { FactsCard } from './FactsCard';

@@ -18,7 +18,7 @@ export function LeadForm({ app, lead, done }: FormProps & { lead?: Lead }) {
 export function ProjectForm({ app, project, clientId, done }: FormProps & { project?: Project; clientId?: string }) {
   return <RecordForm app={app} initial={{ name: project?.name ?? '', clientId: project?.clientId ?? clientId ?? '', address: project?.address ?? '', note: project?.note ?? '' }} fields={[
     { name: 'name', label: 'Project name' },
-    { name: 'clientId', label: 'Client (optional)', type: 'select', options: [{ value: '', label: 'No linked client' }, ...app.snapshot.clients.map(c => ({ value: c.id, label: c.name + (c.archivedAt !== null ? ' (archived)' : '') }))] },
+    { name: 'clientId', label: 'Client', type: 'select', options: [{ value: '', label: 'Choose a client' }, ...app.snapshot.clients.map(c => ({ value: c.id, label: c.name + (c.archivedAt !== null ? ' (archived)' : '') }))] },
     { name: 'address', label: 'Job address (optional)', type: 'textarea' }, { name: 'note', label: 'Project notes (optional)', type: 'textarea' },
   ]} command={v => ({ ...(project ? { type: 'project.update' as const, id: project.id } : { type: 'project.create' as const }), name: v.name.trim(), clientId: v.clientId || null, clientName: v.clientId ? app.snapshot.clients.find(c => c.id === v.clientId)?.name ?? '' : project?.clientId === null ? project.clientName : '', address: v.address.trim(), note: v.note.trim() })} message={project ? 'Project updated.' : 'Project added.'} done={done}>
     {project?.clientId === null && project.clientName && <p className="info-panel">Original client name: {project.clientName}. It stays with this project until you link a client.</p>}

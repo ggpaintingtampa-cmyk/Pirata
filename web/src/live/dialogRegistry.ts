@@ -8,5 +8,5 @@ export const dialogRegistry:Record<RegisteredDialogName,ComponentType<Registered
   'shift':lazy(()=>import('../features/hours/ShiftDialog').then(m=>({default:m.ShiftDialog}))),
   'tool-signout':lazy(()=>import('../features/tools/SignOutDialog').then(m=>({default:m.SignOutDialog}))),
   'question':lazy(()=>import('../features/work/QuestionDialog').then(m=>({default:m.QuestionDialog}))),
-  'project-new':lazy(()=>import('../features/sales/CaptureDialog').then(m=>({default:m.CaptureDialog}))),
+  'project-new':lazy(()=>import('../features/sales/CaptureFlow').then(m=>({default:m.CaptureDialog}))),
 };
