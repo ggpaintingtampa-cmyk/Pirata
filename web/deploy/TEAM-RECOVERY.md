@@ -4,9 +4,9 @@ This runbook supersedes the historical owner-only access and database-only backu
 instructions for the team release. `deployed-release.json` records what is
 actually deployed; source files alone do not establish production status.
 
-## Current team update release — September 25, TBD-TIME UTC
+## Current team update release — September 25, 14:52 UTC
 
-Web `TBD-WEB` and API `TBD-API` are live and verified with schema 003
+Web `20260925T145201Z-be86cc88` and API `20260925T145156Z-d947be1a` are live and verified with schema 003
 (`003-update-2026-09-25.sql`). This release adds four roles (owner, manager, sales,
 worker), the Daily page with ordered day lists and the three-level task tree,
 questions, day notes, nested templates, work shifts with approval and pay rates,
@@ -22,11 +22,11 @@ and project status `open` remain stored unchanged and are read as `worker` and
 Before publication, the complete online backup was:
 `/var/backups/pirata/database/20260925T144917Z-cb173e39e9ac402caad4a4057e202409.sqlite`,
 plus its matching `.files` and `.manifest.json`. The noninterrupting preflight
-(`team-preflight-TBD-PREFLIGHT`) migrated a scratch copy of that backup with the
+(`team-preflight-20260925T145147Z-93613d7b`) migrated a scratch copy of that backup with the
 candidate CLI and compared every historical column and row. The cutover repeated
 the check with the fresh closed-window backup recorded in
-`/var/backups/pirata/team-upgrade-TBD-UPGRADE/upgrade.json`; the pre-migration
-database and sidecars are retained in `/var/lib/pirata/upgrade-recovery-TBD-UPGRADE/`.
+`/var/backups/pirata/team-upgrade-20260925T145156Z-d947be1a/upgrade.json`; the pre-migration
+database and sidecars are retained in `/var/lib/pirata/upgrade-recovery-20260925T145156Z-d947be1a/`.
 
 The previous compatible pair is web `20260921T175808Z-35477776` with API
 `20260918T081813Z-a8592c71` on schema 002. The old API rejects schema 003, so a
@@ -40,7 +40,18 @@ Chromium cases, six integrated cases, 46 demo cases, the scoped module harness,
 CLI operations passed. The Caddy snippet now also serves `/manifest.webmanifest`,
 `/sw.js` and `/icons/*` and allows `manifest-src`/`worker-src 'self'`.
 
-Post-publish verification: TBD-VERIFY
+Post-publish verification passed trusted HTTPS, the exact HTTP redirect, all ten
+exact build hashes (HTML, favicon, manifest, service worker, two icons, four
+assets), `manifest-src`/`worker-src` CSP, anonymous 401 for snapshot/export/
+files/admin, private-path 404s, and the read-only authenticated browser run
+(`node deploy/verify-live-team.mjs`): owner Daily controls, Projects, Calendar,
+All tasks, Files, Ask, Updates, Progress, Workday settings, Materials requests,
+Tools, Hours, Pay rates, Daily report, Project insights, Templates, Team accounts,
+the Add menu and task capture, Menu search, route refresh/Back, installable shell
+files and responsive navigation at 320/390/768/1280. No business writes were
+made; the temporary owner session was revoked. API, Caddy and the backup timer
+remain active/enabled. Actual production password entry and a physical
+iPhone/Safari check were not exercised.
 
 ## Historical Work release — September 21, 17:58 UTC
 

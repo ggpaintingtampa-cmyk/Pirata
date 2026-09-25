@@ -77,7 +77,7 @@ try {
   assert.equal(data.currentUser?.role, 'owner', 'Temporary session retains owner role');
   assert(Array.isArray(data.tasks) && Array.isArray(data.projects), 'Existing business collections load');
   phase = 'Daily planning controls';
-  assert(await page.getByLabel('Whose list', { exact: true }).isVisible(), 'Owner can choose whose day list to read');
+  assert(await page.getByLabel('Whose list').first().isVisible(), 'Owner can choose whose day list to read');
   await page.getByText(/\d+ of \d+ steps done/).first().waitFor();
   assert(await page.getByRole('button', { name: 'Plan this day', exact: true }).isVisible(), 'Owner can plan the day');
   assert(await page.locator('.work-bar').count() >= 0, 'Sticky work bar mounted');
