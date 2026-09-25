@@ -83,7 +83,7 @@ test('phone client/project create and edit, linked job navigation and reload per
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Browser exterior repaint' })).toBeVisible();
-  await expect(page.getByText('12 Sample Lane')).toBeVisible();
+  await expect(page.getByText('12 Sample Lane').first()).toBeVisible();
   expect((await snapshot(page)).projects.filter(p => p.id === project.id)).toHaveLength(1);
   await page.getByRole('button', { name: 'Browser Alex Smith', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Client: ' + client.id);
@@ -312,8 +312,9 @@ test('client and project layouts fit 320, 390, 768 and 1280px with usable dialog
     const dialog = page.getByRole('dialog');
     const box = (await dialog.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width); expect(box.height).toBeLessThanOrEqual(height);
-    await expect(page.getByLabel('Project name', { exact: true })).toBeFocused();
-    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
+    // Update 2026-09-25: Add project opens the on-site capture flow (client, name, address, then tasks).
+    await expect(page.getByLabel('Project name', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start walking the job', exact: true })).toBeVisible();
     await page.keyboard.press('Escape'); await expect(button).toBeFocused();
   }
   expect(consoleErrors).toEqual([]);

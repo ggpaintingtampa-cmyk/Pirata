@@ -117,3 +117,12 @@ it('applies nested templates within three levels and saves a project as a templa
   expect((await runAs(f, owner, { type: 'projectTemplate.apply', templateId: projectTemplate.id, projectId: project2 })).statusCode).toBe(200);
   expect(f.repo.list('tasks').filter(t => t.projectId === project2)).toHaveLength(4);
 });
+it('completing the only tiny task closes its subtask and the top task; adding a step reopens both', async () => {
+  const { owner, worker, project } = await setup();
+  const root = await create(owner, 'Move furniture', project), sub = await create(owner, 'Cover desk', project, root), tiny = await create(owner, 'Use delicate tape', project, sub);
+  expect((await runAs(f, worker.headers, { type: 'task.setStatus', id: tiny, status: 'done', expectedSessionId: null })).statusCode).toBe(200);
+  for (const id of [tiny, sub, root]) expect(f.repo.require('tasks', id)).toMatchObject({ status: 'done', completedBy: worker.id });
+  await create(owner, 'Wrap the lamp', project, sub);
+  for (const id of [sub, root]) expect(f.repo.require('tasks', id).status).toBe('open');
+  expect(f.repo.require('tasks', root).completedAt).toBeNull();
+});

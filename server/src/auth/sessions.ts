@@ -13,7 +13,7 @@ export interface Session {token_hash:string;owner_id:string|null;user_id:string|
 const digest=(value:string)=>createHash('sha256').update(value).digest('hex');
 export function findSession(db:Sqlite,request:FastifyRequest,now:number):Session|undefined {
   const token=request.cookies[COOKIE_NAME];if(!token||!/^[-\w]{43}$/.test(token))return;
-  return db.prepare('SELECT s.*,m.role FROM sessions s LEFT JOIN team_members m ON m.id=s.user_id WHERE token_hash=? AND expires_at>? AND (s.owner_id IS NULL OR (m.id IS NOT NULL AND m.disabled_at IS NULL))').get(digest(token),now) as Session|undefined;
+  return db.prepare('SELECT s.*,CASE m.role WHEN \'employee\' THEN \'worker\' ELSE m.role END AS role FROM sessions s LEFT JOIN team_members m ON m.id=s.user_id WHERE token_hash=? AND expires_at>? AND (s.owner_id IS NULL OR (m.id IS NOT NULL AND m.disabled_at IS NULL))').get(digest(token),now) as Session|undefined;
 }
 export function newSession(db:Sqlite,reply:FastifyReply,ownerId:string|null,now:number,userId:string|null=ownerId):Session {
   const token=randomBytes(32).toString('base64url'),csrf=randomBytes(32).toString('base64url'),ttl=ownerId?SESSION_TTL:PREAUTH_TTL;

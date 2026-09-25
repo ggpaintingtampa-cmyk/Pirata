@@ -7,7 +7,7 @@ async function command(page: Page, command: unknown) { return page.evaluate(asyn
 async function menu(page: Page, name: string) { await page.setViewportSize({width:390,height:844}); await page.getByRole('navigation').getByRole('button', { name: 'Menu', exact: true }).click(); await page.getByRole('button', { name, exact: true }).click(); }
 test('photos, PDFs, paint notes, shopping and equipment cleanup stay shared and recoverable', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto('/'); await page.getByLabel('Username', { exact: true }).fill('owner'); await page.getByLabel('Pirata password').fill('isolated-team-browser-password'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Work.', exact: true })).toBeVisible();
+  await page.goto('/'); await page.getByLabel('Username', { exact: true }).fill('owner'); await page.getByLabel('Pirata password').fill('isolated-team-browser-password'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Daily.', exact: true })).toBeVisible();
   const projectId = (await command(page, { type: 'project.create', name: 'Photo project', clientId: null, clientName: '', address: '', note: '' })).result.id;
   const equipmentId = (await command(page, { type: 'equipment.create', name: 'Photo sprayer', note: '' })).result.id;
   await page.reload(); if (await page.getByRole('button', { name: 'Dismiss success message' }).count()) await page.getByRole('button', { name: 'Dismiss success message' }).click(); await menu(page, 'Projects'); await page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Photo project', exact: true }) }).getByRole('button', { name: 'View project' }).click();
@@ -16,7 +16,7 @@ test('photos, PDFs, paint notes, shopping and equipment cleanup stay shared and 
   const links = page.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'Download photo', exact: true }) });
   await links.getByRole('button', { name: 'Remove', exact: true }).click(); await expect(page.getByRole('link', { name: 'Download photo', exact: true })).toHaveCount(0); await page.getByRole('button', { name: 'Recover removed' }).click(); await page.getByRole('button', { name: 'Restore file', exact: true }).click(); await expect(page.getByRole('link', { name: 'Download photo', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Add note', exact: true }).click(); await page.getByLabel('Note title', { exact: true }).fill('Trim supplies'); await page.getByLabel('Remember', { exact: true }).fill('Use the same finish on both doors.'); await page.getByText('Optional paint or supply details', { exact: true }).click(); await page.getByLabel('Product / brand', { exact: true }).fill('Paint brand'); await page.getByLabel('Color code', { exact: true }).fill('101'); await page.getByLabel('Finish / sheen', { exact: true }).fill('Satin'); await page.getByLabel('Pin this note', { exact: true }).check(); await page.getByRole('button', { name: 'Save note', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Pinned · Trim supplies', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Add to shopping', exact: true }).click(); await menu(page, 'Shopping'); await expect(page.getByLabel('Trim supplies', { exact: true })).toBeVisible(); await page.getByLabel('Trim supplies', { exact: true }).check(); await page.getByLabel('Show checked items', { exact: true }).check(); await expect(page.getByLabel('Trim supplies', { exact: true })).toBeChecked(); await expect(page.getByLabel('Trim supplies', { exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Add to shopping', exact: true }).click(); await menu(page, 'Materials requests'); const request = page.getByRole('listitem').filter({ hasText: 'Trim supplies' }); await expect(request).toBeVisible(); await request.getByRole('button', { name: 'Received', exact: true }).click(); await page.getByRole('group').getByRole('button', { name: 'Received', exact: true }).click(); await expect(page.getByRole('listitem').filter({ hasText: 'Trim supplies' })).toBeVisible();
   await command(page, { type: 'equipment.cleanupRule', id: equipmentId, cleaningMinutes: 15, maxCleaningDelayMinutes: 1440 }); await page.reload(); await menu(page, 'Inventory'); await page.getByRole('button', { name: 'Equipment', exact: true }).click(); await page.getByRole('button', { name: 'View Photo sprayer', exact: true }).click(); await page.getByRole('button', { name: 'Record use', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Clean Photo sprayer', exact: true })).toBeVisible(); await page.getByRole('button', { name: 'Record use', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Clean Photo sprayer', exact: true })).toHaveCount(1);
   await mkdir('artifacts/screenshots', { recursive: true });
   for (const width of [320, 390, 768, 1280]) { await page.setViewportSize({ width, height: width < 768 ? 844 : 960 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.getByRole('button', { name: 'Mark cleaned', exact: true }).scrollIntoViewIfNeeded(); await page.screenshot({ path: `artifacts/screenshots/team-cleanup-${engine}-${width}.png`, fullPage: true }); }
@@ -34,7 +34,7 @@ test('Share update preserves hidden drafts and supports live personal and messag
   await page.getByLabel('Username', { exact: true }).fill('owner');
   await page.getByLabel('Pirata password').fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Work.', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Daily.', exact: true })).toBeVisible();
   await command(page, { type: 'task.create', title: marker + ' task' });
   const username = 'updates-' + Date.now();
   await page.evaluate(async ({ username, password }) => {
@@ -54,7 +54,7 @@ test('Share update preserves hidden drafts and supports live personal and messag
   await activity.getByRole('button', { name: 'Hide message form', exact: true }).click();
   let discardMessage = '';
   page.once('dialog', async dialog => { discardMessage = dialog.message(); await dialog.dismiss(); });
-  await navigation.getByRole('button', { name: 'Work', exact: true }).click();
+  await navigation.getByRole('button', { name: 'Daily', exact: true }).click();
   await expect(activity).toBeVisible();
   expect(discardMessage).toContain('discard your unsaved changes');
   await activity.getByRole('button', { name: 'Share update', exact: true }).click();
@@ -75,7 +75,7 @@ test('Share update preserves hidden drafts and supports live personal and messag
     await other.getByLabel('Username', { exact: true }).fill(username);
     await other.getByLabel('Pirata password').fill(password);
     await other.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await expect(other.getByRole('heading', { name: 'Work.', exact: true })).toBeVisible();
+    await expect(other.getByRole('heading', { name: 'Daily.', exact: true })).toBeVisible();
     await other.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Updates', exact: true }).click();
     const otherActivity = other.getByRole('region', { name: 'Team activity', exact: true });
     await expect(otherActivity.getByText(message, { exact: true })).toBeVisible();

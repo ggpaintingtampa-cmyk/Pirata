@@ -155,3 +155,12 @@ suites and Playwright: Andres.
 Sign in as owner and as the existing employee (now a worker); every menu entry
 opens; the Add button shows the new list; the language toggle switches the
 shell to Spanish; lock the phone for two hours and reopen without signing in.
+
+## Deploy-time deviation (2026-09-25)
+
+The production publisher (`web/deploy/publish-team.py`) compares every historical column value before and after
+migrating a copy of the live database and refuses a cutover that rewrites any of them. Migration 003 therefore
+keeps the legacy role `employee` and project status `open` in place (both stay valid in the widened CHECK
+constraints) instead of remapping them. The server reads them as `worker` / `scheduled`
+(`normalizeRole`, `normalizeProjectStatus` in `server/src/core/repositories.ts`, plus the session and team-admin
+queries); writes always use the current vocabulary. `daily_goals` is kept as a read-only legacy table.

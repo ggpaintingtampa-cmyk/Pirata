@@ -7,8 +7,13 @@ export type MutablePatch<T> = T extends unknown ? Partial<Omit<T,'id'|'createdAt
 export const TABLES:TableName[]=['clients','projects','tasks','objectives','schedule_blocks','time_entries','expenses','materials','material_requirements','material_adjustments','equipment','maintenance_items','leads','lead_follow_ups','daily_goals','task_templates','attachments','activity','project_notes','shopping_items','cleanup_obligations','cleanup_snoozes','day_assignments','task_questions','day_notes','project_templates','project_facts','pay_rates','work_shifts','tool_sign_outs','equipment_reports','attachment_tags','attachment_comments'];
 const snake=(s:string)=>s.replace(/[A-Z]/g,c=>'_'+c.toLowerCase());
 const camel=(s:string)=>s.replace(/_([a-z])/g,(_,c:string)=>c.toUpperCase());
-function decode<T>(raw:unknown):T {
+/** Migration 003 keeps historical values untouched; legacy vocabularies are interpreted on read (writes use the current ones). */
+export function normalizeRole<T extends string>(role:T|'employee'):T|'worker' {return role==='employee'?'worker':role;}
+export function normalizeProjectStatus<T extends string>(status:T|'open'):T|'scheduled' {return status==='open'?'scheduled':status;}
+function decode<T>(raw:unknown,table?:TableName):T {
   const record=raw as Record<string,unknown>;
+  if(table==='projects'&&record.status==='open')record.status='scheduled';
+  if(typeof record.role==='string')record.role=normalizeRole(record.role);
   return Object.fromEntries(Object.entries(record).filter(([key,v])=>key!=='owner_id'&&!(record.source==='timer'&&['date','duration_seconds'].includes(key))&&!(record.source==='manual'&&['started_at','ended_at'].includes(key))&&v!==undefined).map(([k,v])=>[camel(k),v])) as T;
 }
 /** These repositories capture ownerId; no public method can change ownership or commit. */
@@ -18,8 +23,8 @@ export class Repositories {
   #assertActive(){if(!this.#active())throw new Error('Transaction context is no longer active');}
   #table(table:TableName){this.#assertActive();if(!TABLES.includes(table))throw new Error('Unknown table');return table;}
   #columns(table:TableName,record:object){const allowed=new Set((this.#db.prepare(`PRAGMA table_info(${this.#table(table)})`).all() as {name:string}[]).map(c=>c.name));const keys=Object.keys(record).map(snake);if(keys.some(k=>k==='owner_id'||!allowed.has(k)))throw new Error('Unknown record field');return keys;}
-  list<K extends TableName>(table:K):Tables[K][]{return this.#db.prepare(`SELECT * FROM ${this.#table(table)} WHERE owner_id=? ORDER BY created_at,id`).all(this.#ownerId).map(r=>decode<Tables[K]>(r));}
-  get<K extends TableName>(table:K,id:string):Tables[K]|undefined {const row=this.#db.prepare(`SELECT * FROM ${this.#table(table)} WHERE owner_id=? AND id=?`).get(this.#ownerId,id);return row?decode<Tables[K]>(row):undefined;}
+  list<K extends TableName>(table:K):Tables[K][]{return this.#db.prepare(`SELECT * FROM ${this.#table(table)} WHERE owner_id=? ORDER BY created_at,id`).all(this.#ownerId).map(r=>decode<Tables[K]>(r,table));}
+  get<K extends TableName>(table:K,id:string):Tables[K]|undefined {const row=this.#db.prepare(`SELECT * FROM ${this.#table(table)} WHERE owner_id=? AND id=?`).get(this.#ownerId,id);return row?decode<Tables[K]>(row,table):undefined;}
   require<K extends TableName>(table:K,id:string):Tables[K]{return this.get(table,id)??notFound();}
   insert<K extends TableName>(table:K,record:Tables[K]):void {if(table==='time_entries')record={...record,userId:this.#userId};const keys=this.#columns(table,record);this.#db.prepare(`INSERT INTO ${this.#table(table)} (owner_id,${keys.join(',')}) VALUES (?,${keys.map(()=>'?').join(',')})`).run(this.#ownerId,...Object.values(record));}
   update<K extends TableName>(table:K,id:string,patch:MutablePatch<Tables[K]>):void {

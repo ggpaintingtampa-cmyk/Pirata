@@ -3,9 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 import { migrate, migrations, openDatabase } from '../src/db/database.js';
+import { Repositories } from '../src/core/repositories.js';
 let directory='';
 afterEach(()=>{if(directory)rmSync(directory,{recursive:true,force:true});directory='';});
-it('003 maps employees to workers, open projects to scheduled, records completion, day lists and received requests',()=>{
+it('003 keeps historical roles and statuses (read as worker/scheduled), records completion, day lists and received requests',()=>{
   directory=mkdtempSync(join(tmpdir(),'pirata-migration-'));
   const db=openDatabase(join(directory,'v2.sqlite'),{create:true,applyMigrations:false});
   const steps=migrations();expect(steps.length).toBeGreaterThanOrEqual(3);
@@ -22,9 +23,11 @@ it('003 maps employees to workers, open projects to scheduled, records completio
   db.prepare("INSERT INTO shopping_items (id,owner_id,created_at,updated_at,title,note,project_id,source_note_id,checked_at,created_by) VALUES ('s','biz',?,?,'Primer','','p',NULL,?,'jose')").run(now,now,now);
   db.prepare("INSERT INTO equipment (id,owner_id,created_at,updated_at,name,note,archived_at,cleaning_minutes,max_cleaning_delay_minutes) VALUES ('e','biz',?,?,'Sprayer','',NULL,30,4320)").run(now,now);
   migrate(db);
-  expect(db.prepare("SELECT role,locale FROM team_members WHERE id='jose'").get()).toEqual({role:'worker',locale:'en'});
+  expect(db.prepare("SELECT role,locale FROM team_members WHERE id='jose'").get()).toEqual({role:'employee',locale:'en'});
   expect(db.prepare("SELECT role FROM team_members WHERE id='biz'").get()).toEqual({role:'owner'});
-  expect(db.prepare("SELECT status FROM projects WHERE id='p'").get()).toEqual({status:'scheduled'});
+  expect(db.prepare("SELECT status FROM projects WHERE id='p'").get()).toEqual({status:'open'});
+  const repo=new Repositories(db,'biz');expect(repo.team().find(m=>m.id==='jose')?.role).toBe('worker');expect(repo.require('projects','p').status).toBe('scheduled');expect(repo.list('projects')[0]?.status).toBe('scheduled');
+  expect(db.prepare("INSERT INTO projects (id,owner_id,created_at,updated_at,name,client_id,client_name,address,note,status) VALUES ('p2','biz',?,?,'Sold job','c','Client','','','sold')").run(now,now).changes).toBe(1);
   expect(db.prepare("SELECT completed_at,position,description FROM tasks WHERE id='t1'").get()).toEqual({completed_at:now,position:0,description:''});
   expect(db.prepare("SELECT completed_at,position FROM tasks WHERE id='t2'").get()).toEqual({completed_at:null,position:1});
   expect(db.prepare("SELECT project_id,task_id,user_id,created_by FROM day_assignments WHERE id='g'").get()).toEqual({project_id:'p',task_id:'t2',user_id:'jose',created_by:'jose'});

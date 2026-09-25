@@ -63,9 +63,19 @@ export function createTask(ctx: TransactionContext, title: string, fields: { pro
   createTaskWithSchedule(ctx, { ...relationships, id, title, estimatedMinutes: estimate, note, description, position, status: 'open', archivedAt: null, completedAt: null, completedBy: null, createdAt: ctx.serverNow, updatedAt: ctx.serverNow });
   if (relationships.parentTaskId) {
     const parent = ctx.repo.require('tasks', relationships.parentTaskId);
-    if (parent.status === 'done') ctx.repo.update('tasks', parent.id, { status: 'open', completedAt: null, completedBy: null, updatedAt: ctx.serverNow });
+    if (parent.status === 'done') { ctx.repo.update('tasks', parent.id, { status: 'open', completedAt: null, completedBy: null, updatedAt: ctx.serverNow }); reconcileAncestors(ctx, parent.parentTaskId); }
   }
   return id;
+}
+/** Re-check every ancestor (parent, then grandparent) so three-level completion and reopening stay truthful. */
+function reconcileAncestors(ctx: TransactionContext, parentId: string | null | undefined): boolean {
+  let changed = false;
+  for (let id = parentId ?? null; id; ) {
+    const node = ctx.repo.get('tasks', id); if (!node) break;
+    if (reconcileParent(ctx, id)) { changed = true; const after = ctx.repo.require('tasks', id); ctx.repo.update('tasks', id, after.status === 'done' ? { completedAt: ctx.serverNow, completedBy: ctx.userId } : { completedAt: null, completedBy: null }); }
+    id = node.parentTaskId ?? null;
+  }
+  return changed;
 }
 /** Push project and inherited assignment down the tree (explicit assignments on descendants are kept). */
 function propagate(ctx: TransactionContext, parentId: string, projectId: string | null, assigneeId: string | null) {
@@ -103,7 +113,7 @@ export const handlers = {
     if (changed) {
       ctx.repo.update('tasks', id, { ...fields, updatedAt: ctx.serverNow });
       propagate(ctx, id, fields.projectId, fields.assigneeId);
-      if (task.parentTaskId !== fields.parentTaskId) { reconcileParent(ctx, task.parentTaskId); reconcileParent(ctx, fields.parentTaskId); }
+      if (task.parentTaskId !== fields.parentTaskId) { reconcileAncestors(ctx, task.parentTaskId); reconcileAncestors(ctx, fields.parentTaskId); }
     }
     return result('task', id, changed);
   },
@@ -122,7 +132,7 @@ export const handlers = {
     for (const record of affected) if (Boolean(record.archivedAt) !== c.archived) ctx.repo.update('tasks', record.id, { archivedAt: c.archived ? ctx.serverNow : null, updatedAt: ctx.serverNow });
     // An archived task leaves every day list; nobody plans work that no longer exists.
     if (c.archived) for (const row of ctx.repo.list('day_assignments').filter(row => row.taskId !== null && ids.has(row.taskId))) ctx.repo.remove('day_assignments', row.id);
-    if(changed)reconcileParent(ctx,task.parentTaskId);
+    if(changed)reconcileAncestors(ctx,task.parentTaskId);
     return result('task', c.id, changed);
   },
   'taskTemplate.save': (ctx, c) => {
@@ -150,6 +160,7 @@ export const handlers = {
       }
     }
     if (setTaskStatus(ctx, c.id, c.status, expected)) changed = true;
+    if (reconcileAncestors(ctx, ctx.repo.get('tasks', c.id)?.parentTaskId)) changed = true;
     if (changed) for (const after of ctx.repo.list('tasks')) {
       const previous = before.get(after.id);
       if (previous === after.status) continue;

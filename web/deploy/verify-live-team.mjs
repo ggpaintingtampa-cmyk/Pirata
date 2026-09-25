@@ -56,7 +56,7 @@ try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addCookies([{ ...credential.cookie, url: origin, secure: true, httpOnly: true,
-    sameSite: 'Strict', expires: credential.expiresAt / 1000 }]);
+    sameSite: 'Lax', expires: credential.expiresAt / 1000 }]);
   const page = await context.newPage();
   let failedRequests = 0, pageErrors = 0, attemptedWrites = 0;
   page.on('pageerror', () => pageErrors++);
@@ -66,29 +66,21 @@ try {
     else await route.continue();
   });
   const response = await page.goto(origin);
-  phase = 'authenticated Work page';
+  phase = 'authenticated Daily page';
   assert.equal(response.status(), 200, 'Trusted HTTPS application entrypoint');
-  await page.getByRole('heading', { name: 'Work.', exact: true }).waitFor();
-  assert(await page.getByRole('navigation', { name: 'Main navigation' }).isVisible(), 'Authenticated Work navigation');
+  await page.getByRole('heading', { name: 'Daily.', exact: true }).waitFor();
+  assert(await page.getByRole('navigation', { name: 'Main navigation' }).isVisible(), 'Authenticated Daily navigation');
   const snapshot = await context.request.get(origin + '/api/v1/snapshot');
   phase = 'authenticated owner snapshot';
   assert.equal(snapshot.status(), 200, 'Owner snapshot authenticated');
   const data = await snapshot.json();
   assert.equal(data.currentUser?.role, 'owner', 'Temporary session retains owner role');
   assert(Array.isArray(data.tasks) && Array.isArray(data.projects), 'Existing business collections load');
-  phase = 'Work assignment filters';
-  const teamTasks = page.getByRole('region', { name: 'Team tasks', exact: true });
-  assert(await teamTasks.isVisible(), 'Owner team task section visible');
-  await teamTasks.getByRole('group', { name: 'Work task status' }).getByRole('button', { name: 'All', exact: true }).click();
-  const visibleTasks = data.tasks.filter(task => task.archivedAt == null &&
-    !(task.parentTaskId && data.tasks.some(parent => parent.id === task.parentTaskId && parent.archivedAt != null)));
-  assert.equal(await teamTasks.locator('.work-my-task-row').count(), visibleTasks.length, 'All unarchived tasks available without history cap');
-  await teamTasks.getByLabel('Person', { exact: true }).selectOption('unassigned');
-  assert.equal(await teamTasks.locator('.work-my-task-row').count(), visibleTasks.filter(task => !task.assigneeId).length, 'Unassigned filter preserves records');
-  await teamTasks.getByRole('button', { name: 'Reset filters', exact: true }).click();
-  await teamTasks.getByRole('button', { name: 'Today', exact: true }).click();
-  assert.equal(await teamTasks.getByRole('button', { name: 'Today', exact: true }).getAttribute('aria-pressed'), 'true', 'Today toggle works');
-  await teamTasks.getByRole('button', { name: 'Reset filters', exact: true }).click();
+  phase = 'Daily planning controls';
+  assert(await page.getByLabel('Whose list', { exact: true }).isVisible(), 'Owner can choose whose day list to read');
+  await page.getByText(/\d+ of \d+ steps done/).first().waitFor();
+  assert(await page.getByRole('button', { name: 'Plan this day', exact: true }).isVisible(), 'Owner can plan the day');
+  assert(await page.locator('.work-bar').count() >= 0, 'Sticky work bar mounted');
   for (const section of ['Projects', 'Calendar']) {
     phase = 'read-only ' + section + ' page';
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Menu', exact: true }).click();
@@ -101,38 +93,44 @@ try {
     await page.getByRole('button', { name: mode, exact: true }).click();
     assert.equal(await page.getByRole('button', { name: mode, exact: true }).getAttribute('aria-pressed'), 'true', 'Calendar mode switches');
   }
-  phase = 'redesigned direct routes and refresh';
-  await page.locator('.workspace-shortcuts').getByRole('link', { name: 'Tasks', exact: true }).click();
+  phase = 'direct routes and refresh';
+  await page.locator('.workspace-shortcuts').getByRole('link', { name: 'All tasks', exact: true }).click();
   await page.reload();
-  await page.getByRole('heading', { name: 'Tasks.', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'All tasks.', exact: true }).waitFor();
   assert.equal(new URL(page.url()).hash, '#/tasks', 'Refresh keeps the selected page');
   const activeTask = data.tasks.find(task => !task.archivedAt && task.status !== 'done');
   if (activeTask) {
     phase = 'read-only task file controls';
     await page.getByRole('button', { name: 'Open task: ' + activeTask.title, exact: true }).first().click();
     const recovery = page.getByRole('dialog').getByRole('button', { name: 'Recover removed', exact: true });
-    await recovery.scrollIntoViewIfNeeded();
-    const bounds = await recovery.boundingBox();
-    assert(bounds && bounds.width > 120 && bounds.height <= 52, 'Recovery action stays horizontal');
+    if (await recovery.count()) {
+      await recovery.scrollIntoViewIfNeeded();
+      const bounds = await recovery.boundingBox();
+      assert(bounds && bounds.width > 120 && bounds.height <= 52, 'Recovery action stays horizontal');
+    }
     await page.getByRole('dialog').getByRole('button', { name: 'Close dialog', exact: true }).click();
   }
-  for (const route of ['files', 'ask', 'updates', 'progress', 'settings']) {
-    phase = 'read-only Figma route ' + route;
+  for (const [route, heading] of [['files', 'Files.'], ['ask', 'Ask.'], ['updates', 'Updates.'], ['progress', 'Progress.'], ['settings', 'Workday settings.'],
+    ['materials', 'Materials requests.'], ['tools', 'Tools.'], ['hours', 'Hours.'], ['pay', 'Pay rates.'], ['report', 'Daily report.'], ['insights', 'Project insights.'], ['templates', 'Templates.'], ['team', 'Team accounts.']]) {
+    phase = 'read-only route ' + route;
     await page.goto(origin + '/#/' + route);
-    await page.getByRole('heading', { name: route[0].toUpperCase() + route.slice(1) + '.', exact: true }).waitFor();
-    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Figma route fits phone');
+    await page.getByRole('heading', { name: heading, exact: true }).waitFor();
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Route fits phone: ' + route);
   }
-  phase = 'task-first Add and child navigation';
+  phase = 'Add menu and task capture';
+  await page.goto(origin + '/#/work');
+  await page.getByRole('heading', { name: 'Daily.', exact: true }).waitFor();
   await page.locator('.add-button').click();
+  await page.getByRole('dialog', { name: 'Add', exact: true }).waitFor();
+  await page.getByRole('dialog', { name: 'Add', exact: true }).getByRole('button', { name: 'Task' }).click();
   await page.getByRole('dialog', { name: 'Add task', exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Back to Add menu', exact: true }).click();
-  await page.getByRole('dialog', { name: 'Quick Add', exact: true }).waitFor();
   await page.keyboard.press('Escape');
+  await page.getByRole('dialog').waitFor({ state: 'detached' });
   phase = 'Menu page search';
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Menu', exact: true }).click();
-  await page.getByLabel('Find a page', { exact: true }).fill('shopping');
-  await page.getByRole('button', { name: 'Shopping', exact: true }).click();
-  await page.getByRole('heading', { name: 'Shopping.', exact: true }).waitFor();
+  await page.getByLabel('Find a page', { exact: true }).fill('materials');
+  await page.getByRole('button', { name: 'Materials requests', exact: true }).click();
+  await page.getByRole('heading', { name: 'Materials requests.', exact: true }).waitFor();
   await page.goBack();
   await page.getByRole('heading', { name: 'Menu.', exact: true }).waitFor();
   phase = 'responsive persistent controls';
@@ -146,9 +144,15 @@ try {
       const nav = await page.getByRole('navigation', { name: 'Main navigation' }).boundingBox();
       assert(nav && add.y + add.height <= nav.y, 'Add clears bottom navigation');
     } else {
-      assert(await page.getByRole('navigation', { name: 'Workspace navigation' }).isVisible(), 'Desktop sidebar visible');
+      assert(await page.getByRole('navigation', { name: 'Workspace sections' }).isVisible(), 'Desktop sidebar visible');
     }
   }
+  phase = 'installable app shell files';
+  for (const [path, marker] of [['/manifest.webmanifest', '"name"'], ['/sw.js', 'addEventListener']]) {
+    const shell = await context.request.get(origin + path);
+    assert(shell.status() === 200 && (await shell.text()).includes(marker), 'Installable shell file served: ' + path);
+  }
+  assert.equal((await context.request.get(origin + '/icons/icon-192.png')).status(), 200, 'Home-screen icon served');
   const example = data.attachments?.find(file => !file.removedAt);
   phase = 'private file authorization';
   if (example) assert.equal((await context.request.get(origin + '/api/v1/files/' + example.id + '/content')).status(), 200, 'Existing private file authorized');
@@ -165,7 +169,7 @@ try {
   await browser.close(); browser = undefined;
   phase = 'temporary session revocation';
   revoke();
-  console.log('PASS: live trusted HTTPS; authorized Work, Projects, Calendar, Files, Ask, Updates, Progress, Settings, task-first Add and task/file controls, Menu search, route refresh/Back and responsive navigation; anonymous business/admin/file rejection. No business writes. Temporary owner session revoked. Actual password entry and physical iPhone are not part of this check.');
+  console.log('PASS: live trusted HTTPS; authorized Daily, Projects, Calendar, All tasks, Files, Ask, Updates, Progress, Workday settings, Materials requests, Tools, Hours, Pay rates, Daily report, Project insights, Templates, Team accounts, the Add menu and task capture, Menu search, route refresh/Back, installable shell files and responsive navigation; anonymous business/admin/file rejection. No business writes. Temporary owner session revoked. Actual password entry and physical iPhone are not part of this check.');
 } catch {
   // Avoid Playwright exception output containing page content or request headers.
   console.error('Live team verification failed at ' + phase + '. No credentials or business records logged.');

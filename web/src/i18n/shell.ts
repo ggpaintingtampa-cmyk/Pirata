@@ -4,7 +4,7 @@ export const shellStrings:Strings={
   en:{
     'shell.tagline':'YOUR WORK, TOGETHER','shell.account':'Your account','shell.skip':'Skip to content','shell.comingSoon':'Coming in this update.',
     'shell.role.owner':'Owner','shell.role.manager':'Manager','shell.role.sales':'Sales','shell.role.worker':'Team',
-    'shell.nav.work':'Daily','shell.nav.ask':'Ask','shell.nav.askLong':'Ask Morgan','shell.nav.updates':'Updates','shell.nav.more':'Menu',
+    'shell.nav.main':'Main navigation','shell.nav.work':'Daily','shell.nav.ask':'Ask','shell.nav.askLong':'Ask Morgan','shell.nav.updates':'Updates','shell.nav.more':'Menu',
     'shell.group.plan':'Plan & work','shell.group.hours':'Hours','shell.group.business':'Your business','shell.group.files':'Files & team','shell.group.settings':'Settings',
     'shell.view.work':'Daily','shell.view.work.desc':'Today’s ordered list, person by person','shell.view.projects':'Projects','shell.view.projects.desc':'Jobs, checklists & files',
     'shell.view.calendar':'Calendar','shell.view.calendar.desc':'See the day and week ahead','shell.view.tasks':'All tasks','shell.view.tasks.desc':'Find, assign & finish work',
@@ -36,7 +36,7 @@ export const shellStrings:Strings={
   es:{
     'shell.tagline':'TU TRABAJO, EN EQUIPO','shell.account':'Tu cuenta','shell.skip':'Ir al contenido','shell.comingSoon':'Disponible en esta actualización.',
     'shell.role.owner':'Dueño','shell.role.manager':'Manager','shell.role.sales':'Ventas','shell.role.worker':'Equipo',
-    'shell.nav.work':'Diario','shell.nav.ask':'Preguntar','shell.nav.askLong':'Preguntar a Morgan','shell.nav.updates':'Novedades','shell.nav.more':'Menú',
+    'shell.nav.main':'Navegación principal','shell.nav.work':'Diario','shell.nav.ask':'Preguntar','shell.nav.askLong':'Preguntar a Morgan','shell.nav.updates':'Novedades','shell.nav.more':'Menú',
     'shell.group.plan':'Planear y trabajar','shell.group.hours':'Horas','shell.group.business':'Tu negocio','shell.group.files':'Archivos y equipo','shell.group.settings':'Ajustes',
     'shell.view.work':'Diario','shell.view.work.desc':'La lista ordenada de hoy, persona por persona','shell.view.projects':'Proyectos','shell.view.projects.desc':'Trabajos, listas y archivos',
     'shell.view.calendar':'Calendario','shell.view.calendar.desc':'Mira el día y la semana','shell.view.tasks':'Todas las tareas','shell.view.tasks.desc':'Busca, asigna y termina trabajo',

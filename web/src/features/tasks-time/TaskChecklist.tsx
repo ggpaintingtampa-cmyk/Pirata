@@ -6,7 +6,7 @@ import { completionPercent, projectCompletion } from '@pirata/contracts/progress
 import { formatDuration } from '@pirata/domain/lib/time';
 import type { ModuleProps } from '../../services/moduleProps';
 import { createMutation, createSubmission, ServiceError } from '../../services/api';
-import { useT } from '../../i18n';
+import { tx, useT } from '../../i18n';
 import { WorkDialog } from './WorkDialog';
 import { WorkForm } from './WorkForm';
 import { CompletionRing } from './CompletionRing';
@@ -40,14 +40,14 @@ export function QuickTaskCapture({ app, projectId = null, parentTaskId = null }:
   const depth = parentTaskId ? taskDepth(app.snapshot.tasks, parentTaskId) + 1 : 0;
   const label = depth === 0 ? 'Tasks' : depth === 1 ? t('tasks.subtasks') : t('tasks.tiny');
   return <details className="quick-task-capture"><summary><span><Plus size={17} aria-hidden="true"/>Add {label.toLowerCase()} quickly</span><ChevronDown size={16} aria-hidden="true"/></summary>
-    <WorkForm key={generation} app={app} initial={{titles:''}} includeCancel={false} submitLabel="Save and add another"
+    <WorkForm key={generation} app={app} initial={{titles:''}} includeCancel={false} submitLabel={tx('Save and add another')}
       command={v => ({type:'task.batchCreate',titles:v.titles.split('\n').map(title=>title.trim()).filter(Boolean),projectId,parentTaskId,assigneeId:null})}
       message={label+' saved.'} done={() => setGeneration(n=>n+1)}>
-      {d => d.field('titles',label+' — one per line',{type:'textarea',hint:'A name is enough. Add up to 50 items together; details can wait.'})}
+      {d => d.field('titles',label+' — one per line',{type:'textarea',hint:tx('A name is enough. Add up to 50 items together; details can wait.')})}
     </WorkForm>
-    {depth < 2 && (app.snapshot.taskTemplates ?? []).map(item => <CommandButton key={item.id} app={app} command={item.tree ? {type:'taskTemplate.applyTree',templateId:item.id,projectId:projectId ?? '',parentTaskId} : {type:'taskTemplate.apply',templateId:item.id,projectId,parentTaskId}} message="Template tasks added." disabled={Boolean(item.tree) && !projectId}>Use {item.name}</CommandButton>)}
-    <button type="button" onClick={()=>setTemplate(true)}>Save a reusable list</button>
-    {template && <WorkDialog title="Save task template" onClose={()=>setTemplate(false)}><WorkForm app={app} initial={{name:'',titles:''}} command={v=>({type:'taskTemplate.save',name:v.name,titles:v.titles.split('\n').map(title=>title.trim()).filter(Boolean)})} message="Task template saved." done={()=>setTemplate(false)}>{d=><>{d.field('name','Template name')}{d.field('titles','Task names — one per line',{type:'textarea'})}</>}</WorkForm></WorkDialog>}
+    {depth < 2 && (app.snapshot.taskTemplates ?? []).map(item => <CommandButton key={item.id} app={app} command={item.tree ? {type:'taskTemplate.applyTree',templateId:item.id,projectId:projectId ?? '',parentTaskId} : {type:'taskTemplate.apply',templateId:item.id,projectId,parentTaskId}} message={tx('Template tasks added.')} disabled={Boolean(item.tree) && !projectId}>Use {item.name}</CommandButton>)}
+    <button type="button" onClick={()=>setTemplate(true)}>{tx('Save a reusable list')}</button>
+    {template && <WorkDialog title={tx('Save task template')} onClose={()=>setTemplate(false)}><WorkForm app={app} initial={{name:'',titles:''}} command={v=>({type:'taskTemplate.save',name:v.name,titles:v.titles.split('\n').map(title=>title.trim()).filter(Boolean)})} message={tx('Task template saved.')} done={()=>setTemplate(false)}>{d=><>{d.field('name',tx('Template name'))}{d.field('titles',tx('Task names — one per line'),{type:'textarea'})}</>}</WorkForm></WorkDialog>}
   </details>;
 }
 
@@ -74,7 +74,7 @@ export function TaskCheck({ app, task, showEstimate = false }: { app: ModuleProp
       : <CommandButton app={app} command={command} message={finishing?'Task complete.':'Task reopened.'}><span className="task-check-box" aria-hidden="true">{!finishing&&<Check size={15}/>}</span><span className="visually-hidden">{label}</span></CommandButton>}
     <button className="task-name" aria-label={task.title} onClick={()=>app.onOpenTask(task.id)}><span>{task.title}{task.description&&<small>{task.description}</small>}<small>{children.length ? completionPercent(completion.fraction)+'% · '+completion.done+'/'+completion.total : task.status==='done'?'Complete':task.status==='blocked'?'Blocked':''}</small></span>{showEstimate&&task.estimatedMinutes>0?<span className="task-estimate-badge">{formatDuration(task.estimatedMinutes*60000)}</span>:<ChevronRight size={16} aria-hidden="true"/>}</button>
     <ReorderButtons app={app} task={task} />
-    {confirm && <WorkDialog title="Complete task and checklist" onClose={()=>setConfirm(false)}><WorkForm app={app} initial={{}} command={()=>command} message="Task and checklist complete." done={()=>setConfirm(false)} submitLabel="Complete task and remaining steps">{()=> <p>Complete “{task.title}”{children.length?' and every step under it':''}{affectedTimer?', saving and stopping your running timer':''}?</p>}</WorkForm></WorkDialog>}
+    {confirm && <WorkDialog title={tx('Complete task and checklist')} onClose={()=>setConfirm(false)}><WorkForm app={app} initial={{}} command={()=>command} message={tx('Task and checklist complete.')} done={()=>setConfirm(false)} submitLabel={tx('Complete task and remaining steps')}>{()=> <p>Complete “{task.title}”{children.length?' and every step under it':''}{affectedTimer?', saving and stopping your running timer':''}?</p>}</WorkForm></WorkDialog>}
   </div>;
 }
 
@@ -87,8 +87,8 @@ export function TaskChecklist(app: ModuleProps & { parentTaskId?: string; compac
   const completion = parent ? treeCompletion(all, parent.id) : null;
   const heading = parentDepth === 1 ? t('tasks.tiny') : parent ? t('tasks.subtasks') : 'Tasks';
   return <section className={'work-module task-checklist'+(parent?' task-subtask-list':'')} aria-label={heading}>
-    {parent&&completion&&!app.compact&&<div className="task-checklist-summary"><CompletionRing fraction={completion.fraction} label="Task completion" size={64}/><div><h3>{heading}</h3><p>{completion.total>1?`${completion.done} of ${completion.total} steps completed`:'Break it into a few simple steps.'}</p></div></div>}
-    <div className="task-checklist-heading"><h3>{heading}</h3>{progress!==null&&!parent&&<span>Project completion: {completionPercent(progress)}%</span>}{!parent&&<button className="work-primary" onClick={()=>app.onAddTask(app.selection?.projectId??null)}><Plus size={16} aria-hidden="true"/>Add task</button>}</div>
+    {parent&&completion&&!app.compact&&<div className="task-checklist-summary"><CompletionRing fraction={completion.fraction} label={tx('Task completion')} size={64}/><div><h3>{heading}</h3><p>{completion.total>1?`${completion.done} of ${completion.total} steps completed`:'Break it into a few simple steps.'}</p></div></div>}
+    <div className="task-checklist-heading"><h3>{heading}</h3>{progress!==null&&!parent&&<span>Project completion: {completionPercent(progress)}%</span>}{!parent&&<button className="work-primary" onClick={()=>app.onAddTask(app.selection?.projectId??null)}><Plus size={16} aria-hidden="true"/>{tx('Add task')}</button>}</div>
     {!tasks.length&&<p>{parent?'Add the practical steps for this task.':'Add the next piece of work.'}</p>}
     {tasks.map(task=><div key={task.id}><TaskCheck app={app} task={task} showEstimate={Boolean(parent)}/>
       {taskDepth(all, task.id) < 2 && !app.compact && orderedChildren(all, task.id, task.projectId ?? null).map(child=><div className="task-child" key={child.id}><TaskCheck app={app} task={child}/>

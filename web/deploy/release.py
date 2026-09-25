@@ -17,6 +17,10 @@ DEFAULT_DIST = Path('/home/andre/Desktop/LargeConcierge/Morgan el Pirata/web/dis
 PRODUCTION = Path('/srv/pirata')
 BACKUPS = Path('/var/backups/pirata')
 ASSET = re.compile(r'assets/[A-Za-z0-9_.-]+-[A-Za-z0-9_-]{6,}\.(?:js|css|svg|png|jpg|jpeg|webp|woff2)\Z')
+# Update 2026-09-25: the installable app shell adds a manifest, a service worker and fixed-name icons.
+ENTRY_FILES = ('index.html', 'favicon.svg', 'manifest.webmanifest', 'sw.js')
+DIRECTORIES = ('assets', 'icons')
+ICON = re.compile(r'icons/[A-Za-z0-9_-]+\.(?:png|svg)\Z')
 RELEASE = re.compile(r'\d{8}T\d{6}Z-[a-f0-9]{8}\Z')
 LIMIT = 64 * 1024 * 1024
 
@@ -78,9 +82,9 @@ def inspect_dist(source):
         require(not path.is_symlink(), f'Symlink rejected: {path}')
         name = path.relative_to(source).as_posix()
         if path.is_dir():
-            require(name == 'assets', f'Unexpected directory: {name}')
+            require(name in DIRECTORIES, f'Unexpected directory: {name}')
             continue
-        require(name in ('index.html', 'favicon.svg') or ASSET.fullmatch(name),
+        require(name in ENTRY_FILES or ASSET.fullmatch(name) or ICON.fullmatch(name),
                 f'Unexpected build file: {name}')
         files[name] = regular_bytes(path)
     require('index.html' in files and 'favicon.svg' in files, 'Missing entrypoint/favicon')
@@ -151,8 +155,10 @@ def publish(source, root, backups):
                 require(regular_bytes(target) == content, f'Immutable asset collision: {name}')
     release.mkdir(mode=0o755)
     release.chmod(0o755)
-    (release / 'assets').mkdir(mode=0o755)
-    (release / 'assets').chmod(0o755)
+    for directory in DIRECTORIES:
+        if directory == 'assets' or any(name.startswith(directory + '/') for name in files):
+            (release / directory).mkdir(mode=0o755)
+            (release / directory).chmod(0o755)
     for name, content in files.items():
         write_new(release / name, content, 0o644)
         if name.startswith('assets/') and not (shared / name).exists():
@@ -164,7 +170,7 @@ def publish(source, root, backups):
     }
     write_new(backups / (release_id + '.json'),
               (json.dumps(manifest, indent=2) + '\n').encode(), 0o600)
-    for directory in [release / 'assets', release, root / 'releases', shared / 'assets', backups]:
+    for directory in [release / 'assets', *(release / d for d in DIRECTORIES if (release / d).is_dir() and d != 'assets'), release, root / 'releases', shared / 'assets', backups]:
         sync_directory(directory)
     # Verify the complete release and shared copies before the atomic switch.
     verify_release(root, backups, release_id)

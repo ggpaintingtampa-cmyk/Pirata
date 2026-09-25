@@ -12,7 +12,7 @@ const roleSchema=z.enum(ROLES);
 const ROLE_LABEL:Record<Role,string>={owner:'owners',manager:'managers',sales:'sales reps',worker:'workers'};
 /** Active accounts per role (2 owners, 5 managers, 5 sales, 10 workers); `except` ignores one member when re-enabling or changing role. */
 function assertCapacity(db:Sqlite,ownerId:string,role:Role,except:string|null=null):void {
- const n=(db.prepare('SELECT count(*) n FROM team_members WHERE owner_id=? AND role=? AND disabled_at IS NULL AND id IS NOT ?').get(ownerId,role,except) as {n:number}).n;
+ const n=(db.prepare('SELECT count(*) n FROM team_members WHERE owner_id=? AND CASE role WHEN \'employee\' THEN \'worker\' ELSE role END=? AND disabled_at IS NULL AND id IS NOT ?').get(ownerId,role,except) as {n:number}).n;
  if(n>=ROLE_CAPS[role])throw new ApiError(409,'TEAM_LIMIT',`Up to ${ROLE_CAPS[role]} ${ROLE_LABEL[role]} may have access. Disable one before adding another.`);
 }
 export function registerTeam(app:FastifyInstance,{db,origin,now}:{db:Sqlite;origin:string;now:()=>number}){
@@ -29,7 +29,7 @@ export function registerTeam(app:FastifyInstance,{db,origin,now}:{db:Sqlite;orig
   const s=requireOwner(db,req,now());checkMutation(req,s,origin);const {id}=z.object({id:z.string()}).parse(req.params);
   const c=z.object({password:password.optional(),disabled:z.boolean().optional(),name:z.string().trim().min(1).max(100).optional(),role:roleSchema.optional()}).strict().parse(req.body);
   const hash=c.password?await hashPassword(c.password):null;
-  return db.transaction(()=>{requireOwner(db,req,now());const m=db.prepare('SELECT role,disabled_at FROM team_members WHERE owner_id=? AND id=?').get(s.owner_id,id) as {role:Role;disabled_at:number|null}|undefined;
+  return db.transaction(()=>{requireOwner(db,req,now());const m=db.prepare('SELECT CASE role WHEN \'employee\' THEN \'worker\' ELSE role END AS role,disabled_at FROM team_members WHERE owner_id=? AND id=?').get(s.owner_id,id) as {role:Role;disabled_at:number|null}|undefined;
    // The primary owner (id = business id) is recovered only by the server command; other owners are ordinary members.
    if(!m||id===s.owner_id)throw new ApiError(400,'INVALID_MEMBER','Choose a team member. Owner password recovery uses the secure server command.');
    const role=c.role??m.role,enabling=c.disabled===false&&m.disabled_at!==null,active=c.disabled===undefined?m.disabled_at===null:!c.disabled;

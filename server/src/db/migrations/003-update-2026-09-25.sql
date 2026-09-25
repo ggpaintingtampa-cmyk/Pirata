@@ -1,10 +1,12 @@
 -- Version 3 (update 2026-09-25): four roles, three-level tasks with completion records, day lists, questions,
 -- day notes, project lifecycle + sales fields + facts, work shifts + pay rates, material requests, tool sign-outs,
 -- broken reports, per-user cleanup cycles, nested templates, file tags + comments, user locale.
+-- Historical values are never rewritten (the publisher compares every original column): the legacy role 'employee'
+-- and project status 'open' stay valid in the schema and are read as 'worker' / 'scheduled' by the application.
 
 -- team_members: roles + locale (rebuild; a CHECK constraint cannot change in place)
-CREATE TABLE team_members_new (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id), name TEXT NOT NULL, username TEXT NOT NULL COLLATE NOCASE UNIQUE, role TEXT NOT NULL CHECK(role IN ('owner','manager','sales','worker')), password_hash TEXT NOT NULL, disabled_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, locale TEXT NOT NULL DEFAULT 'en' CHECK(locale IN ('en','es')), UNIQUE(owner_id,id)) STRICT;
-INSERT INTO team_members_new (id,owner_id,name,username,role,password_hash,disabled_at,created_at,updated_at) SELECT id,owner_id,name,username,CASE role WHEN 'employee' THEN 'worker' ELSE role END,password_hash,disabled_at,created_at,updated_at FROM team_members;
+CREATE TABLE team_members_new (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id), name TEXT NOT NULL, username TEXT NOT NULL COLLATE NOCASE UNIQUE, role TEXT NOT NULL CHECK(role IN ('owner','manager','sales','worker','employee')), password_hash TEXT NOT NULL, disabled_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, locale TEXT NOT NULL DEFAULT 'en' CHECK(locale IN ('en','es')), UNIQUE(owner_id,id)) STRICT;
+INSERT INTO team_members_new (id,owner_id,name,username,role,password_hash,disabled_at,created_at,updated_at) SELECT id,owner_id,name,username,role,password_hash,disabled_at,created_at,updated_at FROM team_members;
 DROP TRIGGER owners_team_insert;
 DROP TRIGGER owners_team_password;
 DROP TABLE team_members;
@@ -43,7 +45,7 @@ CREATE TABLE projects_new (
   client_name TEXT NOT NULL CHECK(length(client_name) BETWEEN 0 AND 100),
   address TEXT NOT NULL CHECK(length(address) BETWEEN 0 AND 300),
   note TEXT NOT NULL CHECK(length(note) BETWEEN 0 AND 1000),
-  status TEXT NOT NULL CHECK(status IN ('draft','sold','scheduled','completed')),
+  status TEXT NOT NULL CHECK(status IN ('draft','sold','scheduled','completed','open')),
   start_date TEXT CHECK(start_date IS NULL OR length(start_date)=10),
   end_date TEXT CHECK(end_date IS NULL OR length(end_date)=10),
   sales_price_cents INTEGER CHECK(sales_price_cents IS NULL OR sales_price_cents BETWEEN 0 AND 9007199254740991),
@@ -58,7 +60,7 @@ CREATE TABLE projects_new (
   PRIMARY KEY(owner_id,id),
   FOREIGN KEY(owner_id,client_id) REFERENCES clients(owner_id,id)
 ) STRICT;
-INSERT INTO projects_new (id,owner_id,created_at,updated_at,name,client_id,client_name,address,note,status) SELECT id,owner_id,created_at,updated_at,name,client_id,client_name,address,note,CASE status WHEN 'open' THEN 'scheduled' ELSE status END FROM projects;
+INSERT INTO projects_new (id,owner_id,created_at,updated_at,name,client_id,client_name,address,note,status) SELECT id,owner_id,created_at,updated_at,name,client_id,client_name,address,note,status FROM projects;
 DROP TABLE projects;
 ALTER TABLE projects_new RENAME TO projects;
 CREATE INDEX projects_client_id_idx ON projects(owner_id,client_id);

@@ -52,7 +52,7 @@ test('the owner plans a worker’s day; the worker sees the ordered tree, comple
   await expect(cards.nth(1)).toContainText('Be careful');
   await expect(cards.nth(1)).toContainText('Use delicate tape');
   await phone.getByRole('button',{name:'Use delicate tape',exact:true}).click();
-  await expect(cards.nth(1)).toContainText('1 of 2 steps done');
+  await expect(cards.nth(1)).toHaveClass(/is-done/);
   await cards.nth(1).getByRole('button',{name:'Details'}).click();
   await phone.getByRole('button',{name:'Ask a question'}).click();
   await phone.getByLabel('Your question').fill('Which tape for the delicate paint?');
