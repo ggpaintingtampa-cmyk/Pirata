@@ -1,0 +1,41 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, expect, it } from 'vitest';
+import { migrate, migrations, openDatabase } from '../src/db/database.js';
+let directory='';
+afterEach(()=>{if(directory)rmSync(directory,{recursive:true,force:true});directory='';});
+it('003 maps employees to workers, open projects to scheduled, records completion, day lists and received requests',()=>{
+  directory=mkdtempSync(join(tmpdir(),'pirata-migration-'));
+  const db=openDatabase(join(directory,'v2.sqlite'),{create:true,applyMigrations:false});
+  const steps=migrations();expect(steps.length).toBeGreaterThanOrEqual(3);
+  migrate(db,steps.slice(0,2));
+  const now=1_790_000_000_000;
+  db.prepare("INSERT INTO owners (id,singleton,password_hash,created_at,updated_at) VALUES ('biz',1,'hash',?,?)").run(now,now);
+  db.prepare("INSERT INTO data_revisions (owner_id,revision) VALUES ('biz',0)").run();
+  db.prepare("INSERT INTO team_members VALUES ('jose','biz','Jose','jose','employee','hash',NULL,?,?)").run(now,now);
+  db.prepare("INSERT INTO clients (id,owner_id,created_at,updated_at,name,phone,email,note,archived_at) VALUES ('c','biz',?,?,'Client','','','',NULL)").run(now,now);
+  db.prepare("INSERT INTO projects (id,owner_id,created_at,updated_at,name,client_id,client_name,address,note,status) VALUES ('p','biz',?,?,'Job','c','Client','','','open')").run(now,now);
+  const task=db.prepare("INSERT INTO tasks (id,owner_id,created_at,updated_at,project_id,title,estimated_minutes,status,note,parent_task_id,assignee_id,assignment_explicit,archived_at) VALUES (?,'biz',?,?,'p',?,0,?,'',NULL,'jose',1,NULL)");
+  task.run('t1',now,now,'Prep','done');task.run('t2',now+1,now+1,'Paint','open');
+  db.prepare("INSERT INTO daily_goals (id,owner_id,created_at,updated_at,date,user_id,task_id,position) VALUES ('g','biz',?,?,'2026-09-25','jose','t2',0)").run(now,now);
+  db.prepare("INSERT INTO shopping_items (id,owner_id,created_at,updated_at,title,note,project_id,source_note_id,checked_at,created_by) VALUES ('s','biz',?,?,'Primer','','p',NULL,?,'jose')").run(now,now,now);
+  db.prepare("INSERT INTO equipment (id,owner_id,created_at,updated_at,name,note,archived_at,cleaning_minutes,max_cleaning_delay_minutes) VALUES ('e','biz',?,?,'Sprayer','',NULL,30,4320)").run(now,now);
+  migrate(db);
+  expect(db.prepare("SELECT role,locale FROM team_members WHERE id='jose'").get()).toEqual({role:'worker',locale:'en'});
+  expect(db.prepare("SELECT role FROM team_members WHERE id='biz'").get()).toEqual({role:'owner'});
+  expect(db.prepare("SELECT status FROM projects WHERE id='p'").get()).toEqual({status:'scheduled'});
+  expect(db.prepare("SELECT completed_at,position,description FROM tasks WHERE id='t1'").get()).toEqual({completed_at:now,position:0,description:''});
+  expect(db.prepare("SELECT completed_at,position FROM tasks WHERE id='t2'").get()).toEqual({completed_at:null,position:1});
+  expect(db.prepare("SELECT project_id,task_id,user_id,created_by FROM day_assignments WHERE id='g'").get()).toEqual({project_id:'p',task_id:'t2',user_id:'jose',created_by:'jose'});
+  expect(db.prepare("SELECT received_at FROM shopping_items WHERE id='s'").get()).toEqual({received_at:now});
+  expect(db.prepare("SELECT requires_sign_out,status FROM equipment WHERE id='e'").get()).toEqual({requires_sign_out:0,status:'ok'});
+  expect(db.prepare('SELECT count(*) n FROM schema_versions').get()).toEqual({n:3});
+  // per-user cleanup cycles: two people may hold an open obligation on the same tool
+  const obligation=db.prepare("INSERT INTO cleanup_obligations (id,owner_id,created_at,updated_at,equipment_id,user_id,task_id,first_used_at,deadline_at,due_at,cleaning_minutes,completed_at) VALUES (?,'biz',?,?,'e',?,NULL,?,?,?,30,NULL)");
+  obligation.run('o1',now,now,'jose',now,now+10,now+5);obligation.run('o2',now,now,'biz',now,now+10,now+5);
+  expect(()=>obligation.run('o3',now,now,'jose',now,now+10,now+5)).toThrow();
+  // a second owner is allowed by the schema and the trigger keeps working
+  expect(()=>db.prepare("INSERT INTO team_members (id,owner_id,name,username,role,password_hash,disabled_at,created_at,updated_at) VALUES ('boss2','biz','Second','boss2','owner','hash',NULL,?,?)").run(now,now)).not.toThrow();
+  db.close();
+});

@@ -8,7 +8,7 @@ export function TeamSettings(app: ModuleProps) {
   const [name, setName] = useState(''), [username, setUsername] = useState(''), [password, setPassword] = useState('');
   const [selected, setSelected] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const members = app.snapshot.team ?? [];
-  const employeeCount = members.filter(member => member.role === 'employee' && !member.disabledAt).length;
+  const employeeCount = members.filter(member => member.role !== 'owner' && !member.disabledAt).length;
   async function save() {
     setBusy(true); setError('');
     try {
@@ -28,11 +28,11 @@ export function TeamSettings(app: ModuleProps) {
     <p className="team-description">One crew, individual accounts. Everyone shares the work and keeps their own timer.</p>
     <ul className="live-records team-member-list">{members.map(member => <li key={member.id}>
       <div className="team-member-heading"><span className={'team-member-avatar' + (member.role === 'owner' ? ' is-owner' : '')} aria-hidden="true">{member.name.slice(0, 1)}</span><div><strong>{member.name}</strong><p>{member.username} · {member.role}{member.disabledAt ? ' · Access disabled' : ''}</p></div>{member.role === 'owner' && <ShieldCheck size={18} className="team-owner-mark" aria-label="Workspace owner" />}</div>
-      {member.role === 'employee' && <div className="live-actions"><button disabled={busy} onClick={() => { setSelected(member.id); setPassword(''); }}><KeyRound size={15} aria-hidden="true" />Reset password</button><button disabled={busy} onClick={() => void disable(member.id, !member.disabledAt)}>{member.disabledAt ? 'Enable access' : 'Disable access'}</button></div>}
+      {member.role !== 'owner' && <div className="live-actions"><button disabled={busy} onClick={() => { setSelected(member.id); setPassword(''); }}><KeyRound size={15} aria-hidden="true" />Reset password</button><button disabled={busy} onClick={() => void disable(member.id, !member.disabledAt)}>{member.disabledAt ? 'Enable access' : 'Disable access'}</button></div>}
     </li>)}</ul>
     <form data-form-dirty={Boolean(name || username || password)} onSubmit={event => { event.preventDefault(); void save(); }}>
       <div className="team-form-heading"><UserPlus size={19} aria-hidden="true" /><h3>{selected ? 'Set a new employee password' : 'Add employee'}</h3></div>
-      <p className="team-form-help">{selected ? `Set a new password for ${members.find(member => member.id === selected)?.name ?? 'this employee'}.` : `${employeeCount} of 4 employee places in use. Share login details privately.`}</p>
+      <p className="team-form-help">{selected ? `Set a new password for ${members.find(member => member.id === selected)?.name ?? 'this employee'}.` : `${employeeCount} team members with access. Share login details privately.`}</p>
       {!selected && <div className="team-form-grid"><label>Name<input disabled={busy} required value={name} onChange={event => setName(event.target.value)} maxLength={100} /></label><label>Username<input disabled={busy} required autoCapitalize="none" autoComplete="off" spellCheck={false} pattern="[a-z0-9][a-z0-9._-]{1,39}" value={username} onChange={event => setUsername(event.target.value.toLowerCase())} /></label></div>}
       <label>Password (at least 15 characters)<input disabled={busy} required type="password" autoComplete="new-password" minLength={15} maxLength={128} value={password} onChange={event => setPassword(event.target.value)} /></label>
       <div className="live-actions"><button type="submit" className="primary" disabled={busy}>{busy ? 'Saving…' : selected ? 'Save new password' : 'Create employee'}</button>{selected && <button type="button" disabled={busy} onClick={() => { setSelected(''); setPassword(''); }}>Cancel reset</button>}</div>

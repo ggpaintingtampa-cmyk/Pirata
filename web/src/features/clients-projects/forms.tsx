@@ -35,8 +35,8 @@ export function ArchiveForm({ app, client, done }: FormProps & { client: Client 
   return <RecordForm app={app} initial={{}} fields={[]} command={() => ({ type: 'client.archive', id: client.id, archived })} message={archived ? 'Client archived. Project links preserved.' : 'Client restored.'} submitLabel={archived ? 'Archive client' : 'Restore client'} done={done}><p>{client.name}’s existing projects and contact history will remain available.</p></RecordForm>;
 }
 export function ProjectStatusForm({ app, project, done }: FormProps & { project: Project }) {
-  const summary = projectSummary(app.snapshot, project.id), complete = project.status === 'open';
-  return <RecordForm app={app} initial={{}} fields={[]} command={() => ({ type: 'project.setStatus', id: project.id, status: complete ? 'completed' : 'open' })} message={complete ? 'Project completed.' : 'Project reopened.'} submitLabel={complete ? 'Complete project' : 'Reopen project'} done={done}>
+  const summary = projectSummary(app.snapshot, project.id), complete = project.status !== 'completed';
+  return <RecordForm app={app} initial={{}} fields={[]} command={() => ({ type: 'project.setStatus', id: project.id, status: complete ? 'completed' : 'scheduled' })} message={complete ? 'Project completed.' : 'Project reopened.'} submitLabel={complete ? 'Complete project' : 'Reopen project'} done={done}>
     <p>{complete ? 'Complete' : 'Reopen'} {project.name}?</p>
     {complete && <div className="info-panel"><strong>{summary.outstanding.length} unfinished {summary.outstanding.length === 1 ? 'task' : 'tasks'}</strong><ul className="cp-simple-list">{summary.outstanding.map(task => <li key={task.id}>{task.title} · {task.status}</li>)}</ul>
       <p>{summary.reservations.length ? 'Reserved materials:' : 'No reserved materials.'}</p><ul className="cp-simple-list">{summary.reservations.map(r => { const m = app.snapshot.materials.find(m => m.id === r.materialId)!; return <li key={r.id}>{m.name}: {quantityLabel(r.reservedMinor, m.unit)}</li>; })}</ul>

@@ -279,7 +279,7 @@ test('project summary derives integer spending and time including the active int
   await openClients(page);
   const s = await snapshot(page), base = { createdAt: s.serverNow, updatedAt: s.serverNow };
   const fixture: BusinessSnapshot = { ...s,
-    projects: [{ ...base, id: 'summary-project', name: 'Summary job', clientId: null, clientName: '', address: '', note: '', status: 'open' }],
+    projects: [{ ...base, id: 'summary-project', name: 'Summary job', clientId: null, clientName: '', address: '', note: '', status: 'scheduled' }],
     tasks: [{ ...base, id: 'summary-task', projectId: 'summary-project', title: 'Paint', estimatedMinutes: 60, status: 'open', note: '' }],
     timeEntries: [{ ...base, id: 'summary-entry', taskId: 'summary-task', source: 'manual', date: businessDate(s.serverNow), durationSeconds: 1800, note: '' }],
     runningTimer: { taskId: 'summary-task', sessionId: 'summary-running', startedAt: s.serverNow - 120000 },

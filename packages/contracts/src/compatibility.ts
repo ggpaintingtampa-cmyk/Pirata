@@ -7,7 +7,7 @@ import type { BusinessSnapshot } from './index.js';
 export function toLegacyState(s:BusinessSnapshot):AppState {
   const base = ({id,createdAt}: {id:string;createdAt:number}) => ({id,createdAt});
   return validateState({schemaVersion:1,timezone:s.timezone,currency:s.currency,seededOn:businessDate(s.serverNow),
-    projects:s.projects.map(p=>({id:p.id,name:p.name,clientName:s.clients.find(c=>c.id===p.clientId)?.name||p.clientName||'General business',status:p.status})),
+    projects:s.projects.map(p=>({id:p.id,name:p.name,clientName:s.clients.find(c=>c.id===p.clientId)?.name||p.clientName||'General business',status:p.status==='completed'?'completed':'open'})),
     tasks:s.tasks.map(t=>({...base(t),projectId:t.projectId,title:t.title,estimatedMinutes:Math.max(1,t.estimatedMinutes),status:t.status,note:t.note})),
     objectives:s.objectives.map(o=>({id:o.id,date:o.date,title:o.title,taskId:o.taskId,status:o.status,note:o.note,rank:o.rank})),
     schedule:s.schedule.map(b=>({id:b.id,date:b.date,startMinute:b.startMinute,endMinute:b.endMinute,kind:b.kind,title:b.title,taskId:b.taskId})),

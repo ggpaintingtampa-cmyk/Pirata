@@ -1,3 +1,4 @@
+import { can } from '@pirata/contracts/permissions';
 import { useId, useState, type MouseEvent } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, DollarSign, MapPin, Pencil, Plus, Search, User, Users } from 'lucide-react';
 import type { Client, Lead, Project } from '@pirata/contracts/index';
@@ -30,7 +31,7 @@ function ClientDetails({ app, client, open }: { app: ModuleProps; client: Client
     {client.note && <p className="cp-note">{client.note}</p>}
     <div className="actions"><button className="secondary" data-navigate onClick={() => open({ kind: 'edit-client', id: client.id })}>Edit client</button><button className="secondary" data-navigate onClick={() => open({ kind: 'archive-client', id: client.id })}>{client.archivedAt === null ? 'Archive client' : 'Restore client'}</button></div>
     <div className="cp-section-heading"><h3>Projects</h3><button className="text-button" data-navigate onClick={() => open({ kind: 'new-project', clientId: client.id })}><Plus size={18} />Add project</button></div>
-    {projects.length ? <ul className="cp-records">{projects.map(project => <li key={project.id}><button className="cp-record" onClick={() => { open(null); app.onOpenProject(project.id); }}><span><strong>{project.name}</strong><small>{project.status === 'open' ? 'Open project' : 'Completed project'}</small></span><ChevronRight size={20} /></button></li>)}</ul> : <p className="empty-state">No projects for this client yet.</p>}
+    {projects.length ? <ul className="cp-records">{projects.map(project => <li key={project.id}><button className="cp-record" onClick={() => { open(null); app.onOpenProject(project.id); }}><span><strong>{project.name}</strong><small>{project.status !== 'completed' ? 'Open project' : 'Completed project'}</small></span><ChevronRight size={20} /></button></li>)}</ul> : <p className="empty-state">No projects for this client yet.</p>}
     <FilesPanel app={app} parentType="client" parentId={client.id} />
   </div>;
 }
@@ -47,7 +48,7 @@ function LeadDetails({ app, lead, open }: { app: ModuleProps; lead: Lead; open: 
 function FeatureDialog({ app, state, open }: { app: ModuleProps; state: DialogState; open: OpenDialog }) {
   const close = () => open(null), id = 'id' in state ? state.id : undefined;
   const client = app.snapshot.clients.find(c => c.id === id), lead = app.snapshot.leads.find(l => l.id === id), project = app.snapshot.projects.find(p => p.id === id);
-  const titles: Record<DialogState['kind'], string> = { client: 'Client details', 'edit-client': 'Edit client', 'archive-client': client?.archivedAt === null ? 'Archive client' : 'Restore client', lead: 'Lead details', 'edit-lead': 'Edit lead', 'follow-up': 'Record follow-up', convert: 'Convert lead to client', 'edit-project': 'Edit project', 'project-status': project?.status === 'open' ? 'Complete project' : 'Reopen project', 'new-client': 'Add client', 'new-lead': 'Add lead', 'new-project': 'Add project' };
+  const titles: Record<DialogState['kind'], string> = { client: 'Client details', 'edit-client': 'Edit client', 'archive-client': client?.archivedAt === null ? 'Archive client' : 'Restore client', lead: 'Lead details', 'edit-lead': 'Edit lead', 'follow-up': 'Record follow-up', convert: 'Convert lead to client', 'edit-project': 'Edit project', 'project-status': project && project.status !== 'completed' ? 'Complete project' : 'Reopen project', 'new-client': 'Add client', 'new-lead': 'Add lead', 'new-project': 'Add project' };
   let content;
   switch (state.kind) {
     case 'new-client': content = <ClientForm app={app} done={close} />; break;
@@ -89,9 +90,9 @@ export function ClientsView(app: ModuleProps) {
 export function ProjectsView(app: ModuleProps) {
   const [filter, setFilter] = useState<'open' | 'completed'>('open'), [query, setQuery] = useState('');
   const [dialog, open] = useState<DialogState | null>(null);
-  const projects = app.snapshot.projects.filter(project => project.status === filter && [project.name, project.address, contactName(app, project)].some(value => value.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
+  const projects = app.snapshot.projects.filter(project => (filter === 'completed' ? project.status === 'completed' : project.status !== 'completed') && [project.name, project.address, contactName(app, project)].some(value => value.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
   return <section className="cp-module cp-projects" aria-label="Projects"><header className="cp-header"><button className="secondary cp-project-add" onClick={() => open({ kind: 'new-project' })}><Plus size={16} aria-hidden="true" />Add project</button></header>
-    <div className="cp-project-controls"><div className="cp-tabs" role="group" aria-label="Project status">{(['open', 'completed'] as const).map(status => <button key={status} aria-pressed={filter === status} onClick={() => setFilter(status)}>{status === 'open' ? 'Open' : 'Completed'} <span>{app.snapshot.projects.filter(project => project.status === status).length}</span></button>)}</div>
+    <div className="cp-project-controls"><div className="cp-tabs" role="group" aria-label="Project status">{(['open', 'completed'] as const).map(status => <button key={status} aria-pressed={filter === status} onClick={() => setFilter(status)}>{status === 'open' ? 'Open' : 'Completed'} <span>{app.snapshot.projects.filter(project => (status === 'completed' ? project.status === 'completed' : project.status !== 'completed')).length}</span></button>)}</div>
     </div>
     <div className="field cp-project-search"><label htmlFor="cp-project-search">Search projects</label><Search size={18} aria-hidden="true" /><input id="cp-project-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Project, client or address" /></div>
     <p className="cp-eyebrow cp-project-list-label">YOUR WORK, TOGETHER</p>
@@ -116,7 +117,7 @@ export function ProjectDetail(app: ModuleProps) {
   const project = app.snapshot.projects.find(project => project.id === app.selection?.projectId);
   if (!project) return <section className="cp-module"><h1>Project unavailable</h1><p>Choose a saved project to see its details.</p><button className="secondary" onClick={app.onClose}>Back to projects</button></section>;
   const summary = projectSummary(app.snapshot, project.id), client = app.snapshot.clients.find(client => client.id === project.clientId);
-  const completion = projectCompletion(project.id, app.snapshot.tasks), owner = app.snapshot.currentUser?.role !== 'employee';
+  const completion = projectCompletion(project.id, app.snapshot.tasks), owner = can(app.snapshot.currentUser?.role, 'money.costs');
   const sections = [{ key: 'tasks', label: 'Tasks' }, { key: 'notes', label: 'Notes' }, { key: 'files', label: 'Files' }, { key: 'activity', label: 'Activity' }, ...(owner ? [{ key: 'purchases', label: 'Purchases' }] : [])];
   function jump(event: MouseEvent<HTMLAnchorElement>, key: string) {
     event.preventDefault();
@@ -126,7 +127,7 @@ export function ProjectDetail(app: ModuleProps) {
     section?.focus({ preventScroll: true });
   }
   return <section className="cp-module cp-project-detail" aria-label="Project details"><div className="cp-project-back-row"><button className="text-button cp-back" onClick={app.onClose}><ArrowLeft size={16} aria-hidden="true" />Back to projects</button><span>Overview</span></div>
-    <header className="cp-header"><div><span className="cp-badge">{project.status === 'open' ? 'Open project' : 'Completed project'}</span><h1>{project.name}</h1>{project.note && <p className="cp-note cp-project-intro">{project.note}</p>}</div></header>
+    <header className="cp-header"><div><span className="cp-badge">{project.status !== 'completed' ? 'Open project' : 'Completed project'}</span><h1>{project.name}</h1>{project.note && <p className="cp-note cp-project-intro">{project.note}</p>}</div></header>
     <nav className="cp-section-nav" aria-label="Project sections">{sections.map(({ key, label }) => <a key={key} aria-current={selectedSection === key ? 'location' : undefined} href={'#' + sectionId + '-' + key} onClick={event => jump(event, key)}>{label}</a>)}</nav>
     <div className="cp-project-context"><div className="cp-context-item"><div className="cp-context-label"><User size={16} aria-hidden="true" /><span>Client</span></div>{client ? <button className="cp-client-link" onClick={() => app.onOpenClient(client.id)}><span>{client.name}{client.archivedAt !== null ? ' (archived)' : ''}</span><ChevronRight size={16} aria-hidden="true" /></button> : <p>{project.clientName || 'No linked client'}</p>}</div>{project.address && <div className="cp-context-item"><div className="cp-context-label"><MapPin size={16} aria-hidden="true" /><span>Job address</span></div><p className="cp-note">{project.address}</p></div>}</div>
     <div className="cp-progress-card"><div className="cp-progress-heading"><h3>Project Progress</h3><strong>{completion === null ? 'Ready to plan' : completionPercent(completion) + '%'}</strong></div>{completion !== null && <progress max={1} value={completion} aria-label="Project completion" />}<dl className="cp-project-totals"><div><dt><Clock3 size={14} aria-hidden="true" />Logged time:</dt><dd>{formatDuration(summary.loggedMs)}</dd></div>{owner && <div><dt><DollarSign size={14} aria-hidden="true" />Spending:</dt><dd>{formatMoney(summary.spendingCents)}</dd></div>}</dl></div>
@@ -137,7 +138,7 @@ export function ProjectDetail(app: ModuleProps) {
     <section className="cp-project-section" id={sectionId + '-files'} aria-label="Files section" tabIndex={-1}><FilesPanel app={app} parentType="project" parentId={project.id} /></section>
     <section className="cp-project-section" id={sectionId + '-activity'} aria-label="Activity section" tabIndex={-1}><UpdatesPanel app={app} projectId={project.id} /></section>
     {owner && <section className="cp-project-section cp-surface" id={sectionId + '-purchases'} aria-label="Purchases section" tabIndex={-1}><div className="cp-section-heading"><h3>Purchases</h3><button className="text-button" onClick={() => app.onAddExpense(project.id)}><Plus size={18} />Add expense</button></div>{summary.expenses.length ? <ul className="cp-records">{[...summary.expenses].sort((a, b) => b.createdAt - a.createdAt).map(expense => <li key={expense.id}><button className="cp-record" onClick={() => app.onOpenExpense(expense.id)}><span><strong>{expense.description}</strong><small>{expense.purchaseDate}</small></span><strong>{formatMoney(expense.amountCents)}</strong></button></li>)}</ul> : <p className="empty-state">No purchases recorded for this project.</p>}</section>}
-    <footer className="cp-project-footer"><p className="muted">{project.status === 'open' ? 'All set with this job?' : 'More work to do on this job?'}</p><button className="secondary" onClick={() => open({ kind: 'project-status', id: project.id })}><Check size={18} aria-hidden="true" />{project.status === 'open' ? 'Complete project' : 'Reopen project'}</button></footer>
+    <footer className="cp-project-footer"><p className="muted">{project.status !== 'completed' ? 'All set with this job?' : 'More work to do on this job?'}</p><button className="secondary" onClick={() => open({ kind: 'project-status', id: project.id })}><Check size={18} aria-hidden="true" />{project.status !== 'completed' ? 'Complete project' : 'Reopen project'}</button></footer>
     {dialog && <FeatureDialog app={app} state={dialog} open={open} />}
   </section>;
 }

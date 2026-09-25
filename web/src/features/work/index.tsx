@@ -1,3 +1,4 @@
+import { can } from '@pirata/contracts/permissions';
 import { useState } from 'react';
 import { ArrowUpRight, CheckCheck, ChevronRight, CornerDownRight, FolderOpen, ListChecks, Plus, Sparkles, Target } from 'lucide-react';
 import type { Task } from '@pirata/contracts/index';
@@ -40,7 +41,7 @@ function MyTasksSection({ app, userId }: { app:ModuleProps; userId:string }) {
   // Keep the dialog through refresh/retry, but use reviewed current fields after a conflict.
   const assigning=assignmentDraft?(app.snapshot.tasks.find(task=>task.id===assignmentDraft.id)??assignmentDraft):null;
   const [collapsed,setCollapsed]=useState<Set<string>>(()=>new Set());
-  const owner=app.snapshot.currentUser?.role==='owner';
+  const owner=can(app.snapshot.currentUser?.role,'plan.others');
   const tasks=selectWorkTasks(app.snapshot,app.businessDate,filters);
   const groups=owner?groupWorkTasks(app.snapshot,tasks):[{id:userId,name:'Your tasks',tasks}].filter(group=>group.tasks.length);
   const setFilter=<K extends keyof WorkTaskFilters>(key:K,value:WorkTaskFilters[K])=>setFilters(previous=>({...previous,[key]:value}));
@@ -71,7 +72,7 @@ export function WorkView(app: ModuleProps & { onOpenProjects?():void; onOpenTask
   const goals=(app.snapshot.dailyGoals??[]).filter(goal=>goal.userId===person?.id&&goal.date===app.businessDate).sort((a,b)=>a.position-b.position);
   const fraction=dailyCompletion(goals.map(goal=>goal.taskId),app.snapshot.tasks);
   const current=app.snapshot.tasks.find(task=>task.id===app.snapshot.runningTimer?.taskId);
-  const projects=app.snapshot.projects.filter(project=>project.status==='open');
+  const projects=app.snapshot.projects.filter(project=>project.status!=='completed');
   const unfiled=app.snapshot.tasks.filter(task=>!task.archivedAt&&!task.parentTaskId&&!task.projectId&&task.status!=='done'&&!goals.some(goal=>goal.taskId===task.id)&&(!task.assigneeId||task.assigneeId===person?.id));
   return <div className="work-home work-module">
     <div className="work-focus-grid"><section className="daily-success" aria-label="Daily progress"><div className="work-section-heading"><div className="work-section-title"><h2>Today’s goals</h2></div>{goals.length>0&&<span className="work-small-label">{goals.length} {goals.length===1?'goal':'goals'} · equally weighted</span>}</div>
@@ -96,7 +97,7 @@ export function ProgressView(app: ModuleProps) {
   const team=(app.snapshot.team??[]).filter(person=>!person.disabledAt);
   const planned=team.map(person=>dailyCompletion((app.snapshot.dailyGoals??[]).filter(goal=>goal.userId===person.id&&goal.date===date).map(goal=>goal.taskId),app.snapshot.tasks)).filter((fraction):fraction is number=>fraction!==null);
   const average=planned.length?planned.reduce((sum,fraction)=>sum+fraction,0)/planned.length:null;
-  const projects=app.snapshot.projects.filter(project=>project.status==='open');
+  const projects=app.snapshot.projects.filter(project=>project.status!=='completed');
   return <section className="work-module progress-team"><div className="work-section-heading"><h2 className="progress-section-label">Daily team progress</h2><label className="work-field">Progress date<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label></div>
     <div className="progress-summary">{average!==null?<><CompletionRing fraction={average} label="Team daily completion" success/><div><h3>{average===1?'A day well done, together.':'Every step moves us forward.'}</h3><p>Average completion for {planned.length} {planned.length===1?'person':'people'} with daily goals on this date.</p></div></>:<div><h3>Make room for a good day.</h3><p>Choose daily goals below to start seeing the team’s progress.</p></div>}</div>
     <div className="progress-people">{(app.snapshot.team??[]).filter(person=>!person.disabledAt).map(person=>{

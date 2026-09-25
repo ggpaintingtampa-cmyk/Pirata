@@ -3,6 +3,7 @@ import { mutationRequestSchema, mutationResultSchema, type MutationRequest, type
 import type { Sqlite } from '../db/database.js';
 import { Repositories } from './repositories.js';
 import { ApiError } from './errors.js';
+import { COMMAND_CAPABILITY, can, type Role } from '@pirata/contracts/permissions';
 import { invokeHandler, type HandlerResult, type PartialHandlers } from './context.js';
 export function canonical(value:unknown):string {
   if(value===null||typeof value!=='object')return JSON.stringify(value);
@@ -10,9 +11,10 @@ export function canonical(value:unknown):string {
   return '{'+Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([k,v])=>JSON.stringify(k)+':'+canonical(v)).join(',')+'}';
 }
 export function revision(db:Sqlite,ownerId:string):number {const row=db.prepare('SELECT revision FROM data_revisions WHERE owner_id=?').get(ownerId) as {revision:number}|undefined;if(!row)throw new ApiError(401,'UNAUTHENTICATED','Sign in required.');return row.revision;}
-export function executeCommand(db:Sqlite,ownerId:string,input:MutationRequest,handlers:PartialHandlers,now:()=>number=Date.now,userId=ownerId,role:'owner'|'employee'='owner'):MutationResult {
+export function executeCommand(db:Sqlite,ownerId:string,input:MutationRequest,handlers:PartialHandlers,now:()=>number=Date.now,userId=ownerId,role:Role='owner'):MutationResult {
   const request=mutationRequestSchema.parse(input);
-  if(role!=='owner'&&(request.command.type.startsWith('expense.')||request.command.type==='settings.update'))throw new ApiError(403,'FORBIDDEN','Only the owner can access this information.');
+  const capability=COMMAND_CAPABILITY[request.command.type];
+  if(capability&&!can(role,capability))throw new ApiError(403,'FORBIDDEN','You do not have permission for this action.');
   const fingerprint=createHash('sha256').update(canonical(request)).digest('hex');
   return db.transaction(()=>{
     const previous=db.prepare('SELECT fingerprint,result_json,user_id FROM command_receipts WHERE owner_id=? AND request_id=?').get(ownerId,request.requestId) as {fingerprint:string;result_json:string;user_id:string}|undefined;

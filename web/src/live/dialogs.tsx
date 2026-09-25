@@ -1,5 +1,9 @@
-import { useState, useRef } from 'react';
-import { CalendarDays, Check, ChevronRight, CircleDollarSign, ClipboardList, Clock3, PackagePlus, Pause, Pencil, Play, Plus, UserPlus } from 'lucide-react';
+import { Suspense, useState, useRef } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { can } from '@pirata/contracts/permissions';
+import { dialogRegistry, type RegisteredDialogName } from './dialogRegistry';
+import { useT } from '../i18n';
+import { CalendarDays, Check, ChevronRight, CircleDollarSign, ClipboardList, Clock3, Folder, MessageSquare, PackagePlus, Pause, Pencil, Play, Plus, UserPlus, Wrench } from 'lucide-react';
 import type { BusinessCommand, TimeEntry } from '@pirata/contracts/index';
 import { toLegacyState } from '@pirata/contracts/compatibility';
 import { actualTaskTime, estimateVariance } from '@pirata/domain/domain/selectors';
@@ -14,10 +18,10 @@ import { ScheduleTaskDialog } from '../features/planning';
 import { ExpenseForm } from '../features/spending';
 import { MaterialDetail, MaintenanceDetail } from '../features/inventory';
 import { FollowUpForm } from '../features/clients-projects/forms';
-export type Dialog = {kind:'quick'|'task-new'|'expense'|'task'|'task-edit'|'plan'|'time'|'time-edit'|'manual'|'material'|'maintenance'|'adjustment'|'lead'|'follow-up'|'objectives';id?:string;projectId?:string;parentTaskId?:string;fromQuick?:boolean;focusChoice?:string}|{kind:'action';title:string;command:BusinessCommand;description:string};
+export type Dialog = {kind:'quick'|'task-new'|'expense'|'task'|'task-edit'|'plan'|'time'|'time-edit'|'manual'|'material'|'maintenance'|'adjustment'|'lead'|'follow-up'|'objectives'|'registry';id?:string;projectId?:string;parentTaskId?:string;fromQuick?:boolean;focusChoice?:string;name?:RegisteredDialogName}|{kind:'action';title:string;command:BusinessCommand;description:string};
 type Props={app:ModuleProps;dialog:Dialog;open(d:Dialog|null,confirmedClose?:boolean):void;now:number};
 export function LiveDialogs({app,dialog:d,open,now}:Props){
- const leadName=useRef('');
+ const leadName=useRef(''),t=useT();
  // Cancel goes up one Add level; a confirmed save still returns to the workspace.
  const fromQuick='fromQuick' in d&&d.fromQuick, backLabel=fromQuick?'Back to Add menu':undefined;
  const done=()=>open(null),close=()=>open(fromQuick?{kind:'quick',focusChoice:d.kind,projectId:d.projectId,parentTaskId:d.parentTaskId}:null,true),task=app.snapshot.tasks.find(t=>'id' in d&&t.id===d.id),selection='id' in d?d.id:undefined;
@@ -30,7 +34,13 @@ export function LiveDialogs({app,dialog:d,open,now}:Props){
  if(d.kind==='material')return <MaterialDetail {...app} selection={{materialId:d.id}} onClose={close}/>;
  if(d.kind==='maintenance')return <MaintenanceDetail {...app} selection={{maintenanceId:d.id}} onClose={close}/>;
  if(d.kind==='action')return <WorkDialog title={d.title} onClose={close}><WorkForm app={app} initial={{startedAt:new Date(app.snapshot.runningTimer?.startedAt??now).toISOString()}} command={v=>d.command.type==='timer.correctStart'?{...d.command,startedAt:Date.parse(v.startedAt)}:d.command} message={d.title+' saved.'} done={done} submitLabel={'Confirm '+d.title.toLowerCase()}>{draft=><><p>{d.description}</p>{d.command.type==='timer.correctStart'&&draft.field('startedAt','Corrected start (ISO timestamp)',{hint:'Include Z or an explicit timezone offset. Server time: '+new Date(now).toISOString()})}</>}</WorkForm></WorkDialog>;
- if(d.kind==='quick')return <WorkDialog title="Quick Add" onClose={close} initialFocusSelector={d.focusChoice?'[data-quick-kind="'+d.focusChoice+'"]':undefined}><div className="quick-choices">{([['task-new','Task','Plan a piece of work'],['expense','Expense','Record a purchase'],['manual','Time entry','Record completed work'],['adjustment','Material adjustment','Restock, usage or correction'],['lead','Lead','Keep a new enquiry']] as const).filter(([kind])=>kind!=='expense'||app.snapshot.currentUser?.role!=='employee').map(([kind,title,detail])=>{const Icon=kind==='task-new'?ClipboardList:kind==='expense'?CircleDollarSign:kind==='manual'?Clock3:kind==='adjustment'?PackagePlus:UserPlus;return <button key={kind} data-quick-kind={kind} onClick={()=>open({kind,fromQuick:true,projectId:d.projectId,parentTaskId:d.parentTaskId})}><Icon size={22} aria-hidden="true"/><span><strong>{title}</strong><small>{detail}</small></span><ChevronRight size={17} aria-hidden="true"/></button>;})}</div></WorkDialog>;
+ if(d.kind==='registry'&&d.name){const Registered=dialogRegistry[d.name];return <Suspense fallback={null}><Registered app={app} projectId={d.projectId} taskId={d.id} onClose={close} onDone={done}/></Suspense>;}
+ if(d.kind==='quick'){
+  // Explicit Add menu (update 2026-09-25): one tap per record type, no 'Back to Add menu' step. Chunk dialogs come from dialogRegistry.
+  const role=app.snapshot.currentUser?.role;
+  const entries:[Dialog,string,LucideIcon][]=[[{kind:'task-new',projectId:d.projectId,parentTaskId:d.parentTaskId},'task',ClipboardList],[{kind:'registry',name:'project-new'},'project',Folder],[{kind:'registry',name:'material-request',projectId:d.projectId},'materialRequest',PackagePlus],[{kind:'registry',name:'shift',projectId:d.projectId},'shift',Clock3],[{kind:'registry',name:'tool-signout',projectId:d.projectId},'toolSignOut',Wrench],[{kind:'registry',name:'question',projectId:d.projectId},'question',MessageSquare],...(can(role,'money.costs')?[[{kind:'expense',projectId:d.projectId},'expense',CircleDollarSign] as [Dialog,string,LucideIcon]]:[]),[{kind:'lead'},'lead',UserPlus]];
+  return <WorkDialog title={t('shell.add.title')} onClose={close} initialFocusSelector={d.focusChoice?'[data-quick-kind="'+d.focusChoice+'"]':undefined}><div className="quick-choices">{entries.map(([target,label,Icon])=><button key={label} data-quick-kind={label} onClick={()=>open(target)}><Icon size={22} aria-hidden="true"/><span><strong>{t('shell.add.'+label)}</strong><small>{t('shell.add.'+label+'.desc')}</small></span><ChevronRight size={17} aria-hidden="true"/></button>)}</div></WorkDialog>;
+ }
  if(d.kind==='objectives')return <ObjectivesForm app={app} close={close}/>;
  if(d.kind==='task'){
   if(!task)return <WorkDialog title="Task unavailable" onClose={close}><p>Refresh to load the latest records.</p></WorkDialog>;

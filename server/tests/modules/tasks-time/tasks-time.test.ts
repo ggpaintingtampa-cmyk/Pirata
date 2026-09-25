@@ -129,7 +129,7 @@ it('rejects other-owner task/project/entry references', async () => {
   f.db.pragma('ignore_check_constraints = ON');
   try { f.db.prepare('INSERT INTO owners VALUES (?,?,?,?,?)').run('other', 2, 'fixture-only', NOW, NOW); } finally { f.db.pragma('ignore_check_constraints = OFF'); }
   const repo = new Repositories(f.db, 'other'), base = { createdAt: NOW, updatedAt: NOW };
-  repo.insert('projects', { ...base, id: 'foreign-project', name: 'Other', clientId: null, clientName: '', address: '', note: '', status: 'open' });
+  repo.insert('projects', { ...base, id: 'foreign-project', name: 'Other', clientId: null, clientName: '', address: '', note: '', status: 'scheduled' });
   repo.insert('tasks', { ...base, id: 'foreign-task', title: 'Other', projectId: null, estimatedMinutes: 10, status: 'open', note: '' });
   repo.insert('time_entries', { ...base, id: 'foreign-entry', taskId: 'foreign-task', source: 'manual', date: '2026-09-17', durationSeconds: 60, note: '' });
   const commands: BusinessCommand[] = [

@@ -30,7 +30,7 @@ export const handlers = {
   'project.create': (ctx, c) => {
     // Linked clients supply their own display name. Unlinked imported names are retained.
     const clientName = c.clientId === null ? c.clientName : ctx.repo.require('clients', c.clientId).name;
-    const project = { ...record(ctx), name: c.name, clientId: c.clientId, clientName, address: c.address, note: c.note, status: 'open' as const };
+    const project = { ...record(ctx), name: c.name, clientId: c.clientId, clientName, address: c.address, note: c.note, status: 'scheduled' as const };
     ctx.repo.insert('projects', project);
     return result('project', project.id);
   },
