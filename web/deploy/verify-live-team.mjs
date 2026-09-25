@@ -111,7 +111,7 @@ try {
     await page.getByRole('dialog').getByRole('button', { name: 'Close dialog', exact: true }).click();
   }
   for (const [route, heading] of [['files', 'Files.'], ['ask', 'Ask.'], ['updates', 'Updates.'], ['progress', 'Progress.'], ['settings', 'Workday settings.'],
-    ['materials', 'Materials requests.'], ['tools', 'Tools.'], ['hours', 'Hours.'], ['pay', 'Pay rates.'], ['report', 'Daily report.'], ['insights', 'Project insights.'], ['templates', 'Templates.'], ['team', 'Team accounts.']]) {
+    ['materials', 'Materials requests.'], ['tools', 'Tools.'], ['hours', 'Hours.'], ['pay', 'Pay rates.'], ['report', 'Daily report.'], ['insights', 'Project insights.'], ['templates', 'Templates.'], ['team', 'Team accounts.'], ['trash', 'Deleted items.']]) {
     phase = 'read-only route ' + route;
     await page.goto(origin + '/#/' + route);
     await page.getByRole('heading', { name: heading, exact: true }).waitFor();

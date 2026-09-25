@@ -3,6 +3,10 @@ import type { Sqlite } from '../db/database.js';
 import { notFound } from './errors.js';
 export interface Tables {clients:D.Client;projects:D.Project;tasks:D.Task;objectives:D.Objective;schedule_blocks:D.ScheduleBlock;time_entries:D.TimeEntry;expenses:D.Expense;materials:D.Material;material_requirements:D.MaterialRequirement;material_adjustments:D.MaterialAdjustment;equipment:D.Equipment;maintenance_items:D.MaintenanceItem;leads:D.LeadRecord;lead_follow_ups:D.LeadFollowUp;daily_goals:D.DailyGoal;task_templates:D.TaskTemplate;attachments:D.StoredAttachment;activity:D.Activity;project_notes:D.ProjectNote;shopping_items:D.ShoppingItem;cleanup_obligations:D.CleanupObligation;cleanup_snoozes:D.CleanupSnooze;day_assignments:D.DayAssignment;task_questions:D.TaskQuestion;day_notes:D.DayNote;project_templates:D.ProjectTemplate;project_facts:D.ProjectFact;pay_rates:D.PayRate;work_shifts:D.WorkShift;tool_sign_outs:D.ToolSignOut;equipment_reports:D.EquipmentReport;attachment_tags:D.AttachmentTag;attachment_comments:D.AttachmentComment}
 export type TableName=keyof Tables;
+/** Tables whose rows can be deleted into the Trash (migration 004). Ordinary reads skip deleted rows; only the trash module uses the *Deleted methods. */
+export const DELETABLE=new Set<TableName>(['projects','tasks','clients','leads','expenses','shopping_items','tool_sign_outs','task_questions','work_shifts','task_templates','project_templates','equipment','materials','maintenance_items','equipment_reports','project_notes']);
+export interface DeletionMark {deletedAt:number;deletedBy:string|null;deletedWith:string|null}
+const DELETION_COLUMNS=new Set(['deleted_at','deleted_by','deleted_with']);
 export type MutablePatch<T> = T extends unknown ? Partial<Omit<T,'id'|'createdAt'>> : never;
 export const TABLES:TableName[]=['clients','projects','tasks','objectives','schedule_blocks','time_entries','expenses','materials','material_requirements','material_adjustments','equipment','maintenance_items','leads','lead_follow_ups','daily_goals','task_templates','attachments','activity','project_notes','shopping_items','cleanup_obligations','cleanup_snoozes','day_assignments','task_questions','day_notes','project_templates','project_facts','pay_rates','work_shifts','tool_sign_outs','equipment_reports','attachment_tags','attachment_comments'];
 const snake=(s:string)=>s.replace(/[A-Z]/g,c=>'_'+c.toLowerCase());
@@ -10,11 +14,11 @@ const camel=(s:string)=>s.replace(/_([a-z])/g,(_,c:string)=>c.toUpperCase());
 /** Migration 003 keeps historical values untouched; legacy vocabularies are interpreted on read (writes use the current ones). */
 export function normalizeRole<T extends string>(role:T|'employee'):T|'worker' {return role==='employee'?'worker':role;}
 export function normalizeProjectStatus<T extends string>(status:T|'open'):T|'scheduled' {return status==='open'?'scheduled':status;}
-function decode<T>(raw:unknown,table?:TableName):T {
+function decode<T>(raw:unknown,table?:TableName,keepDeletion=false):T {
   const record=raw as Record<string,unknown>;
   if(table==='projects'&&record.status==='open')record.status='scheduled';
   if(typeof record.role==='string')record.role=normalizeRole(record.role);
-  return Object.fromEntries(Object.entries(record).filter(([key,v])=>key!=='owner_id'&&!(record.source==='timer'&&['date','duration_seconds'].includes(key))&&!(record.source==='manual'&&['started_at','ended_at'].includes(key))&&v!==undefined).map(([k,v])=>[camel(k),v])) as T;
+  return Object.fromEntries(Object.entries(record).filter(([key,v])=>key!=='owner_id'&&(keepDeletion||!DELETION_COLUMNS.has(key))&&!(record.source==='timer'&&['date','duration_seconds'].includes(key))&&!(record.source==='manual'&&['started_at','ended_at'].includes(key))&&v!==undefined).map(([k,v])=>[camel(k),v])) as T;
 }
 /** These repositories capture ownerId; no public method can change ownership or commit. */
 export class Repositories {
@@ -23,8 +27,15 @@ export class Repositories {
   #assertActive(){if(!this.#active())throw new Error('Transaction context is no longer active');}
   #table(table:TableName){this.#assertActive();if(!TABLES.includes(table))throw new Error('Unknown table');return table;}
   #columns(table:TableName,record:object){const allowed=new Set((this.#db.prepare(`PRAGMA table_info(${this.#table(table)})`).all() as {name:string}[]).map(c=>c.name));const keys=Object.keys(record).map(snake);if(keys.some(k=>k==='owner_id'||!allowed.has(k)))throw new Error('Unknown record field');return keys;}
-  list<K extends TableName>(table:K):Tables[K][]{return this.#db.prepare(`SELECT * FROM ${this.#table(table)} WHERE owner_id=? ORDER BY created_at,id`).all(this.#ownerId).map(r=>decode<Tables[K]>(r,table));}
-  get<K extends TableName>(table:K,id:string):Tables[K]|undefined {const row=this.#db.prepare(`SELECT * FROM ${this.#table(table)} WHERE owner_id=? AND id=?`).get(this.#ownerId,id);return row?decode<Tables[K]>(row,table):undefined;}
+  #live(table:TableName){return DELETABLE.has(table)?' AND deleted_at IS NULL':'';}
+  list<K extends TableName>(table:K):Tables[K][]{return this.#db.prepare(`SELECT * FROM ${this.#table(table)} WHERE owner_id=?${this.#live(table)} ORDER BY created_at,id`).all(this.#ownerId).map(r=>decode<Tables[K]>(r,table));}
+  get<K extends TableName>(table:K,id:string):Tables[K]|undefined {const row=this.#db.prepare(`SELECT * FROM ${this.#table(table)} WHERE owner_id=? AND id=?${this.#live(table)}`).get(this.#ownerId,id);return row?decode<Tables[K]>(row,table):undefined;}
+  #deletable(table:TableName){if(!DELETABLE.has(this.#table(table)))throw new Error('Table has no Trash');return table;}
+  /** Rows in the Trash, newest first (top-level and cascaded alike). */
+  listDeleted<K extends TableName>(table:K):(Tables[K]&DeletionMark)[]{return this.#db.prepare(`SELECT * FROM ${this.#deletable(table)} WHERE owner_id=? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC,id`).all(this.#ownerId).map(r=>decode<Tables[K]&DeletionMark>(r,table,true));}
+  getDeleted<K extends TableName>(table:K,id:string):(Tables[K]&DeletionMark)|undefined {const row=this.#db.prepare(`SELECT * FROM ${this.#deletable(table)} WHERE owner_id=? AND id=? AND deleted_at IS NOT NULL`).get(this.#ownerId,id);return row?decode<Tables[K]&DeletionMark>(row,table,true):undefined;}
+  /** Move a row into the Trash (mark) or bring it back (null): the only writes that touch deleted rows. */
+  markDeleted(table:TableName,id:string,mark:DeletionMark|null):void {this.#assertActive();this.#db.prepare(`UPDATE ${this.#deletable(table)} SET deleted_at=?,deleted_by=?,deleted_with=? WHERE owner_id=? AND id=?`).run(mark?.deletedAt??null,mark?.deletedBy??null,mark?.deletedWith??null,this.#ownerId,id);}
   require<K extends TableName>(table:K,id:string):Tables[K]{return this.get(table,id)??notFound();}
   insert<K extends TableName>(table:K,record:Tables[K]):void {if(table==='time_entries')record={...record,userId:this.#userId};const keys=this.#columns(table,record);this.#db.prepare(`INSERT INTO ${this.#table(table)} (owner_id,${keys.join(',')}) VALUES (?,${keys.map(()=>'?').join(',')})`).run(this.#ownerId,...Object.values(record));}
   update<K extends TableName>(table:K,id:string,patch:MutablePatch<Tables[K]>):void {

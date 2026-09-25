@@ -1,0 +1,9 @@
+/* Delete option (2026-09-25): one quiet destructive control and the Deleted items page. */
+.delete-button{display:inline-flex;align-items:center;gap:6px;color:var(--color-danger,#e5484d);background:transparent;border:1px solid color-mix(in srgb,var(--color-danger,#e5484d) 45%,transparent);border-radius:999px;padding:8px 14px;min-height:44px;font:inherit;cursor:pointer}
+.delete-button:hover:not(:disabled){background:color-mix(in srgb,var(--color-danger,#e5484d) 12%,transparent)}
+.delete-button:disabled{opacity:.6;cursor:default}
+.trash-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.trash-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.trash-row>div{display:grid;gap:4px;min-width:0}
+.trash-row strong{overflow-wrap:anywhere}
+.trash-row small{color:var(--text-muted,#a3a3a3)}

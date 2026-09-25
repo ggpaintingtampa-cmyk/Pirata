@@ -27,7 +27,7 @@ export function executeCommand(db:Sqlite,ownerId:string,input:MutationRequest,ha
     try{change=invokeHandler(handlers,{ownerId,userId,role,serverNow,revision:current,repo:new Repositories(db,ownerId,()=>active&&db.inTransaction,userId),newId:randomUUID},request.command);}finally{active=false;}
     const wrote=(db.prepare('SELECT total_changes() AS count').get() as {count:number}).count>before;
     if(change.changed!==wrote)throw new Error('Handler changed flag does not match actual writes');
-    if(change.changed&&!request.command.type.startsWith('expense.')&&!['update.post','settings.update','equipment.use'].includes(request.command.type)){
+    if(change.changed&&!request.command.type.startsWith('expense.')&&!request.command.type.startsWith('record.')&&!['update.post','settings.update','equipment.use'].includes(request.command.type)){ // record.* (Trash) writes its own descriptive activity row
       const r=new Repositories(db,ownerId),task=change.result.kind==='task'&&change.result.id?r.get('tasks',change.result.id):undefined;
       r.insert('activity',{id:randomUUID(),createdAt:serverNow,updatedAt:serverNow,userId,projectId:task?.projectId??('projectId' in request.command?request.command.projectId:null)??null,taskId:task?.id??null,kind:request.command.type,body:request.command.type.replaceAll('.',' ') + (task?' · '+task.title:'')});
     }

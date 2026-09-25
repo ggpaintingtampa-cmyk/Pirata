@@ -1,0 +1,52 @@
+-- Version 4 (delete option, 2026-09-25): records a person creates can be deleted into a restorable Trash.
+-- Additive only: three nullable columns per table; historical values are never rewritten and rows are never removed.
+-- deleted_with names the root record ('project:<id>', 'task:<id>', 'equipment:<id>') when a row went into the Trash
+-- as part of that record; such rows come back together with it.
+ALTER TABLE projects ADD COLUMN deleted_at INTEGER;
+ALTER TABLE projects ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE projects ADD COLUMN deleted_with TEXT;
+ALTER TABLE tasks ADD COLUMN deleted_at INTEGER;
+ALTER TABLE tasks ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE tasks ADD COLUMN deleted_with TEXT;
+ALTER TABLE clients ADD COLUMN deleted_at INTEGER;
+ALTER TABLE clients ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE clients ADD COLUMN deleted_with TEXT;
+ALTER TABLE leads ADD COLUMN deleted_at INTEGER;
+ALTER TABLE leads ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE leads ADD COLUMN deleted_with TEXT;
+ALTER TABLE expenses ADD COLUMN deleted_at INTEGER;
+ALTER TABLE expenses ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE expenses ADD COLUMN deleted_with TEXT;
+ALTER TABLE shopping_items ADD COLUMN deleted_at INTEGER;
+ALTER TABLE shopping_items ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE shopping_items ADD COLUMN deleted_with TEXT;
+ALTER TABLE tool_sign_outs ADD COLUMN deleted_at INTEGER;
+ALTER TABLE tool_sign_outs ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE tool_sign_outs ADD COLUMN deleted_with TEXT;
+ALTER TABLE task_questions ADD COLUMN deleted_at INTEGER;
+ALTER TABLE task_questions ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE task_questions ADD COLUMN deleted_with TEXT;
+ALTER TABLE work_shifts ADD COLUMN deleted_at INTEGER;
+ALTER TABLE work_shifts ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE work_shifts ADD COLUMN deleted_with TEXT;
+ALTER TABLE task_templates ADD COLUMN deleted_at INTEGER;
+ALTER TABLE task_templates ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE task_templates ADD COLUMN deleted_with TEXT;
+ALTER TABLE project_templates ADD COLUMN deleted_at INTEGER;
+ALTER TABLE project_templates ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE project_templates ADD COLUMN deleted_with TEXT;
+ALTER TABLE equipment ADD COLUMN deleted_at INTEGER;
+ALTER TABLE equipment ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE equipment ADD COLUMN deleted_with TEXT;
+ALTER TABLE materials ADD COLUMN deleted_at INTEGER;
+ALTER TABLE materials ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE materials ADD COLUMN deleted_with TEXT;
+ALTER TABLE maintenance_items ADD COLUMN deleted_at INTEGER;
+ALTER TABLE maintenance_items ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE maintenance_items ADD COLUMN deleted_with TEXT;
+ALTER TABLE equipment_reports ADD COLUMN deleted_at INTEGER;
+ALTER TABLE equipment_reports ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE equipment_reports ADD COLUMN deleted_with TEXT;
+ALTER TABLE project_notes ADD COLUMN deleted_at INTEGER;
+ALTER TABLE project_notes ADD COLUMN deleted_by TEXT REFERENCES team_members(id);
+ALTER TABLE project_notes ADD COLUMN deleted_with TEXT;

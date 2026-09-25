@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BriefcaseBusiness, CalendarDays, CheckCheck, CircleDollarSign, ClipboardList, Clock3, Gauge, Folder, Files, LayoutTemplate, ClipboardCheck, MessageSquare, Search, Settings2, ShoppingBag, Users, Wrench, Bell, ChevronRight, Package } from 'lucide-react';
+import { Trash2, BriefcaseBusiness, CalendarDays, CheckCheck, CircleDollarSign, ClipboardList, Clock3, Gauge, Folder, Files, LayoutTemplate, ClipboardCheck, MessageSquare, Search, Settings2, ShoppingBag, Users, Wrench, Bell, ChevronRight, Package } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Capability, Role } from '@pirata/contracts/permissions';
 import { useT } from '../i18n';
@@ -24,6 +24,7 @@ const destinations: Destination[] = [
   { name:'spending', icon:CircleDollarSign, group:'business', capability:'money.costs' },
   { name:'files', icon:Files, group:'files' },
   { name:'team', icon:Users, group:'files', capability:'team.admin' },
+  { name:'trash', icon:Trash2, group:'files', capability:'records.delete' },
   { name:'ai-settings', icon:MessageSquare, group:'settings', capability:'ask.admin' },
   { name:'settings', icon:Settings2, group:'settings', capability:'settings.admin' },
 ];

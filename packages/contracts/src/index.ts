@@ -5,11 +5,13 @@ import {dailyCommands,dailySnapshot,type DailySnapshot} from './daily.js';
 import {hoursCommands,hoursSnapshot,type HoursSnapshot} from './hours.js';
 import {salesCommands,salesSnapshot,PROJECT_STATUSES,type SalesSnapshot} from './sales.js';
 import {toolsCommands,toolsSnapshot,type ToolsSnapshot} from './tools.js';
+import {trashCommands,trashSnapshot,type TrashSnapshot} from './trash.js';
 export * from './permissions.js';
 export * from './daily.js';
 export * from './hours.js';
 export * from './sales.js';
 export * from './tools.js';
+export * from './trash.js';
 import { isLocalDate } from '@pirata/domain/lib/dates';
 
 export const CONTRACT_VERSION = '3.0.0' as const;
@@ -34,7 +36,7 @@ const lead = { name: nameSchema, phone: z.string().trim().max(100), email: z.uni
 const maintenance = { equipmentId: idSchema.nullable(), equipmentName: titleSchema, title: titleSchema, dueDate: dateSchema };
 export const objectiveInputSchema = z.object({ id: idSchema, title: titleSchema, taskId: idSchema.nullable(), status: z.enum(['open','partial','blocked','done']), note: noteSchema, rank: z.number().int().min(0).max(2) }).strict().refine(o => o.status !== 'blocked' || o.note.length > 0,{path:['note'],message:'Explain the blocker.'});
 const command = <T extends string, S extends z.ZodRawShape>(type:T, fields:S) => z.object({type:z.literal(type),...fields}).strict();
-export const commandSchema = z.discriminatedUnion('type',[...extraCommands,...dailyCommands,...hoursCommands,...salesCommands,...toolsCommands,
+export const commandSchema = z.discriminatedUnion('type',[...extraCommands,...dailyCommands,...hoursCommands,...salesCommands,...toolsCommands,...trashCommands,
   command('client.create',contact), command('client.update',{id:idSchema,...contact}), command('client.archive',{id:idSchema,archived:z.boolean()}),
   command('project.create',project), command('project.update',{id:idSchema,...project}), command('project.setStatus',{id:idSchema,status:projectStatusSchema,note:noteSchema.optional()}),
   command('lead.create',lead),command('lead.update',{id:idSchema,...lead}), command('lead.followUp',{id:idSchema,note:noteSchema.min(1),nextFollowUpDate:dateSchema.nullable()}), command('lead.convertToClient',{id:idSchema,clientId:idSchema.nullable()}),
@@ -84,7 +86,7 @@ export interface MaintenanceItem extends RecordBase {equipmentId:string|null;equ
 export interface LeadRecord extends RecordBase {name:string;phone:string;email:string;workDescription:string;nextFollowUpDate:string|null;convertedClientId:string|null}
 export interface LeadFollowUp extends RecordBase {leadId:string;at:number;note:string}
 export interface Lead extends LeadRecord {followUps:LeadFollowUp[]}
-export interface BusinessSnapshot extends ExtraSnapshot, DailySnapshot, HoursSnapshot, SalesSnapshot, ToolsSnapshot {schemaVersion:2;timezone:'America/New_York';currency:'USD';revision:number;serverNow:number;capabilities:Capabilities;clients:Client[];projects:Project[];tasks:Task[];objectives:Objective[];schedule:ScheduleBlock[];timeEntries:TimeEntry[];runningTimer:RunningTimer|null;expenses:Expense[];materials:Material[];materialRequirements:MaterialRequirement[];materialAdjustments:MaterialAdjustment[];equipment:Equipment[];maintenance:MaintenanceItem[];leads:Lead[]}
+export interface BusinessSnapshot extends ExtraSnapshot, DailySnapshot, HoursSnapshot, SalesSnapshot, ToolsSnapshot, TrashSnapshot {schemaVersion:2;timezone:'America/New_York';currency:'USD';revision:number;serverNow:number;capabilities:Capabilities;clients:Client[];projects:Project[];tasks:Task[];objectives:Objective[];schedule:ScheduleBlock[];timeEntries:TimeEntry[];runningTimer:RunningTimer|null;expenses:Expense[];materials:Material[];materialRequirements:MaterialRequirement[];materialAdjustments:MaterialAdjustment[];equipment:Equipment[];maintenance:MaintenanceItem[];leads:Lead[]}
 export interface BusinessService {
   session():Promise<SessionStatus>;
   login(password:string,username?:string):Promise<SessionStatus>;
@@ -115,7 +117,7 @@ export const followUpSchema=z.object({...recordBase,leadId:idSchema,at:timestamp
 export const leadSchema=z.object({...recordBase,...lead,convertedClientId:idSchema.nullable(),followUps:z.array(followUpSchema)}).strict();
 export const sessionStatusSchema=z.object({authenticated:z.boolean(),csrfToken:z.string().min(32),expiresAt:timestampSchema,user:teamMemberSchema.optional()}).strict();
 export const apiFailureSchema=z.object({error:z.object({code:z.string(),message:z.string(),fields:z.record(z.string(),z.string()).optional(),currentRevision:safeInteger.optional()}).strict()}).strict();
-export const snapshotSchema=z.object({...extraSnapshot,...dailySnapshot,...hoursSnapshot,...salesSnapshot,...toolsSnapshot,schemaVersion:z.literal(2),timezone:z.literal('America/New_York'),currency:z.literal('USD'),revision:safeInteger,serverNow:timestampSchema,
+export const snapshotSchema=z.object({...extraSnapshot,...dailySnapshot,...hoursSnapshot,...salesSnapshot,...toolsSnapshot,...trashSnapshot,schemaVersion:z.literal(2),timezone:z.literal('America/New_York'),currency:z.literal('USD'),revision:safeInteger,serverNow:timestampSchema,
   capabilities:z.object({'clients-projects':z.enum(['blocked','ready']),'tasks-time':z.enum(['blocked','ready']),planning:z.enum(['blocked','ready']),spending:z.enum(['blocked','ready']),inventory:z.enum(['blocked','ready'])}).strict(),
   clients:z.array(clientSchema),projects:z.array(projectSchema),tasks:z.array(taskSchema),objectives:z.array(objectiveSchema),schedule:z.array(scheduleBlockSchema),timeEntries:z.array(timeEntrySchema),runningTimer:z.object({sessionId:idSchema,taskId:idSchema,startedAt:timestampSchema}).strict().nullable(),expenses:z.array(expenseSchema),materials:z.array(materialSchema),materialRequirements:z.array(materialRequirementSchema),materialAdjustments:z.array(materialAdjustmentSchema),equipment:z.array(equipmentSchema),maintenance:z.array(maintenanceSchema),leads:z.array(leadSchema)
 }).strict() satisfies z.ZodType<BusinessSnapshot>;

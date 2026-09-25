@@ -1,11 +1,11 @@
 import { can, type Capability, type Role } from '@pirata/contracts/permissions';
-export type ViewName = 'work'|'ask'|'updates'|'calendar'|'progress'|'team'|'ai-settings'|'settings'|'projects'|'project'|'inventory'|'clients'|'more'|'spending'|'tasks'|'files'|'report'|'hours'|'pay'|'insights'|'materials'|'tools'|'templates';
+export type ViewName = 'work'|'ask'|'updates'|'calendar'|'progress'|'team'|'ai-settings'|'settings'|'projects'|'project'|'inventory'|'clients'|'more'|'spending'|'tasks'|'files'|'report'|'hours'|'pay'|'insights'|'materials'|'tools'|'templates'|'trash';
 export interface View { name: ViewName; id?: string }
-const names = new Set<ViewName>(['work','ask','updates','calendar','progress','team','ai-settings','settings','projects','project','inventory','clients','more','spending','tasks','files','report','hours','pay','insights','materials','tools','templates']);
+const names = new Set<ViewName>(['work','ask','updates','calendar','progress','team','ai-settings','settings','projects','project','inventory','clients','more','spending','tasks','files','report','hours','pay','insights','materials','tools','templates','trash']);
 /** Old addresses keep working: Today folded into Daily, Shopping became Materials requests. */
 const aliases: Record<string, ViewName> = { menu: 'more', today: 'work', shopping: 'materials' };
 /** Views that need a capability; everything else is open to every signed-in role. */
-export const viewCapability: Partial<Record<ViewName, Capability>> = { team: 'team.admin', 'ai-settings': 'ask.admin', settings: 'settings.admin', spending: 'money.costs', pay: 'money.costs' };
+export const viewCapability: Partial<Record<ViewName, Capability>> = { team: 'team.admin', 'ai-settings': 'ask.admin', settings: 'settings.admin', spending: 'money.costs', pay: 'money.costs', trash: 'records.delete' };
 /** Views that accept a second path segment. */
 const paramViews: Partial<Record<ViewName, 'id'|'date'>> = { project: 'id', clients: 'id', insights: 'id', report: 'date' };
 export function viewAllowed(name: ViewName, role: Role|undefined): boolean { const cap = viewCapability[name]; return !cap || can(role, cap); }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DeleteButton, mayDelete } from '../trash';
 import { subtree } from '@pirata/contracts/index';
 import type { Task } from '@pirata/contracts/index';
 import type { ModuleProps } from '../../services/moduleProps';
@@ -20,7 +21,7 @@ export function TaskExtras({ app, task }: { app: ModuleProps; task: Task }) {
     {task.completedAt && <p className="muted">{t('tasks.doneBy', { name: name(task.completedBy), time: timeFormat.format(task.completedAt) })}</p>}
     {pinned.length > 0 && <div className="day-paint"><strong>{t('tasks.paint')}</strong>{pinned.map(note => <p key={note.id}><span>{note.title}</span> {[note.product, note.color, note.colorCode, note.finish, note.quantity].filter(Boolean).join(' · ')}</p>)}</div>}
     <ThumbStrip attachments={attachments} />
-    {questions.length > 0 && <div className="task-questions"><strong>{t('tasks.questions')}</strong>{questions.map(question => <div key={question.id} className="task-question"><p><strong>{name(question.askedBy)}</strong> · {timeFormat.format(question.createdAt)}</p><p>{question.body}</p>
+    {questions.length > 0 && <div className="task-questions"><strong>{t('tasks.questions')}</strong>{questions.map(question => <div key={question.id} className="task-question"><p><strong>{name(question.askedBy)}</strong> · {timeFormat.format(question.createdAt)}{mayDelete(app, 'question', question as unknown as Record<string, unknown>) && <> · <DeleteButton app={app} kind="question" id={question.id} label={question.body.slice(0, 40)} className="work-link-button" /></>}</p><p>{question.body}</p>
       {question.answeredAt ? <p className="task-question-answer">{t('tasks.answerBy', { name: name(question.answeredBy) })}: {question.answer}</p> : office ? <div className="live-actions"><input placeholder={t('tasks.answerPlaceholder')} value={answer[question.id] ?? ''} onChange={e => setAnswer({ ...answer, [question.id]: e.target.value })} /><button type="button" disabled={busy === question.id} onClick={() => void reply(question.id)}>{t('tasks.answer')}</button></div> : <p className="muted">{t('tasks.unanswered')}</p>}</div>)}</div>}
     {error && <p role="alert" className="work-error">{error}</p>}
   </div>;

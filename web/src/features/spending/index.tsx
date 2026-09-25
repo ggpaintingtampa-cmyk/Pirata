@@ -4,6 +4,7 @@ import type { Expense } from '@pirata/contracts/index';
 import { formatMoney, parseMoneyToCents } from '@pirata/domain/lib/money';
 import type { ModuleProps } from '../../services/moduleProps';
 import { RecordForm } from './RecordForm';
+import { DeleteButton, mayDelete } from '../trash';
 import { RecordModal } from './RecordModal';
 import { filteredExpenses, totalCents } from './selectors';
 import './styles.css';
@@ -23,7 +24,7 @@ export function ExpenseForm(app: ModuleProps & { backLabel?: string; onDone?(): 
       { name: 'projectId', label: tx('Project'), type: 'select', options: [{ value: '', label: tx('General business') }, ...app.snapshot.projects.map(p => ({ value: p.id, label: p.name + (p.status === 'completed' ? ' (completed)' : '') }))] },
     ]} validate={(v): Record<string, string> => parseMoneyToCents(v.amountCents) === null ? { amountCents: 'Enter a positive amount with at most two decimals; no signs or exponents.' } : {}}
       command={v => { const fields = { description: v.description, purchaseDate: v.purchaseDate, category: v.category as Expense['category'], amountCents: parseMoneyToCents(v.amountCents)!, projectId: v.projectId || null }; return existing ? { type: 'expense.update', id: existing.id, ...fields } : { type: 'expense.create', ...fields }; }}
-      message={existing ? 'Purchase updated.' : 'Purchase recorded.'} done={app.onDone ?? app.onClose} />
+      message={existing ? 'Purchase updated.' : 'Purchase recorded.'} done={app.onDone ?? app.onClose}>{existing && mayDelete(app, 'expense', existing as unknown as Record<string, unknown>) && <DeleteButton app={app} kind="expense" id={existing.id} label={existing.description} onDone={app.onDone ?? app.onClose} />}</RecordForm>
   </RecordModal>;
 }
 export function ExpensesView(app: ModuleProps) {

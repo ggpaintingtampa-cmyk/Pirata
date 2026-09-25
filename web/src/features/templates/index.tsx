@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DeleteButton } from '../trash';
 import { ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { templateDepth, type TemplateNode } from '@pirata/contracts/index';
 import type { ModuleProps } from '../../services/moduleProps';
@@ -33,10 +34,10 @@ export function TemplatesView(app: ModuleProps) {
     {canManage && <div className="live-actions"><button className="work-primary" onClick={() => setEditor({ kind: 'project', nodes: [empty()], name: '', note: '' })}><Plus size={16} aria-hidden="true" />{t('templates.newProject')}</button><button onClick={() => setEditor({ kind: 'task', nodes: [empty()], name: '', note: '' })}><Plus size={16} aria-hidden="true" />{t('templates.newTask')}</button></div>}
     <h3>{t('templates.projectTemplates')}</h3>
     {!(app.snapshot.projectTemplates ?? []).length && <p className="empty-state">{t('templates.noneProject')}</p>}
-    {(app.snapshot.projectTemplates ?? []).map(item => <article key={item.id} className="card template-card"><h4>{item.name}</h4>{item.note && <p>{item.note}</p>}<TreePreview nodes={parseTree(item.tree)} /><button type="button" onClick={() => setApply({ kind: 'project', id: item.id, projectId: projects[0]?.id ?? '' })}>{t('templates.applyProject')}<ChevronRight size={15} aria-hidden="true" /></button></article>)}
+    {(app.snapshot.projectTemplates ?? []).map(item => <article key={item.id} className="card template-card"><h4>{item.name}</h4>{item.note && <p>{item.note}</p>}<TreePreview nodes={parseTree(item.tree)} /><div className="live-actions"><button type="button" onClick={() => setApply({ kind: 'project', id: item.id, projectId: projects[0]?.id ?? '' })}>{t('templates.applyProject')}<ChevronRight size={15} aria-hidden="true" /></button>{canManage && <DeleteButton app={app} kind="projectTemplate" id={item.id} label={item.name} />}</div></article>)}
     <h3>{t('templates.taskTemplates')}</h3>
     {!(app.snapshot.taskTemplates ?? []).length && <p className="empty-state">{t('templates.noneTask')}</p>}
-    {(app.snapshot.taskTemplates ?? []).map(item => { const tree = parseTree(item.tree); return <article key={item.id} className="card template-card"><h4>{item.name}</h4>{tree.length ? <TreePreview nodes={tree} /> : <p className="muted">{(JSON.parse(item.titles) as string[]).join(' · ')}</p>}{tree.length > 0 && <button type="button" onClick={() => setApply({ kind: 'task', id: item.id, projectId: projects[0]?.id ?? '' })}>{t('templates.applyTask')}<ChevronRight size={15} aria-hidden="true" /></button>}</article>; })}
+    {(app.snapshot.taskTemplates ?? []).map(item => { const tree = parseTree(item.tree); return <article key={item.id} className="card template-card"><h4>{item.name}</h4>{tree.length ? <TreePreview nodes={tree} /> : <p className="muted">{(JSON.parse(item.titles) as string[]).join(' · ')}</p>}<div className="live-actions">{tree.length > 0 && <button type="button" onClick={() => setApply({ kind: 'task', id: item.id, projectId: projects[0]?.id ?? '' })}>{t('templates.applyTask')}<ChevronRight size={15} aria-hidden="true" /></button>}{canManage && <DeleteButton app={app} kind="taskTemplate" id={item.id} label={item.name} />}</div></article>; })}
     {editor && <WorkDialog title={t(editor.kind === 'project' ? 'templates.newProject' : 'templates.newTask')} onClose={() => setEditor(null)}>
       <label className="work-field">{t('templates.name')}<input value={editor.name} onChange={e => setEditor({ ...editor, name: e.target.value })} /></label>
       {editor.kind === 'project' && <label className="work-field">{t('templates.note')}<input value={editor.note} onChange={e => setEditor({ ...editor, note: e.target.value })} /></label>}

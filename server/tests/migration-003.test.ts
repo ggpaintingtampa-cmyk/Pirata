@@ -33,7 +33,8 @@ it('003 keeps historical roles and statuses (read as worker/scheduled), records 
   expect(db.prepare("SELECT project_id,task_id,user_id,created_by FROM day_assignments WHERE id='g'").get()).toEqual({project_id:'p',task_id:'t2',user_id:'jose',created_by:'jose'});
   expect(db.prepare("SELECT received_at FROM shopping_items WHERE id='s'").get()).toEqual({received_at:now});
   expect(db.prepare("SELECT requires_sign_out,status FROM equipment WHERE id='e'").get()).toEqual({requires_sign_out:0,status:'ok'});
-  expect(db.prepare('SELECT count(*) n FROM schema_versions').get()).toEqual({n:3});
+  expect(db.prepare('SELECT count(*) n FROM schema_versions').get()).toEqual({n:steps.length});
+  expect(db.prepare("SELECT deleted_at,deleted_with FROM projects WHERE id='p'").get()).toEqual({deleted_at:null,deleted_with:null});
   // per-user cleanup cycles: two people may hold an open obligation on the same tool
   const obligation=db.prepare("INSERT INTO cleanup_obligations (id,owner_id,created_at,updated_at,equipment_id,user_id,task_id,first_used_at,deadline_at,due_at,cleaning_minutes,completed_at) VALUES (?,'biz',?,?,'e',?,NULL,?,?,?,30,NULL)");
   obligation.run('o1',now,now,'jose',now,now+10,now+5);obligation.run('o2',now,now,'biz',now,now+10,now+5);

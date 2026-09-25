@@ -6,6 +6,7 @@ import { tx, useT } from '../i18n';
 import { taskDepth } from '@pirata/contracts/index';
 import { canEditDone } from '../features/work/dayList';
 import { TaskExtras } from '../features/tasks-time/TaskExtras';
+import { DeleteButton, mayDelete } from '../features/trash';
 const pad=(n:number)=>String(n).padStart(2,'0');
 /** Device-local calendar date and clock time for a timestamp; the phone and the business share America/New_York. */
 export const localDate=(ms:number)=>{const d=new Date(ms);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
@@ -67,7 +68,7 @@ export function LiveDialogs({app,dialog:d,open,now}:Props){
     <div className="task-detail-primary">{task.status==='open'?<button onClick={()=>status('done')}><Check size={17} aria-hidden="true"/>{tx('Finish task')}</button>:editable?<button onClick={()=>status('open')}>{task.status==='done'&&!isOwner?t('tasks.undo'):t('tasks.reopen')}</button>:<p className="muted">{t('tasks.locked')}</p>}</div>
     <div className="task-detail-tools">{!parent&&editable&&<button onClick={()=>open({kind:'task-edit',id:task.id})}><Pencil size={16} aria-hidden="true"/>{tx('Edit task')}</button>}<button onClick={()=>open({kind:'plan',id:task.id})}><CalendarDays size={16} aria-hidden="true"/>{tx('Schedule / reschedule')}</button><button onClick={()=>open({kind:'time',id:task.id})}><Clock3 size={16} aria-hidden="true"/>{tx('Time entries')}</button>{depth<2&&<button onClick={()=>open({kind:'task-new',parentTaskId:task.id,projectId:task.projectId??undefined})}><Plus size={16} aria-hidden="true"/>{depth===0?t('tasks.addSubtask'):t('tasks.addTiny')}</button>}</div>
     <FilesPanel app={app} parentType="task" parentId={task.id}/>
-    {task.status==='open'&&<details className="task-secondary-actions"><summary>{tx('More task actions')}</summary><button onClick={()=>status('blocked')}>{tx('Block task')}</button></details>}
+    {(task.status==='open'||mayDelete(app,'task',task as unknown as Record<string,unknown>))&&<details className="task-secondary-actions"><summary>{tx('More task actions')}</summary>{task.status==='open'&&<button onClick={()=>status('blocked')}>{tx('Block task')}</button>}{mayDelete(app,'task',task as unknown as Record<string,unknown>)&&<DeleteButton app={app} kind="task" id={task.id} label={task.title} onDone={close}/>}</details>}
     {parent&&editable&&<footer className="work-actions task-subtask-edit"><button className="work-primary" onClick={()=>open({kind:'task-edit',id:task.id})}><Pencil size={16} aria-hidden="true"/>{tx('Edit subtask')}</button></footer>}
   </WorkDialog>;
  }

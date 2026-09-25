@@ -25,6 +25,15 @@ with per-person sprayer cleaning cycles and broken reports, files take tags and
 comments, the app installs to the phone home screen, sessions slide for 30 days,
 and every screen is available in Spanish from the account menu.
 
+Every record a person creates has a **Delete** control (tasks, projects, clients,
+leads, purchases, material requests, tool sign-outs, questions, hours entries,
+templates, equipment, materials, maintenance, broken reports and notes). Deleting
+moves the record to **Menu → Deleted items**, where the owner or a manager can
+restore it; a project takes its tasks, questions, requests and notes with it and
+brings them back together. Owner and manager can delete anything they see; a
+sales rep their own draft projects; everyone the unprocessed items they created.
+Nothing is destroyed (schema version 4 adds only nullable columns).
+
 The build spec and per-chunk handoffs live in [update09-25-26](update09-25-26/SKILL.md).
 Schema version 3 (`003-update-2026-09-25.sql`) adds tables and columns only and
 never rewrites historical values: the legacy role `employee` and project status

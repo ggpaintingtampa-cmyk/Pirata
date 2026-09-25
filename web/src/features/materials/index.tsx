@@ -6,6 +6,7 @@ import { useT } from '../../i18n';
 import { useCan } from '../../state/permissions';
 import { runCommand } from '../work/commands';
 import { RequestDialog } from './RequestDialog';
+import { DeleteButton, mayDelete } from '../trash';
 import './styles.css';
 const timeFormat = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 export type MaterialsFilter = 'open' | 'received' | 'all';
@@ -29,7 +30,7 @@ export function MaterialsView(app: ModuleProps) {
       <div className="materials-main"><strong>{item.title}{item.quantity ? ' × ' + item.quantity : ''}</strong>
         <small>{t('materials.for')}: {item.taskId ? task(item.taskId) + ' · ' + project(item.projectId) : item.projectId ? project(item.projectId) : item.forUserId === me ? t('materials.forMe') : name(item.forUserId)} · {t('materials.requestedBy', { name: name(item.createdBy), time: timeFormat.format(item.createdAt) })}</small>
         {item.note && <small>{item.note}</small>}{item.receivedAt && <small className="materials-received">{t('materials.receivedBy', { name: name(item.receivedBy), time: timeFormat.format(item.receivedAt) })}</small>}</div>
-      {editable && <div className="live-actions"><button type="button" onClick={() => setDialog({ item })}>{t('materials.edit')}</button><button type="button" disabled={busy === item.id} onClick={() => { if (window.confirm(t('materials.removeConfirm'))) void run(item.id, { type: 'materialRequest.remove', id: item.id }); }}>{t('materials.remove')}</button></div>}
+      {editable && <div className="live-actions"><button type="button" onClick={() => setDialog({ item })}>{t('materials.edit')}</button>{mayDelete(app, 'materialRequest', item as unknown as Record<string, unknown>) && <DeleteButton app={app} kind="materialRequest" id={item.id} label={item.title}>{t('materials.remove')}</DeleteButton>}</div>}
     </li>; })}</ul>
     {dialog && <RequestDialog app={app} item={dialog.item} onClose={() => setDialog(null)} onDone={() => setDialog(null)} />}
   </section>;

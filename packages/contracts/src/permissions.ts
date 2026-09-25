@@ -14,12 +14,13 @@ export type Capability=
  |'plan.others'          // edit another person's or a project's day list, set presence, answer questions
  |'equipment.admin'      // requires-sign-out flag, resolve broken reports
  |'facts.hidden'         // read facts with workerVisible=0
- |'template.manage';     // save project / task templates
+ |'template.manage'      // save project / task templates
+ |'records.delete';      // delete anything into the Trash and restore from it; creators may delete their own unprocessed items
 const OFFICE:readonly Role[]=['owner','manager','sales'];
 export const CAPABILITIES:Readonly<Record<Capability,readonly Role[]>>={
  'money.costs':['owner'],'money.sales':OFFICE,'team.admin':['owner'],'ask.admin':['owner'],'settings.admin':['owner'],'data.admin':['owner'],
  'project.review':['owner','manager'],'shift.approve':['owner','manager'],'shift.enterForOthers':['owner','manager'],'task.editDone':['owner'],
- 'plan.others':OFFICE,'equipment.admin':['owner','manager'],'facts.hidden':OFFICE,'template.manage':OFFICE,
+ 'plan.others':OFFICE,'equipment.admin':['owner','manager'],'facts.hidden':OFFICE,'template.manage':OFFICE,'records.delete':['owner','manager'],
 };
 export function can(role:Role|string|undefined|null,capability:Capability):boolean {
  return !!role&&(CAPABILITIES[capability] as readonly string[]).includes(role);

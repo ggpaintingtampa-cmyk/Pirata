@@ -5,6 +5,7 @@ import { CopyField } from '../../components/CopyField';
 import { viewHref } from '../../live/navigation';
 import { FactsCard } from '../facts';
 import { CaptureFlow, ProjectLifecycle, ProjectStatusChip, SalesBlock } from '../sales';
+import { DeleteButton, mayDelete } from '../trash';
 const PROJECT_TAB = { draft: 'Drafts', sold: 'In review', scheduled: 'Scheduled', completed: 'Completed' } as const;
 import { useId, useState, type MouseEvent } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, DollarSign, MapPin, Pencil, Plus, Search, User, Users } from 'lucide-react';
@@ -36,7 +37,7 @@ function ClientDetails({ app, client, open }: { app: ModuleProps; client: Client
     <div className="cp-detail-heading"><Users size={24} /><div><h3>{client.name}</h3><span className="cp-badge">{client.archivedAt === null ? 'Active client' : 'Archived client'}</span></div></div>
     <div className="cp-contact"><CopyField label={tx('Phone')} value={client.phone} /><CopyField label={tx('Email')} value={client.email} /></div>
     {client.note && <p className="cp-note">{client.note}</p>}
-    <div className="actions"><button className="secondary" data-navigate onClick={() => open({ kind: 'edit-client', id: client.id })}>{tx('Edit client')}</button><button className="secondary" data-navigate onClick={() => open({ kind: 'archive-client', id: client.id })}>{client.archivedAt === null ? 'Archive client' : 'Restore client'}</button></div>
+    <div className="actions"><button className="secondary" data-navigate onClick={() => open({ kind: 'edit-client', id: client.id })}>{tx('Edit client')}</button><button className="secondary" data-navigate onClick={() => open({ kind: 'archive-client', id: client.id })}>{client.archivedAt === null ? 'Archive client' : 'Restore client'}</button>{mayDelete(app, 'client', client as unknown as Record<string, unknown>) && <DeleteButton app={app} kind="client" id={client.id} label={client.name} onDone={() => open(null)} />}</div>
     <div className="cp-section-heading"><h3>{tx('Projects')}</h3><button className="text-button" data-navigate onClick={() => open({ kind: 'new-project', clientId: client.id })}><Plus size={18} />{tx('Add project')}</button></div>
     {projects.length ? <ul className="cp-records">{projects.map(project => <li key={project.id}><button className="cp-record" onClick={() => { open(null); app.onOpenProject(project.id); }}><span><strong>{project.name}</strong><small>{project.status !== 'completed' ? 'Open project' : 'Completed project'}</small></span><ChevronRight size={20} /></button></li>)}</ul> : <p className="empty-state">{tx('No projects for this client yet.')}</p>}
     <FilesPanel app={app} parentType="client" parentId={client.id} />
@@ -48,6 +49,7 @@ function LeadDetails({ app, lead, open }: { app: ModuleProps; lead: Lead; open: 
     <dl className="cp-contact"><div><dt>{tx('Phone')}</dt><dd>{lead.phone || 'Not provided'}</dd></div><div><dt>{tx('Email')}</dt><dd>{lead.email || 'Not provided'}</dd></div><div><dt>{tx('Next follow-up')}</dt><dd>{lead.nextFollowUpDate ?? 'No reminder'}{due(lead, app.businessDate) && <span className="cp-badge cp-warning">{tx('Due')}</span>}</dd></div></dl>
     <div className="actions"><button className="primary" data-navigate onClick={() => open({ kind: 'follow-up', id: lead.id })}>{tx('Record follow-up')}</button><button className="secondary" data-navigate onClick={() => open({ kind: 'edit-lead', id: lead.id })}>{tx('Edit lead')}</button>
       {linked ? <button className="secondary" data-navigate onClick={() => open({ kind: 'client', id: linked.id })}>View client: {linked.name}</button> : <button className="secondary" data-navigate onClick={() => open({ kind: 'convert', id: lead.id })}>{tx('Convert to client')}</button>}
+      {mayDelete(app, 'lead', lead as unknown as Record<string, unknown>) && <DeleteButton app={app} kind="lead" id={lead.id} label={lead.name} onDone={() => open(null)} />}
     </div><h3>{tx('Follow-up history')}</h3>
     {lead.followUps.length ? <ol className="cp-history">{[...lead.followUps].sort((a, b) => b.at - a.at).map(followUp => <li key={followUp.id}><time dateTime={new Date(followUp.at).toISOString()}>{new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' }).format(followUp.at)}</time><p className="cp-note">{followUp.note}</p></li>)}</ol> : <p className="empty-state">{tx('No follow-ups recorded yet.')}</p>}
   </div>;
@@ -144,7 +146,7 @@ export function ProjectDetail(app: ModuleProps) {
     <FactsCard app={app} project={project} />
     <SalesBlock app={app} project={project} />
     <div className="cp-progress-card"><div className="cp-progress-heading"><h3>{tx('Project Progress')}</h3><strong>{completion === null ? 'Ready to plan' : completionPercent(completion) + '%'}</strong></div>{completion !== null && <progress max={1} value={completion} aria-label={tx('Project completion')} />}<dl className="cp-project-totals"><div><dt><Clock3 size={14} aria-hidden="true" />{tx('Logged time:')}</dt><dd>{formatDuration(summary.loggedMs)}</dd></div>{owner && <div><dt><DollarSign size={14} aria-hidden="true" />{tx('Spending:')}</dt><dd>{formatMoney(summary.spendingCents)}</dd></div>}</dl></div>
-    <div className="cp-project-edit-row"><button className="text-button" onClick={() => open({ kind: 'edit-project', id: project.id })}><Pencil size={15} aria-hidden="true" />{tx('Edit project')}</button><a className="text-button" href={viewHref({ name: 'insights', id: project.id })}><Gauge size={15} aria-hidden="true" />{tx('Insights')}</a></div>
+    <div className="cp-project-edit-row">{mayDelete(app, 'project', project as unknown as Record<string, unknown>) && <DeleteButton app={app} kind="project" id={project.id} label={project.name} onDone={app.onClose} />}<button className="text-button" onClick={() => open({ kind: 'edit-project', id: project.id })}><Pencil size={15} aria-hidden="true" />{tx('Edit project')}</button><a className="text-button" href={viewHref({ name: 'insights', id: project.id })}><Gauge size={15} aria-hidden="true" />{tx('Insights')}</a></div>
     {summary.hasRunningTimer && <p className="info-panel">Includes the running session as of the latest refresh. The timer continues until you pause it.</p>}
     <section className="cp-project-section" id={sectionId + '-tasks'} aria-label={tx('Tasks section')} tabIndex={-1}><TaskChecklist {...app} selection={{ projectId: project.id }} /></section>
     <section className="cp-project-section" id={sectionId + '-notes'} aria-label={tx('Notes section')} tabIndex={-1}><ProjectNotesPanel app={app} projectId={project.id} /></section>
