@@ -4,7 +4,48 @@ This runbook supersedes the historical owner-only access and database-only backu
 instructions for the team release. `deployed-release.json` records what is
 actually deployed; source files alone do not establish production status.
 
-## Current Figma release — September 19, 01:55 UTC
+## Current Work release — September 21, 17:58 UTC
+
+Web `20260921T175808Z-35477776` is live and verified. API
+`20260918T081813Z-a8592c71` and schema 002 are unchanged. This release adds Work
+assignment/Today and status filters, owner person groups and reassignment, and
+dedicated subtask details/editing. Accounts, credentials, business data, uploads,
+timers, daily plans and AI configuration were preserved.
+
+Before publication, the complete online backup was:
+`/var/backups/pirata/database/20260921T175358Z-94952f085437492caab156aa8e9d7493.sqlite`,
+plus its matching `.files` and `.manifest.json`. Scratch restore with the current
+API passed at `/var/backups/pirata/work-tasks-restore-20260921T175358`. There were
+zero uploaded files in this production snapshot; populated-file recovery remains
+covered by the passing isolated backup tests.
+
+The previous compatible web release and its shared assets passed checksum
+verification. Roll back this frontend update from the canonical project root:
+
+```bash
+sudo -n bash web/deploy/deploy.sh rollback 20260919T015539Z-7075cae7
+```
+
+Keep the live API, database and uploads. Do not restore an older database simply
+to undo this frontend change. The existing full database/file recovery procedure
+below remains applicable for disaster recovery.
+
+Root build/typechecks, lint, 150 server/API tests, 75 frontend tests, five team
+cases in each of Chromium and WebKit, 11 integrated cases, all 12 redesign cases
+(split to respect sign-in limits), 25 deployment/backup/recovery tests and CLI
+operations passed. The historical frozen-contract manifest still reports drift
+from the earlier team implementation; its differing files match Git HEAD and
+were not edited here. See [Work verification](../WORK-TASKS.md) for details.
+
+Post-publish verification passed trusted HTTPS, all four exact build hashes,
+owner Work task totals and filters, read-only navigation, anonymous business and
+file rejection, private-path rejection, and the unrelated Research 401 gate.
+API, Caddy and the backup timer remain active/enabled. The temporary verification
+session was revoked. No production business records were changed for testing.
+Screenshots at 320/390/768/1280 are in `web/artifacts/work-tasks/`.
+Physical iPhone/Safari and actual production password entry were not exercised.
+
+## Historical Figma release — September 19, 01:55 UTC
 
 Web `20260919T015539Z-7075cae7` is live and verified. API `20260918T081813Z-a8592c71` and
 schema 002 remain unchanged. The prior compatible web `20260918T155018Z-e47e98e6`

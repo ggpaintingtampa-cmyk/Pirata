@@ -76,6 +76,19 @@ try {
   const data = await snapshot.json();
   assert.equal(data.currentUser?.role, 'owner', 'Temporary session retains owner role');
   assert(Array.isArray(data.tasks) && Array.isArray(data.projects), 'Existing business collections load');
+  phase = 'Work assignment filters';
+  const teamTasks = page.getByRole('region', { name: 'Team tasks', exact: true });
+  assert(await teamTasks.isVisible(), 'Owner team task section visible');
+  await teamTasks.getByRole('group', { name: 'Work task status' }).getByRole('button', { name: 'All', exact: true }).click();
+  const visibleTasks = data.tasks.filter(task => task.archivedAt == null &&
+    !(task.parentTaskId && data.tasks.some(parent => parent.id === task.parentTaskId && parent.archivedAt != null)));
+  assert.equal(await teamTasks.locator('.work-my-task-row').count(), visibleTasks.length, 'All unarchived tasks available without history cap');
+  await teamTasks.getByLabel('Person', { exact: true }).selectOption('unassigned');
+  assert.equal(await teamTasks.locator('.work-my-task-row').count(), visibleTasks.filter(task => !task.assigneeId).length, 'Unassigned filter preserves records');
+  await teamTasks.getByRole('button', { name: 'Reset filters', exact: true }).click();
+  await teamTasks.getByRole('button', { name: 'Today', exact: true }).click();
+  assert.equal(await teamTasks.getByRole('button', { name: 'Today', exact: true }).getAttribute('aria-pressed'), 'true', 'Today toggle works');
+  await teamTasks.getByRole('button', { name: 'Reset filters', exact: true }).click();
   for (const section of ['Projects', 'Calendar']) {
     phase = 'read-only ' + section + ' page';
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Menu', exact: true }).click();

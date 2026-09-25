@@ -1,12 +1,20 @@
 # Pirata deployment and recovery
 
+The **Work update is live and verified as of September 21, 2026, 17:58 UTC**.
+Web `20260921T175808Z-35477776`; API `20260918T081813Z-a8592c71`; schema 002.
+The previous web `20260919T015539Z-7075cae7` is retained and checksummed.
+See [current backup and rollback](TEAM-RECOVERY.md#current-work-release--september-21-1758-utc),
+[release metadata](deployed-release.json) and [Work verification](../WORK-TASKS.md).
+
+## Historical September 19 Figma deployment
+
 The **Figma update is live and verified as of September 19, 2026, 01:55 UTC**.
 Web `20260919T015539Z-7075cae7`; API `20260918T081813Z-a8592c71`; schema 002.
 The tested frontend implements the revised Figma designs and preserves accounts,
 private data and existing API/AI configuration. The previous compatible web
 `20260918T155018Z-e47e98e6` is retained and checksummed.
 
-See [current backup and rollback](TEAM-RECOVERY.md#current-figma-release--september-19-0155-utc),
+See [historical backup and rollback](TEAM-RECOVERY.md#historical-figma-release--september-19-0155-utc),
 [exact deployment record](deployed-release.json) and
 [Figma implementation/screenshots](../FIGMA-IMPLEMENTATION.md).
 

@@ -1,3 +1,10 @@
+# Work update — September 21, 2026
+
+See [Work assignments and subtask editing](WORK-TASKS.md) for the new Work
+filters, owner reassignment, employee view, subtask flow and verification.
+The API and schema remain unchanged; current deployment and rollback are recorded
+in [TEAM-RECOVERY.md](deploy/TEAM-RECOVERY.md).
+
 # Figma update — September 19, 2026
 
 See [FIGMA-IMPLEMENTATION.md](FIGMA-IMPLEMENTATION.md) for the current Figma screen

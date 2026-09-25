@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { ArrowUpRight, CheckCheck, ChevronRight, FolderOpen, ListChecks, Plus, Sparkles, Target } from 'lucide-react';
+import { ArrowUpRight, CheckCheck, ChevronRight, CornerDownRight, FolderOpen, ListChecks, Plus, Sparkles, Target } from 'lucide-react';
+import type { Task } from '@pirata/contracts/index';
 import { completionPercent, dailyCompletion, projectCompletion, taskCompletion } from '@pirata/contracts/progress';
 import type { ModuleProps } from '../../services/moduleProps';
 import { CompletionRing, QuickTaskCapture, TaskCheck, TaskChecklist, TimerControls } from '../tasks-time';
 import { WorkDialog } from '../tasks-time/WorkDialog';
 import { WorkForm } from '../tasks-time/WorkForm';
+import { defaultWorkFilters, groupWorkTasks, selectWorkTasks, type WorkTaskFilters } from './myTasks';
 import './styles.css';
 
 export function DailyPlanEditor({ app, userId, date, onClose }: { app:ModuleProps; userId:string; date:string; onClose():void }) {
@@ -17,6 +19,51 @@ export function DailyPlanEditor({ app, userId, date, onClose }: { app:ModuleProp
 
 function CompletionBar({ fraction, label, goalCount }: { fraction:number|null; label:string; goalCount?:number }) {
   return fraction===null?<div className="work-goal-empty"><span className="work-empty-icon"><Target size={24} aria-hidden="true"/></span><div><h3>A little focus goes a long way.</h3><p>Choose a few meaningful goals to begin your day.</p></div></div>:<div className="completion-display"><CompletionRing fraction={fraction} label={label}/><div className="completion-copy"><h3>{fraction===1?'A day well done.':'Good work, one step at a time.'}</h3><span className="completion-caption">{goalCount?`${goalCount} ${goalCount===1?'goal':'goals'} · equally weighted`:'Your current daily plan'}</span></div></div>;
+}
+
+function MyTaskRow({ app, task, onAssign }: { app:ModuleProps; task:Task; onAssign?: (task:Task)=>void }) {
+  const parent=task.parentTaskId?app.snapshot.tasks.find(item=>item.id===task.parentTaskId):undefined;
+  const project=app.snapshot.projects.find(item=>item.id===(task.projectId??parent?.projectId));
+  return <div className={'work-my-task-row'+(parent?' work-my-subtask':'')}>
+    <span className="work-my-task-context">
+      <span>{project?.name??'No project'}</span>
+      {parent&&<><span aria-hidden="true">·</span><span className="work-my-task-parent"><CornerDownRight size={13} aria-hidden="true"/>Subtask of {parent.title}</span></>}
+    </span>
+    <TaskCheck app={app} task={task}/>
+    {onAssign&&<button className="work-row-assignment" aria-label={'Reassign '+task.title} onClick={()=>onAssign(task)}>Assign: {app.snapshot.team?.find(person=>person.id===task.assigneeId)?.name??(task.assigneeId?'Unavailable member':'Unassigned')}{parent&&!task.assignmentExplicit?' · inherited':''}<ChevronRight size={14} aria-hidden="true"/></button>}
+  </div>;
+}
+
+function MyTasksSection({ app, userId }: { app:ModuleProps; userId:string }) {
+  const [filters,setFilters]=useState<WorkTaskFilters>(defaultWorkFilters);
+  const [assignmentDraft,setAssigning]=useState<Task|null>(null);
+  // Keep the dialog through refresh/retry, but use reviewed current fields after a conflict.
+  const assigning=assignmentDraft?(app.snapshot.tasks.find(task=>task.id===assignmentDraft.id)??assignmentDraft):null;
+  const [collapsed,setCollapsed]=useState<Set<string>>(()=>new Set());
+  const owner=app.snapshot.currentUser?.role==='owner';
+  const tasks=selectWorkTasks(app.snapshot,app.businessDate,filters);
+  const groups=owner?groupWorkTasks(app.snapshot,tasks):[{id:userId,name:'Your tasks',tasks}].filter(group=>group.tasks.length);
+  const setFilter=<K extends keyof WorkTaskFilters>(key:K,value:WorkTaskFilters[K])=>setFilters(previous=>({...previous,[key]:value}));
+  const filtered=Object.keys(defaultWorkFilters).some(key=>filters[key as keyof WorkTaskFilters]!==defaultWorkFilters[key as keyof WorkTaskFilters]);
+  const parent=assigning?.parentTaskId?app.snapshot.tasks.find(task=>task.id===assigning.parentTaskId):undefined;
+  return <section className="work-my-tasks" aria-labelledby="work-my-tasks-title">
+    <div className="work-section-heading">
+      <div className="work-section-title"><ListChecks size={20} aria-hidden="true"/><h2 id="work-my-tasks-title">{owner?'Team tasks':'My tasks'}</h2><span className="work-count" aria-live="polite">{tasks.length}</span></div>
+      <div className="work-task-toggle" role="group" aria-label="Work task view"><button aria-pressed={filters.scope==='assigned'} onClick={()=>setFilter('scope','assigned')}>{owner?'All assignments':'Assigned to me'}</button><button aria-pressed={filters.scope==='today'} onClick={()=>setFilter('scope','today')}>Today</button></div>
+    </div>
+    <p className="work-section-description">{filters.scope==='today'?'Today’s goals and scheduled tasks, including their subtasks.':owner?'Everyone’s assigned work and unassigned tasks, all in one place.':'All work assigned to you, including subtasks and work planned for another day.'}</p>
+    <div className="work-task-toolbar">
+      <label className="work-field work-task-search">Search tasks<input type="search" placeholder="Task, project or note" value={filters.query} onChange={event=>setFilter('query',event.target.value)}/></label>
+      <label className="work-field">Project<select aria-label="Project" value={filters.project} onChange={event=>setFilter('project',event.target.value)}><option value="all">All projects</option><option value="unfiled">Unfiled tasks</option>{app.snapshot.projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
+      {owner&&<label className="work-field">Person<select aria-label="Person" value={filters.person} onChange={event=>setFilter('person',event.target.value)}><option value="all">Everyone</option><option value="unassigned">Unassigned only</option>{(app.snapshot.team??[]).map(person=><option key={person.id} value={person.id}>{person.name}{person.disabledAt!=null?' (inactive)':''}</option>)}</select></label>}
+    </div>
+    <div className="work-task-results"><div className="work-task-toggle" role="group" aria-label="Work task status">{(['active','done','all'] as const).map(status=><button key={status} aria-pressed={filters.status===status} onClick={()=>setFilter('status',status)}>{status==='active'?'Active':status==='done'?'Completed':'All'}</button>)}</div>{filtered&&<button className="work-link-button" onClick={()=>setFilters(defaultWorkFilters)}>Reset filters</button>}</div>
+    <div className="work-my-task-groups">
+      {groups.map(group=><div key={group.id} className="work-my-task-group"><button className="work-my-task-group-heading" aria-expanded={!collapsed.has(group.id)} aria-controls={'work-group-'+group.id} onClick={()=>setCollapsed(previous=>{const next=new Set(previous);if(next.has(group.id))next.delete(group.id);else next.add(group.id);return next;})}><span>{group.name}</span><span>{group.tasks.length}<ChevronRight size={16} aria-hidden="true"/></span></button><div id={'work-group-'+group.id} hidden={collapsed.has(group.id)}><div className="work-my-task-list">{group.tasks.map(task=><MyTaskRow key={task.id} app={app} task={task} onAssign={owner?setAssigning:undefined}/>)}</div></div></div>)}
+    </div>
+    {!tasks.length&&<p className="work-my-task-empty">{filters.scope==='today'?'No matching work planned for today. Check all assignments or adjust the daily plan.':'No tasks match these filters. Try another project, person or status.'}</p>}
+    {assigning&&owner&&<WorkDialog title="Assign task" onClose={()=>setAssigning(null)}><WorkForm app={app} initial={{assigneeId:parent&&!assigning.assignmentExplicit?'':assigning.assigneeId??''}} command={values=>({type:'task.update',id:assigning.id,title:assigning.title,projectId:assigning.projectId,estimatedMinutes:assigning.estimatedMinutes,note:assigning.note,parentTaskId:assigning.parentTaskId??null,assigneeId:values.assigneeId||null})} message="Assignment updated." done={()=>setAssigning(null)}>{draft=><><p>{assigning.title}</p>{draft.field('assigneeId','Responsible person',{options:[{value:'',label:parent?'Inherit from '+parent.title:'Unassigned'},...(app.snapshot.team??[]).filter(person=>person.disabledAt==null||person.id===assigning.assigneeId).map(person=>({value:person.id,label:person.name+(person.disabledAt!=null?' (inactive)':'')}))]})}<p>{parent?'Inherit keeps this subtask with the parent’s responsible person.':'Subtasks that inherit this assignment will move with the task. Explicit subtask assignments stay as chosen.'} Running timers and daily goals stay unchanged.</p></>}</WorkForm></WorkDialog>}
+  </section>;
 }
 
 export function WorkView(app: ModuleProps & { onOpenProjects?():void; onOpenTasks?():void }) {
@@ -34,6 +81,7 @@ export function WorkView(app: ModuleProps & { onOpenProjects?():void; onOpenTask
     <TimerControls {...app} selection={{taskId:current?.id??goals[0]?.taskId}}/>
     </div>
     {current&&<section className="work-current-checklist"><div className="work-section-heading"><div className="work-section-title"><ListChecks size={20} aria-hidden="true"/><h2>Next steps</h2></div><button className="work-link-button" onClick={()=>app.onOpenTask(current.parentTaskId??current.id)}>Open task<ArrowUpRight size={16} aria-hidden="true"/></button></div><TaskChecklist {...app} compact parentTaskId={current.parentTaskId??current.id} selection={{projectId:current.projectId??undefined}}/></section>}
+    {person&&<MyTasksSection app={app} userId={person.id}/>}
     <section className="work-projects"><div className="work-section-heading"><div className="work-section-title"><FolderOpen size={20} aria-hidden="true"/><h2>Projects</h2><span className="work-count">{projects.length}</span></div>{app.onOpenProjects&&<button className="work-link-button" onClick={app.onOpenProjects}>All projects<ArrowUpRight size={16} aria-hidden="true"/></button>}</div>
       {!projects.length&&<div className="work-empty-state"><FolderOpen size={24} aria-hidden="true"/><div><h3>Give your next job a home.</h3><p>Create a project when you are ready to group your work. Tasks can stay unfiled in the meantime.</p></div></div>}
       <div className="work-project-grid">{projects.slice(0,3).map(project=>{const completion=projectCompletion(project.id,app.snapshot.tasks),client=app.snapshot.clients.find(item=>item.id===project.clientId);return <button key={project.id} onClick={()=>app.onOpenProject(project.id)}><span className="work-project-top"><span className="work-project-mark"><FolderOpen size={21} aria-hidden="true"/></span><ArrowUpRight size={18} aria-hidden="true"/></span><strong>{project.name}</strong><span className="work-project-client">{client?.name||project.clientName||'Ready to organize'}</span><span className="work-project-completion">{completion===null?'Ready for tasks':completionPercent(completion)+'% complete'}<ChevronRight size={15} aria-hidden="true"/></span>{completion!==null&&<progress value={completion} max={1} aria-label={project.name+' completion'}/>}</button>;})}</div>

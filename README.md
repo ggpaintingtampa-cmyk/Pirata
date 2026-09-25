@@ -7,6 +7,14 @@ The current team version extends the existing application. Historical
 `HOME-SCREEN-SPEC.md` and implementation packets describe earlier versions; the
 September 18 team requirements supersede their home-screen/owner-only boundaries.
 
+## September 21 Work update
+
+Work now offers all assignments or Today, active/completed/all statuses, search
+and project filters. The owner gets person groups, unassigned work and a safe
+assignment picker. Employees get their own complete task history. Subtasks have
+their own details, bottom Edit action and parent navigation.
+See [Work update and verification](web/WORK-TASKS.md).
+
 ## September 19 Figma update
 
 The revised [Figma designs](https://figma.com/design/uf6F2FArS37ia2QSMtSbNT)
