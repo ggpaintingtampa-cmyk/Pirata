@@ -1,41 +1,42 @@
 {
-  "verifiedAt": "2026-09-25T14:52:01+00:00",
-  "status": "Team update 2026-09-25 (roles, Daily lists, hours and pay, sales flow, materials and tools, installable shell, Spanish); paired API/schema 003/web cutover, HTTP verification and authenticated read-only browser verification passed",
+  "verifiedAt": "2026-09-26T02:10:08+00:00",
+  "status": "Delete option (Trash, schema 004) live: paired API/schema/web cutover, HTTP verification and authenticated read-only browser verification passed",
   "target": "https://pirata.andresinbox.tech",
   "audience": "owner plus managers, sales reps and workers (2/5/5/10)",
-  "webReleaseId": "20260925T145201Z-be86cc88",
-  "apiReleaseId": "20260925T145156Z-d947be1a",
-  "previousWebReleaseId": "20260921T175808Z-35477776",
-  "previousApiReleaseId": "20260918T081813Z-a8592c71",
-  "scope": "API + schema 003 + web. Four roles, Daily page and ordered day lists, three-level tasks with completion records and undo, questions, day notes, nested templates, work shifts with approval, pay rates, Daily report, Hours, Project insights, CSV exports, sales capture with review gate, job facts, file tags and comments, materials requests, tool sign-outs with per-person cleaning cycles and broken reports, installable app shell, sliding 30-day sessions, Spanish. Historical rows and values preserved; legacy 'employee'/'open' read as worker/scheduled.",
+  "webReleaseId": "20260926T021008Z-ccdf7326",
+  "apiReleaseId": "20260926T021004Z-76e738c3",
+  "previousWebReleaseId": "20260925T145201Z-be86cc88",
+  "previousApiReleaseId": "20260925T145156Z-d947be1a",
+  "scope": "API + schema 004 + web. Every created record has a Delete control that moves it to a restorable Deleted items page (owner/manager); projects take their tasks, questions, requests and notes with them; running timers, clients with projects and signed-out tools block deletion. Migration 004 adds only nullable columns; every historical row and value preserved.",
   "files": {
     "assets/WorkDialog--c74L6MN.css": "3550722caa743e6b32366853d2946baa3c81580ebc3a551990c5fe09ab0334d8",
-    "assets/WorkDialog-vMQGboob.js": "1ef7157add0b3b64442908da87bb2e67f16d789b847a94c5f532a4c4247328bb",
-    "assets/index-BztIvRh3.js": "a2da2d947452400ea5974da6974330e71ef89c0cba453e9585a5b1b80f33392b",
-    "assets/index-DRBxUw1Y.css": "18e229db52180bc57a31204eb29b474d2bff4cd41f4c7408f715e35111087592",
+    "assets/WorkDialog-DunU3SSW.js": "4cf0d8cd0b81b8f6eb8a7d3b34bccb728f77de885fd7771e1c30608896beaf44",
+    "assets/index-CpZ2xHCa.css": "4a0f98dd59e65d467a0efefb0d35ceaa29b44fb81008b328b1da4c40652c58f6",
+    "assets/index-CrNvGNys.js": "fd85234979f58f085482bb2117644685924449bb1b703184737d00e8fa5748f0",
     "favicon.svg": "e20b5029ce6808cd5bbfc2f2b039cb062d921245a5c5780a5174b12bc01b73a8",
     "icons/icon-192.png": "4f416cd301e7430e59bc444d81099ab8da530371a44f570093bf020ccda8caf8",
     "icons/icon-512.png": "be495bcdb83fc7139f08fbde4e1d56e0d807412692c8e81aa6a6236cee6ba9a1",
-    "index.html": "d4624ccad39e0755b276bac08059ee198d99584cd1b39339de180d7d332db127",
+    "index.html": "f7073c667dca0078a57a38f6100e988727c1046f46dfe0e611187747194046e6",
     "manifest.webmanifest": "cdf721b1ad6117d51574cbf7a07dbc5a6273a2b662d1df9b79d1f433bd17d661",
     "sw.js": "9462efcb3695eb26d0745ed7b8b71ba19917de2151beecf0f10bb82b0281fa37"
   },
-  "webManifest": "/var/backups/pirata/20260925T145201Z-be86cc88.json",
-  "apiManifest": "/var/backups/pirata/team-upgrade-20260925T145156Z-d947be1a/upgrade.json",
+  "webManifest": "/var/backups/pirata/20260926T021008Z-ccdf7326.json",
+  "apiManifest": "/var/backups/pirata/team-upgrade-20260926T021004Z-76e738c3/upgrade.json",
   "migration": {
-    "version": 3,
+    "version": 4,
     "checksums": {
       "001-foundation.sql": "2d201c8615f2eb7b74543ee285c77909b8bfe45002a5e940bb41060014d85c71",
       "002-team.sql": "7169b94a50f157ac39b6783ff4e83fdcb99b2019b160f149ec73a2a42dc8da60",
-      "003-update-2026-09-25.sql": "d35689e0802ce94774bcafe9933e362375ac26669faa2ec27485c280ad49d3b7"
+      "003-update-2026-09-25.sql": "d35689e0802ce94774bcafe9933e362375ac26669faa2ec27485c280ad49d3b7",
+      "004-trash-2026-09-25.sql": "22120e5146345f25723bc5bcb8845ff08001e62e34c8ff398d683b3dd831fa0d"
     },
-    "historicalRecords": "Every original column and row compared equal in both the preflight (team-preflight-20260925T145147Z-93613d7b) and the closed-window migrated copy; 4 team members, 34 tasks, 13 time entries, 154 receipts, 47 activity rows preserved"
+    "historicalRecords": "Every original column and row compared equal in the preflight (team-preflight-20260926T020957Z-6c091a14) and the closed-window migrated copy; 4 team members, 2 clients, 1 project, 48 tasks, 13 time entries, 169 receipts, 62 activity rows preserved"
   },
   "backup": {
-    "database": "/var/backups/pirata/database/20260925T145159Z-4d7f8fe080d042da90de4f23dca9d8b5.sqlite",
-    "sha256": "ed737a1428dd6a38a883f6a10b8e3ae3b3723fd7ccc40995c4fbf7e8eb1af7af",
-    "preflightBackup": "/var/backups/pirata/database/20260925T144917Z-cb173e39e9ac402caad4a4057e202409.sqlite",
-    "preMigrationDatabase": "/var/lib/pirata/upgrade-recovery-20260925T145156Z-d947be1a/"
+    "database": "/var/backups/pirata/database/20260926T021007Z-d7a5cc9de3124283babc1c30df54b674.sqlite",
+    "sha256": "ae93914eceb63ef7f5c24d2d05f0f799e368f6ff88d70c20d12bd6dc1556c554",
+    "preflightBackup": "/var/backups/pirata/database/20260926T020924Z-4e54d8ef915949a1af244c297b30c3e3.sqlite",
+    "preMigrationDatabase": "/var/lib/pirata/upgrade-recovery-20260926T021004Z-76e738c3/"
   },
   "rollback": {
     "kind": "Compatible web-only rollback, retain API/database/uploads",

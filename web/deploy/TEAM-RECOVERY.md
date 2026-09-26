@@ -4,7 +4,42 @@ This runbook supersedes the historical owner-only access and database-only backu
 instructions for the team release. `deployed-release.json` records what is
 actually deployed; source files alone do not establish production status.
 
-## Current team update release — September 25, 14:52 UTC
+## Current delete-option release — September 26, 02:10 UTC
+
+Web `20260926T021008Z-ccdf7326` and API `20260926T021004Z-76e738c3` are live and
+verified with schema 004 (`004-trash-2026-09-25.sql`). Every record a person
+creates now has a Delete control that moves it to **Menu → Deleted items**, where
+the owner or a manager restores it; a project takes its tasks, questions, requests
+and notes with it and brings them back together. Running timers, clients with
+projects and signed-out tools block deletion. The migration adds three nullable
+columns to sixteen tables and nothing else; every historical row and value was
+preserved (preflight `team-preflight-20260926T020957Z-6c091a14` and the closed-window
+copy compared equal: 4 team members, 2 clients, 1 project, 48 tasks, 13 time entries).
+
+Before publication the complete online backup was
+`/var/backups/pirata/database/20260926T020924Z-4e54d8ef915949a1af244c297b30c3e3.sqlite`;
+the closed-window backup is
+`/var/backups/pirata/database/20260926T021007Z-d7a5cc9de3124283babc1c30df54b674.sqlite`
+(sha256 `ae93914e…6554`), with the pre-migration database and sidecars retained in
+`/var/lib/pirata/upgrade-recovery-20260926T021004Z-76e738c3/` and the record in
+`/var/backups/pirata/team-upgrade-20260926T021004Z-76e738c3/upgrade.json`.
+
+The previous pair is web `20260925T145201Z-be86cc88` with API
+`20260925T145156Z-d947be1a` on schema 003. That API does not know the schema 004
+columns but SQLite ignores extra columns on read, and the previous web release only
+reads collections the server still returns, so a reviewed code-only rollback to
+that pair is possible if needed; records deleted through the new release would
+simply reappear (their `deleted_at` is ignored by the old code).
+
+Root build, lint, 178 server/API tests, 87 frontend tests, five team Chromium cases,
+six integrated cases, 11 release, 5 team-release and 10 backup tests, the sealed
+candidate smoke and CLI operations passed. Post-publish verification passed trusted
+HTTPS, all ten exact build hashes, installable shell files, anonymous 401s,
+private-path 404s and the read-only authenticated browser run (which now also opens
+Deleted items). No business writes were made; the temporary owner session was
+revoked. API, Caddy and the backup timer remain active/enabled.
+
+## Historical team update release — September 25, 14:52 UTC
 
 Web `20260925T145201Z-be86cc88` and API `20260925T145156Z-d947be1a` are live and verified with schema 003
 (`003-update-2026-09-25.sql`). This release adds four roles (owner, manager, sales,
