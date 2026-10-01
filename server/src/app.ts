@@ -19,6 +19,7 @@ import { verifyPassword } from './auth/password.js';
 import { registerExports } from './routes/export.js';
 import { registerSearch } from './routes/search.js';
 import { registerTrashPreview } from './routes/trash.js';
+import { registerWorkFeed } from './integration/work-feed.js';
 import { registerTranslation } from './translation/index.js';
 import type { TranslationService } from './translation/service.js';
 export interface AppOptions {storagePath?:string;storageLimitBytes?:number;fetcher?:typeof fetch;db:Sqlite;origin:string;now?:()=>number;audit?:(event:{event:'request';method:string;status:number})=>void;handlers?:PartialHandlers;translation?:TranslationService}
@@ -85,5 +86,6 @@ export function createApp(options:AppOptions) {
   registerExports(app,{db,now,translation});
   registerSearch(app,{db,now});
   registerTrashPreview(app,{db,origin,now});
+  registerWorkFeed(app,{db,origin,now});
   return app;
 }

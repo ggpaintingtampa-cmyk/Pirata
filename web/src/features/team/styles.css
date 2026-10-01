@@ -50,3 +50,7 @@
   .team-settings.team-figma { padding: 16px; }
   .team-figma .team-form-grid { grid-template-columns: minmax(0, 1fr); }
 }
+/* P10 */
+.connections-token-value{display:block;word-break:break-all;padding:8px 10px;margin:6px 0;border-radius:8px;background:rgba(0,0,0,.3);font-size:.85rem;user-select:all}
+.connections-scope{display:flex;gap:8px;align-items:center;margin:8px 0}
+.team-member-list li.is-revoked{opacity:.6}

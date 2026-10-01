@@ -8,7 +8,7 @@ export const capability: 'blocked' | 'ready' = 'ready';
 /** R-ROLE-4: the person who completed a task may undo it for ten minutes; afterwards only an owner may change it. */
 export const UNDO_WINDOW_MS = 10 * 60 * 1000;
 /** P02: a task's requirement rows in order (materials, tools, preparation notes). */
-export function requirementsOf(ctx: TransactionContext, taskId: string): TaskRequirement[] {
+export function requirementsOf(ctx: Pick<TransactionContext, 'repo'>, taskId: string): TaskRequirement[] {
   return ctx.repo.list('task_requirements').filter(row => row.taskId === taskId).sort((a, b) => a.position - b.position || a.createdAt - b.createdAt || a.id.localeCompare(b.id));
 }
 const sameRequirement = (row: TaskRequirement, next: TemplateRequirement) => row.kind === next.kind && row.name === next.name && row.materialId === next.materialId && row.equipmentId === next.equipmentId && row.quantity === next.quantity && row.unit === next.unit && row.note === next.note;

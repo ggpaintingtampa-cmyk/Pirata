@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "sha256": "73b4c8ba9087045e3efb72ce8cd89ff5c2d5bbc1b3ca69fb9ae59e63a3f0768a",
+  "sha256": "e4cfc93a861c66987a2c627880588b9c1fedb3f43bb59c4f7e61af121a5e11b8",
   "files": {
     "package.json": "664c4faef84818afc56ba140bd57084cc4e8d3cf893f89bcf564afd0037a2baf",
     "packages/contracts/package.json": "e1435da4b3e94fd63c5bad7cb5772e31fbc38e6286e202e06a9681cdec2939ed",
@@ -10,7 +10,8 @@
     "packages/contracts/src/extra.ts": "92f8c5a73fa3d38ed8f0a57e34993accef00a1a4ffef26b2b93e47c9635fcf08",
     "packages/contracts/src/hours.ts": "8f655cb996a4b4182e8054a0a05fff2c37092a990abfda6ece9204050925a86e",
     "packages/contracts/src/import.ts": "e124ffe74e614a5a7af8ad1e2903b21b467e1b9470b0828f1381470019f5e423",
-    "packages/contracts/src/index.ts": "d8f61e15ef28fb9248d037daeb797439dd444a01e9142d6e3ee167124a5e8528",
+    "packages/contracts/src/index.ts": "ee7ba5c75f6c553e468745cee85d8d0a2fc8de0bb0073bfc4f36512ebe06dc64",
+    "packages/contracts/src/integration.ts": "b5ae8e602cebd771876071287b2aa3a16004f6181275c86f175d6a92eecc7bb3",
     "packages/contracts/src/permissions.ts": "a50a76a2d0ca56b6698348916770d8b4c0b8d84dbb925bc28dfcc54943691ecd",
     "packages/contracts/src/progress.ts": "ea6e49964d0bfd0765eb65345bc9ccc90357b8e6a737c2d7bb1ad3a77127a61e",
     "packages/contracts/src/requirements.ts": "74fca90cb40d04fd5fa88a91a06ee6ff8b5c7dfe2a90bb5c2d2762e654fab671",
@@ -32,7 +33,7 @@
     "pnpm-lock.yaml": "a190bf93122cbbee5f7f470fef25627cd2baaf4f594ab44c44f083fd959eb088",
     "pnpm-workspace.yaml": "f656f2c1c8aa105f405f0becb214fa0a306a3bc02dec9f3cd210fba194cda5e0",
     "server/package.json": "70f7e731760b65f455de705aa44c12217537a480374d00f9e560bce622c99755",
-    "server/src/app.ts": "3dc3c2df4d743b113bafcff4b060028128a7162f0258f3d1b6116799aaac9f30",
+    "server/src/app.ts": "a6d8f849e1aa7ae2f4691bdbdfc5682ea5f9e57af435d93f09ed4ee74de24f17",
     "server/src/auth/password.ts": "5e86d5f54695c294f6284b0c8a7ccc4205cd9a2868a9c768667d5dc61a6c3801",
     "server/src/auth/sessions.ts": "a94ce9a57240cc57b2541e816ace98c60d9fc54532b13fff0215bccd7c8a6c96",
     "server/src/auth/team.ts": "9a00c45260269182a9d94e3fca5d85e61ed38aa9e951a64fe79666fce42a3f9d",

@@ -18,6 +18,7 @@ export * from './trash.js';
 export * from './translation.js';
 export * from './requirements.js';
 export * from './bulk.js';
+export * from './integration.js';
 import { isLocalDate } from '@pirata/domain/lib/dates';
 
 export const CONTRACT_VERSION = '3.0.0' as const;
