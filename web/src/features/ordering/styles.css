@@ -1,0 +1,7 @@
+.ordering-option{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;margin:8px 0;display:grid;gap:6px}
+.ordering-option.is-applied{border-color:#f0b429}
+.ordering-option h3{margin:0;font-size:1rem}
+.ordering-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ordering-columns h4{margin:0 0 4px;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;opacity:.7}
+.ordering-columns ol{margin:0;padding-left:1.2rem;font-size:.9rem;display:grid;gap:2px}
+@media (max-width:480px){.ordering-columns{grid-template-columns:1fr}}

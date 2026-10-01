@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import {registerFiles} from './files/index.js';
 import {registerAsk} from './ai/index.js';
+import {registerOrderSuggestions} from './ai/order.js';
+import {loadSkill} from './ai/skill/index.js';
 import {registerTeam} from './auth/team.js';
 import {Repositories} from './core/repositories.js';
 import cookie from '@fastify/cookie';
@@ -81,7 +83,9 @@ export function createApp(options:AppOptions) {
   });
   registerTeam(app,{db,origin,now});
   registerFiles(app,{db,origin,now,storagePath:options.storagePath??process.env.PIRATA_UPLOADS_PATH,storageLimitBytes:options.storageLimitBytes??Number(process.env.PIRATA_STORAGE_LIMIT_BYTES??2147483648)});
+  loadSkill(); // P11: a missing or malformed skill file stops the server at startup, never a request.
   registerAsk(app,{db,origin,now,fetcher:options.fetcher});
+  registerOrderSuggestions(app,{db,origin,now,fetcher:options.fetcher});
   const translation=registerTranslation(app,{db,origin,now,fetcher:options.fetcher,service:options.translation});
   registerExports(app,{db,now,translation});
   registerSearch(app,{db,now});

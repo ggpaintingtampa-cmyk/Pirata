@@ -22,7 +22,11 @@ export const bulkCommands=[
   expected:z.object({roots:z.number().int().nonnegative(),cascaded:z.number().int().nonnegative()}).strict(),
  }),
  command('record.bulkRestore',{batchId:id}),
+ /** P12: apply one reviewed AI order proposal; the server re-validates the ids against the live sibling list. */
+ command('task.applyOrder',{reviewId:z.uuid(),optionIndex:z.number().int().min(0).max(4),projectId:id,parentTaskId:nullableId.default(null),orderedIds:z.array(id).min(1).max(500).refine(unique,'Duplicate task.')}),
 ] as const;
+export interface OrderOption {name:string;orderedIds:string[];reasons:string[];assumptions:string[]}
+export interface OrderProposal {reviewId:string;baseRevision:number;projectId:string;parentTaskId:string|null;current:string[];fixed:string[];options:OrderOption[]}
 /** `POST trash/preview` → the consequences of a bulk deletion, computed read-only with the same rules the command applies. */
 export const bulkDeletePreviewRequestSchema=z.object({items:z.array(z.object({kind:trashKindSchema,id}).strict()).min(1).max(BULK_DELETE_MAX_ITEMS)}).strict();
 export interface BulkDeletePreviewRoot {kind:z.infer<typeof trashKindSchema>;id:string;label:string;cascaded:number;blocked?:string}

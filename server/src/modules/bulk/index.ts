@@ -5,7 +5,7 @@ import { BULK_COPY_MAX_NODES, orderedChildren, subtree, taskDepth, type Task } f
 import { businessDate } from '@pirata/domain/lib/dates';
 import type { HandlerMap } from '../../core/context.js';
 import { ApiError, invalid } from '../../core/errors.js';
-import { copyRequirements, createTask } from '../tasks-time/index.js';
+import { byPosition, copyRequirements, createTask } from '../tasks-time/index.js';
 /** Drop ids whose ancestor is also selected (they copy with it) and repeats; keep first-appearance order. */
 export function normalizeSelection(all: readonly Task[], ids: readonly string[]): string[] {
   const chosen = new Set(ids), byId = new Map(all.map(task => [task.id, task]));
@@ -47,4 +47,17 @@ export const handlers = {
     ctx.repo.insert('activity', { id: ctx.newId(), createdAt: ctx.serverNow, updatedAt: ctx.serverNow, userId: ctx.userId, projectId: destination.id, taskId: null, kind: 'task.bulkCopy', body: `Copied ${mapping.length} tasks into “${destination.name}”.` });
     return { changed: true, result: { kind: 'tasks', id: firsts[0] } };
   },
-} satisfies Pick<HandlerMap, 'task.bulkCopy'>;
+  /** P12: the reviewed proposal becomes an ordinary reorder, audited in the same transaction. Scheduled times never change. */
+  'task.applyOrder': (ctx, c) => {
+    const siblings = ctx.repo.list('tasks').filter(t => !t.archivedAt && (t.parentTaskId ?? null) === c.parentTaskId && (c.parentTaskId !== null || (t.projectId ?? null) === c.projectId)).sort(byPosition);
+    const byId = new Map(siblings.map(t => [t.id, t]));
+    if (c.orderedIds.length !== siblings.length || c.orderedIds.some(id => !byId.has(id))) throw new ApiError(409, 'ORDER_STALE', 'The task list changed since this order was proposed. Ask for a fresh proposal.');
+    const before = siblings.map(t => t.id);
+    let changed = false;
+    c.orderedIds.forEach((id, position) => { const task = byId.get(id)!; if ((task.position ?? 0) !== position) { ctx.repo.update('tasks', id, { position, updatedAt: ctx.serverNow }); changed = true; } });
+    if (!changed) return { changed: false, result: { kind: 'tasks', id: c.orderedIds[0] } };
+    ctx.repo.insert('batch_operations', { id: ctx.newId(), createdAt: ctx.serverNow, userId: ctx.userId, kind: 'task.applyOrder', summaryJson: JSON.stringify({ reviewId: c.reviewId, optionIndex: c.optionIndex, projectId: c.projectId, parentTaskId: c.parentTaskId, before, after: c.orderedIds }) });
+    ctx.repo.insert('activity', { id: ctx.newId(), createdAt: ctx.serverNow, updatedAt: ctx.serverNow, userId: ctx.userId, projectId: c.projectId, taskId: null, kind: 'task.applyOrder', body: `Applied a reviewed task order (${c.orderedIds.length} tasks).` });
+    return { changed: true, result: { kind: 'tasks', id: c.orderedIds[0] } };
+  },
+} satisfies Pick<HandlerMap, 'task.bulkCopy' | 'task.applyOrder'>;

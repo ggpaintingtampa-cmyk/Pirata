@@ -15,6 +15,8 @@ import { CompletionRing } from './CompletionRing';
 import { runCommand } from '../work/commands';
 import { affectedSession, canEditDone, treeCompletion } from '../work/dayList';
 import { SelectBox, SelectToggle } from '../bulk';
+import { OrderSuggestionsDialog } from '../ordering/OrderSuggestionsDialog';
+import { useCan } from '../../state/permissions';
 
 /** Retains a request through uncertain responses, including a successful write whose refresh failed. */
 export function CommandButton({ app, command, children, message, disabled = false, onSuccess }: { app: ModuleProps; command: BusinessCommand; children: ReactNode; message: string; disabled?: boolean; onSuccess?(): void }) {
@@ -85,7 +87,7 @@ export function TaskCheck({ app, task, showEstimate = false }: { app: ModuleProp
 
 /** Three levels: the list under a task shows subtasks and their tiny tasks; each level can add children while depth allows. */
 export function TaskChecklist(app: ModuleProps & { parentTaskId?: string; compact?: boolean }) {
-  const t = useT(), all = app.snapshot.tasks;
+  const t = useT(), all = app.snapshot.tasks, canSuggest = useCan('order.suggest'), [suggesting, setSuggesting] = useState(false);
   const parent = all.find(task => task.id === app.parentTaskId), parentDepth = parent ? taskDepth(all, parent.id) : -1;
   const tasks = parent ? orderedChildren(all, parent.id, parent.projectId ?? null) : all.filter(task=>!task.archivedAt&&!task.parentTaskId&&(!app.selection?.projectId||task.projectId===app.selection.projectId)).sort((a,b)=>(a.position??0)-(b.position??0)||a.createdAt-b.createdAt);
   const progress=app.selection?.projectId?projectCompletion(app.selection.projectId,all):null;
@@ -93,7 +95,7 @@ export function TaskChecklist(app: ModuleProps & { parentTaskId?: string; compac
   const heading = parentDepth === 1 ? t('tasks.tiny') : parent ? t('tasks.subtasks') : tx('Tasks');
   return <section className={'work-module task-checklist'+(parent?' task-subtask-list':'')} aria-label={heading}>
     {parent&&completion&&!app.compact&&<div className="task-checklist-summary"><CompletionRing fraction={completion.fraction} label={tx('Task completion')} size={64}/><div><h3>{heading}</h3><p>{completion.total>1?t('work.steps',{done:completion.done,total:completion.total}):tx('Break it into a few simple steps.')}</p></div></div>}
-    <div className="task-checklist-heading"><h3>{heading}</h3>{progress!==null&&!parent&&<span>{tx('Project completion:')} {completionPercent(progress)}%</span>}{!parent&&<SelectToggle/>}{!parent&&<button className="work-primary" onClick={()=>app.onAddTask(app.selection?.projectId??null)}><Plus size={16} aria-hidden="true"/>{tx('Add task')}</button>}</div>
+    <div className="task-checklist-heading"><h3>{heading}</h3>{progress!==null&&!parent&&<span>{tx('Project completion:')} {completionPercent(progress)}%</span>}{!parent&&canSuggest&&app.selection?.projectId&&tasks.filter(task=>task.status!=='done').length>=2&&<button type="button" className="work-link-button" onClick={()=>setSuggesting(true)}>{t('ordering.button')}</button>}{!parent&&<SelectToggle/>}{!parent&&<button className="work-primary" onClick={()=>app.onAddTask(app.selection?.projectId??null)}><Plus size={16} aria-hidden="true"/>{tx('Add task')}</button>}</div>
     {!tasks.length&&<p>{parent?tx('Add the practical steps for this task.'):tx('Add the next piece of work.')}</p>}
     {tasks.map(task=><div key={task.id}><TaskCheck app={app} task={task} showEstimate={Boolean(parent)}/>
       {taskDepth(all, task.id) < 2 && !app.compact && orderedChildren(all, task.id, task.projectId ?? null).map(child=><div className="task-child" key={child.id}><TaskCheck app={app} task={child}/>
@@ -102,5 +104,6 @@ export function TaskChecklist(app: ModuleProps & { parentTaskId?: string; compac
       {parent && parentDepth === 0 && !app.compact && <div className="task-child"><QuickTaskCapture app={app} projectId={task.projectId ?? null} parentTaskId={task.id}/></div>}
     </div>)}
     {(!parent || parentDepth < 2) && <QuickTaskCapture app={app} projectId={parent?.projectId ?? app.selection?.projectId ?? null} parentTaskId={parent?.id ?? null}/>}
+    {suggesting && app.selection?.projectId && <OrderSuggestionsDialog app={app} projectId={app.selection.projectId} parentTaskId={null} onClose={() => setSuggesting(false)} />}
   </section>;
 }

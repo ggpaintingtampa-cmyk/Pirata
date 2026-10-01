@@ -40,6 +40,6 @@ export const COMMAND_CAPABILITY:Readonly<Record<string,Capability>>={
  'dayList.setPresence':'plan.others',
  'equipment.setSignOutRequired':'equipment.admin','equipment.resolveReport':'equipment.admin',
  'projectTemplate.save':'template.manage','projectTemplate.fromProject':'template.manage','taskTemplate.saveTree':'template.manage','taskTemplate.updateTree':'template.manage','projectTemplate.update':'template.manage',
- 'record.bulkDelete':'records.bulkDelete','record.bulkRestore':'records.delete',
+ 'record.bulkDelete':'records.bulkDelete','record.bulkRestore':'records.delete','task.applyOrder':'order.suggest',
  'glossary.save':'translation.manage','glossary.remove':'translation.manage',
 };
