@@ -7,6 +7,7 @@ import { setOwnerPassword } from '../src/auth/password.js';
 import { Repositories, TABLES } from '../src/core/repositories.js';
 import { backup, checkIntegrity, restoreToScratch } from '../src/db/backup.js';
 import { migrate, migrations, openDatabase, type Sqlite } from '../src/db/database.js';
+import { resetBusinessRecords, RESET_TABLES, PRESERVED_TABLES } from '../src/db/reset.js';
 
 const NOW = 1_790_000_000_000;
 const record = (id:string) => ({id,createdAt:NOW,updatedAt:NOW});
@@ -47,6 +48,29 @@ afterEach(() => {
 });
 
 describe('normalized SQLite foundation',() => {
+  it('resets only business records with an exact backup, retaining access and schema guards',async()=>{
+    const original=Object.fromEntries(PRESERVED_TABLES.map(t=>[t,db.prepare(`SELECT * FROM ${t}`).all()]));
+    const revision=(db.prepare('SELECT revision FROM data_revisions').get() as {revision:number}).revision;
+    const file=join(directory,'before-reset.sqlite');
+    await backup(db,file);
+    expect(()=>resetBusinessRecords(db,revision+1,file)).toThrow('Revision changed');
+    const result=resetBusinessRecords(db,revision,file);
+    expect(result.revision).toBe(revision+1);
+    for(const t of RESET_TABLES) expect(db.prepare(`SELECT count(*) n FROM ${t}`).get()).toEqual({n:0});
+    for(const t of PRESERVED_TABLES) expect(db.prepare(`SELECT * FROM ${t}`).all()).toEqual(original[t]);
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name='adjustment_no_delete'").get()).toBeTruthy();
+    expect(()=>resetBusinessRecords(db,revision,file)).toThrow('Revision changed');
+    expect(()=>checkIntegrity(db)).not.toThrow();
+    const saved=new Database(file,{readonly:true});
+    try {expect(saved.prepare('SELECT count(*) n FROM material_adjustments').get()).toEqual({n:1});} finally {saved.close();}
+  });
+  it('refuses an out-of-date backup without changing records',async()=>{
+    const file=join(directory,'older.sqlite'); await backup(db,file);
+    db.prepare("UPDATE clients SET note='Synthetic later edit'").run();
+    const revision=(db.prepare('SELECT revision FROM data_revisions').get() as {revision:number}).revision;
+    expect(()=>resetBusinessRecords(db,revision,file)).toThrow('Backup differs');
+    expect(db.prepare('SELECT count(*) n FROM tasks').get()).toEqual({n:1});
+  });
   it('creates every business table, records migrations, and enables durable private storage',() => {
     const names=(db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {name:string}[]).map(r=>r.name);
     expect(names).toEqual(expect.arrayContaining([...TABLES,'owners','sessions','data_revisions','command_receipts','running_timers','schema_versions']));
