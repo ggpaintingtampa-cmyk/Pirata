@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Anchor, ArrowRight, LockKeyhole } from 'lucide-react';
 import { useServer } from '../state/serverContext';
-import { useT, useLocale, useLocaleOverride, LOCALE_NAMES } from '../i18n';
+import { tx, useT, useLocale, useLocaleOverride, LOCALE_NAMES } from '../i18n';
 export function SignIn() {
  const {store,state}=useServer(),t=useT(),locale=useLocale(),{setOverride}=useLocaleOverride();
  const [password,setPassword]=useState(''),[username,setUsername]=useState('');
@@ -11,7 +11,7 @@ export function SignIn() {
   {state.status==='loading'?<p role="status">{state.error?t('signin.reconnecting'):t('signin.connecting')}</p>:<form onSubmit={e=>{e.preventDefault();void store.login(password,username).then(()=>setPassword('')).catch(()=>{});}}>
    <label htmlFor="username">{t('signin.username')}</label><input id="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={t('signin.usernamePlaceholder')} required value={username} onChange={e=>setUsername(e.target.value)} disabled={state.busy}/>
    <label htmlFor="owner-password">{t('signin.password')}</label><input id="owner-password" type="password" autoComplete="current-password" placeholder={t('signin.passwordPlaceholder')} required value={password} onChange={e=>setPassword(e.target.value)} disabled={state.busy}/>
-   <button className="primary" disabled={state.busy} aria-label="Sign in">{state.busy?t('signin.busy'):t('signin.button')}<ArrowRight size={18} aria-hidden="true"/></button>
+   <button className="primary" disabled={state.busy} aria-label={tx('Sign in')}>{state.busy?t('signin.busy'):t('signin.button')}<ArrowRight size={18} aria-hidden="true"/></button>
   </form>}
   {state.error&&state.status!=='loading'&&<p role="alert" className="inline-warning">{state.error}</p>}
   <details className="signin-help"><summary>{t('signin.forgot')}</summary><p>{t('signin.forgotHelp')}</p></details>

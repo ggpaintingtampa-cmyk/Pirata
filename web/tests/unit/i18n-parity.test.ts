@@ -28,7 +28,7 @@ describe('interface dictionaries', () => {
   it('cover every legacy tx() phrase', () => {
     const phrases = new Set<string>();
     for (const path of walk(root)) { if (path.includes('/i18n/')) continue; for (const m of readFileSync(path, 'utf8').matchAll(/\btx\(\s*'((?:[^'\\]|\\.)*)'/g)) phrases.add(m[1].replace(/\\'/g, "'")); }
-    const missing = [...phrases].filter(phrase => !(phrase in legacyStrings.es));
+    const missing = [...phrases].filter(phrase => !(phrase in legacyStrings.es) && !(phrase in shellStrings.en));
     expect(missing).toEqual([]);
   });
   it('cover the validation and handler messages written in the contracts and server sources', () => {

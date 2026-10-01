@@ -17,8 +17,12 @@ export function TranslationSettingsView(app: ModuleProps) {
   const [admin, setAdmin] = useState<Admin | null>(null), [value, setValue] = useState<TranslationSettings | null>(null), [original, setOriginal] = useState('');
   const [error, setError] = useState(''), [busy, setBusy] = useState(false), [backfill, setBackfill] = useState<BackfillResult | null>(null);
   const load = async () => { try { const data = await store.service.call<Admin>('admin/translation'); setAdmin(data); setValue(data.settings); setOriginal(JSON.stringify(data.settings)); } catch (cause) { setError(errorMessage(locale, cause)); } };
-  useEffect(() => { if (owner) void load(); // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [owner, store]);
+  useEffect(() => {
+    if (!owner) return;
+    let active = true;
+    void store.service.call<Admin>('admin/translation').then(data => { if (!active) return; setAdmin(data); setValue(data.settings); setOriginal(JSON.stringify(data.settings)); }).catch(cause => { if (active) setError(errorMessage(locale, cause)); });
+    return () => { active = false; };
+  }, [owner, store, locale]);
   const save = async () => {
     if (!value) return; setBusy(true); setError('');
     try { await store.service.call('admin/translation', value); setOriginal(JSON.stringify(value)); app.onSaved(t('translation.saved')); await load(); }

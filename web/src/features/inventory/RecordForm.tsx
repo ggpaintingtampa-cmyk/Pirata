@@ -1,4 +1,5 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
+import { tx } from '../../i18n';
 import { commandSchema, type BusinessCommand } from '@pirata/contracts/index';
 import { createMutation, createSubmission, ServiceError } from '../../services/api';
 import type { ModuleProps } from '../../services/moduleProps';
@@ -113,7 +114,7 @@ export function RecordForm({ app, initial, fields, command, validate, message, s
       })}
     </fieldset>
     {error && <p className="save-error" role="alert">{error}</p>}
-    {phase === 'conflict' && <button type="button" className="secondary" onClick={() => void reviewLatest()}>Load latest records</button>}
-    <div className="form-footer"><button type="button" className="secondary" data-cancel disabled={phase === 'saving' || phase === 'uncertain' || phase === 'saved'}>Cancel</button><button type="submit" className="primary" disabled={phase === 'saving' || phase === 'conflict'}>{phase === 'saving' ? 'Saving…' : phase === 'saved' ? 'Reload saved record' : phase === 'uncertain' ? 'Retry same save' : submitLabel}</button></div>
+    {phase === 'conflict' && <button type="button" className="secondary" onClick={() => void reviewLatest()}>{tx('Load latest records')}</button>}
+    <div className="form-footer"><button type="button" className="secondary" data-cancel disabled={phase === 'saving' || phase === 'uncertain' || phase === 'saved'}>{tx('Cancel')}</button><button type="submit" className="primary" disabled={phase === 'saving' || phase === 'conflict'}>{phase === 'saving' ? 'Saving…' : phase === 'saved' ? 'Reload saved record' : phase === 'uncertain' ? 'Retry same save' : submitLabel}</button></div>
   </form>;
 }

@@ -6,9 +6,9 @@ import type { TranslationResponse } from '@pirata/contracts/index';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 200));
 function fakeService(behaviour: { translateReason?: 'disabled' | 'budget'; fail?: boolean } = {}) {
-  const calls: { path: string; body: { target: string; items: { kind: string; id: string; field: string }[] } }[] = [];
+  const calls: { path: string; body: { target: string; items: { kind: 'task'; id: string; field: string }[] } }[] = [];
   return { calls, call: vi.fn(async (path: string, body?: unknown) => {
-    const request = body as { target: 'en' | 'es'; items: { kind: string; id: string; field: string }[] };
+    const request = body as { target: 'en' | 'es'; items: { kind: 'task'; id: string; field: string }[] };
     calls.push({ path, body: request });
     if (behaviour.fail) throw new Error('offline');
     const items = request.items.map(item => path === 'translations/lookup'

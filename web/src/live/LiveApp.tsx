@@ -6,7 +6,7 @@ import type { ModuleProps } from '../services/moduleProps';
 import { createMutation } from '../services/api';
 import { useServer } from '../state/serverContext';
 import { can } from '../state/permissions';
-import { useT, useLocale, LOCALE_NAMES, type Locale } from '../i18n';
+import { useT, useLocale, tx, LOCALE_NAMES, type Locale } from '../i18n';
 import { localeTag } from '../i18n/locale';
 import { Languages } from 'lucide-react';
 import { SignIn } from './SignIn';
@@ -40,11 +40,11 @@ function Workspace({snapshot}:{snapshot:BusinessSnapshot}){
  const role=snapshot.currentUser?.role;
  const {store,state,now}=useServer(),[view,setView]=useState<View>(()=>readView(window.location.hash,role)),[dialog,setDialog]=useState<Dialog|null>(null),[announcement,announce]=useState('');
  const opener=useRef<HTMLElement|null>(null),date=businessDate(now);
- const open=(d:Dialog|null,confirmedClose=false)=>{if(d&&dialog&&!confirmedClose&&!navigationAllowed()){announce('Finish the current save or resolve the draft before opening another task action.');return;}if(d&&!dialog)opener.current=document.activeElement as HTMLElement;if(!d)requestAnimationFrame(()=>opener.current?.isConnected?opener.current.focus({preventScroll:true}):document.getElementById('main')?.focus());setDialog(d);};
+ const open=(d:Dialog|null,confirmedClose=false)=>{if(d&&dialog&&!confirmedClose&&!navigationAllowed()){announce(tx('Finish the current save or resolve the draft before opening another task action.'));return;}if(d&&!dialog)opener.current=document.activeElement as HTMLElement;if(!d)requestAnimationFrame(()=>opener.current?.isConnected?opener.current.focus({preventScroll:true}):document.getElementById('main')?.focus());setDialog(d);};
  const scrollArea=useRef<HTMLDivElement>(null),[settingsFormVersion,setSettingsFormVersion]=useState(0);
  const navigate=(v:View)=>{
   if(viewHref(v)===viewHref(view)){scrollArea.current?.scrollTo({top:0,behavior:'smooth'});return;}
-  if(!navigationAllowed()){announce('Resolve the current save or keep editing before leaving this page.');return;}
+  if(!navigationAllowed()){announce(tx('Resolve the current save or keep editing before leaving this page.'));return;}
   open(null);
   if(viewHref(v)!==viewHref(view))window.history.pushState(null,'',viewHref(v));
   setView(v);
@@ -92,7 +92,7 @@ function Workspace({snapshot}:{snapshot:BusinessSnapshot}){
  {view.name==='more'&&<><WorkspaceMenu role={role} navigate={navigate} counts={{projects:snapshot.projects.filter(p=>p.status!=='completed').length,files:snapshot.attachments?.filter(f=>!f.removedAt).length??0}}/><section className="card"><div className="workspace-account"><span className="person-initial" aria-hidden="true">{snapshot.currentUser?.name.slice(0,1)}</span><div><h2>{snapshot.currentUser?.name}</h2><p>@{snapshot.currentUser?.username} · {roleLabel}</p></div></div>
   <div className="language-toggle" role="group" aria-label={t('shell.account.language')}><span>{t('shell.account.language')}</span>{(['en','es'] as const).map(locale=><button key={locale} type="button" className={(snapshot.currentUser?.locale??'en')===locale?'selected':''} aria-pressed={(snapshot.currentUser?.locale??'en')===locale} disabled={state.busy} onClick={()=>void setLocale(locale)}>{LOCALE_NAMES[locale]}</button>)}</div>
   <InstallHint />
-  <p>{t('shell.account.timerNote')}</p><button disabled={state.busy} onClick={()=>{if(document.querySelector('[data-import-phase=busy],[data-import-phase=uncertain],[data-import-phase=saved]')){announce('Resolve the pending import before signing out.');return;}void store.logout().catch(()=>{});}}>{t('shell.account.signOut')}</button>{timer&&<button onClick={()=>open({kind:'action',title:t('shell.discard.title'),command:{type:'timer.discard',expectedSessionId:timer.sessionId},description:t('shell.discard.desc')})}>{t('shell.account.discard')}</button>}</section></>}
+  <p>{t('shell.account.timerNote')}</p><button disabled={state.busy} onClick={()=>{if(document.querySelector('[data-import-phase=busy],[data-import-phase=uncertain],[data-import-phase=saved]')){announce(tx('Resolve the pending import before signing out.'));return;}void store.logout().catch(()=>{});}}>{t('shell.account.signOut')}</button>{timer&&<button onClick={()=>open({kind:'action',title:t('shell.discard.title'),command:{type:'timer.discard',expectedSessionId:timer.sessionId},description:t('shell.discard.desc')})}>{t('shell.account.discard')}</button>}</section></>}
  {can(role,'data.admin')&&<div hidden={view.name!=='more'}><DataTools/></div>}</main></div><div className="action-bar"><div className="action-inner"><div className="live-announcement" role="status" aria-live="polite">{announcement&&<><span>{announcement}</span><button aria-label={t('shell.dismiss')} onClick={()=>announce('')}><X size={16}/></button></>}</div><button className="add-button" onClick={()=>open({kind:'quick',projectId:view.name==='project'?view.id:undefined})}><Plus size={18} aria-hidden="true"/>{t('shell.add')}</button></div></div><nav className="bottom-nav" aria-label={t('shell.nav.main')}><div className="nav-inner">{([['work','shell.nav.work',BriefcaseBusiness],['ask','shell.nav.ask',MessageSquare],['updates','shell.nav.updates',Bell],['more','shell.nav.more',Menu]] as const).map(([name,labelKey,Icon])=><button key={name} className={'nav-item '+((view.name===name||(name==='more'&&menuActive))?'active':'')} aria-current={(view.name===name||(name==='more'&&menuActive))?'page':undefined} onClick={()=>navigate({name})}><Icon size={21} aria-hidden="true"/>{t(labelKey)}</button>)}</div></nav>
  {state.status==='reauth'&&<div className="reauth-overlay" role="dialog" aria-modal="true" aria-label={t('shell.reauth')}><p className="reauth-note">{t('shell.reauth')}</p><SignIn/></div>}
  {dialog&&<LiveDialogs key={JSON.stringify(dialog)} app={app} dialog={dialog} open={open} now={now}/>}

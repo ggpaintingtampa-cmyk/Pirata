@@ -6,6 +6,7 @@ import type { ModuleProps } from '../../services/moduleProps';
 import { useT, useLocale } from '../../i18n';
 import { formatDateTime } from '../../i18n/locale';
 import { TranslatedText } from '../../components/TranslatedText';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { useCan } from '../../state/permissions';
 import { DateField, addDays } from '../../components/DateField';
 import { ThumbStrip } from '../../components/ThumbStrip';
@@ -20,17 +21,17 @@ import './styles.css';
 
 /** One node's done toggle: completes the subtree (with confirmation) or reopens within the rules. */
 function NodeCheck({ app, task, now, label }: { app: ModuleProps; task: Task; now: number; label: string }) {
-  const t = useT(), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const t = useT(), [busy, setBusy] = useState(false), [error, setError] = useState(''), { confirm, dialog } = useConfirm();
   const me = app.snapshot.currentUser?.id, role = app.snapshot.currentUser?.role;
   const done = task.status === 'done', editable = canEditDone(task, me, role, now), nodes = subtree(app.snapshot.tasks, task.id);
   const toggle = async () => {
     if (busy) return;
     if (done && !editable) { setError(t('work.locked')); return; }
     const hasOpenChildren = nodes.slice(1).some(node => node.status !== 'done');
-    if (done ? !window.confirm(t('work.undoConfirm', { title: task.title })) : hasOpenChildren && !window.confirm(t('work.completeConfirm', { title: task.title }))) return;
+    if (done ? !await confirm({ title: t('work.open'), message: t('work.undoConfirm', { title: task.title }) }) : hasOpenChildren && !await confirm({ title: t('work.done'), message: t('work.completeConfirm', { title: task.title }) })) return;
     setBusy(true); setError((await runCommand(app, { type: 'task.setStatus', id: task.id, status: done ? 'open' : 'done', expectedSessionId: done ? null : affectedSession(app.snapshot, task.id) })) ?? ''); setBusy(false);
   };
-  return <span className="day-check-wrap"><button type="button" className={'day-check' + (done ? ' is-done' : '') + (done && !editable ? ' is-locked' : '')} aria-pressed={done} aria-label={label} disabled={busy} title={done && !editable ? t('work.locked') : undefined} onClick={() => void toggle()}>{done && <Check size={14} aria-hidden="true" />}</button>{error && <span role="alert" className="work-error">{error}</span>}</span>;
+  return <span className="day-check-wrap"><button type="button" className={'day-check' + (done ? ' is-done' : '') + (done && !editable ? ' is-locked' : '')} aria-pressed={done} aria-label={label} disabled={busy} title={done && !editable ? t('work.locked') : undefined} onClick={() => void toggle()}>{done && <Check size={14} aria-hidden="true" />}</button>{error && <span role="alert" className="work-error">{error}</span>}{dialog}</span>;
 }
 
 function DayCard({ app, row, task, now, onAsk }: { app: ModuleProps; row: DayAssignment; task: Task; now: number; onAsk(taskId: string): void }) {

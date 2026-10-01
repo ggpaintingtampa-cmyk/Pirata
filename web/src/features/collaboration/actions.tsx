@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { tx } from '../../i18n';
 import type { BusinessCommand, MutationRequest } from '@pirata/contracts/index';
 import type { ModuleProps } from '../../services/moduleProps';
 import { createMutation, ServiceError } from '../../services/api';
@@ -26,4 +27,4 @@ export function useCommand(app: ModuleProps) {
   }
   return { run, busy, error, uncertain };
 }
-export function ActionStatus({ action }: { action: ReturnType<typeof useCommand> }) { return <>{action.error && <p role="alert" className="co-error">{action.error}</p>}{action.uncertain && <button disabled={action.busy} type="button" onClick={() => void action.run()}>Retry same save</button>}</>; }
+export function ActionStatus({ action }: { action: ReturnType<typeof useCommand> }) { return <>{action.error && <p role="alert" className="co-error">{action.error}</p>}{action.uncertain && <button disabled={action.busy} type="button" onClick={() => void action.run()}>{tx('Retry same save')}</button>}</>; }

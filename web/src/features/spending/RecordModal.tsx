@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { tx } from '../../i18n';
 import { ArrowLeft, X } from 'lucide-react';
 
 /** Native dialog with explicit handling for asynchronous/uncertain server saves. */
@@ -46,8 +47,8 @@ export function RecordModal({ title, onClose, children, backLabel }: { title: st
       if ((event.target as HTMLElement).closest('[data-navigate]')) { dirty.current = false; setNotice(''); }
       if ((event.target as HTMLElement).closest('[data-cancel]')) requestClose();
     }}>
-    <div className="modal-header"><h2 id="sp-dialog-title">{title}</h2><button type="button" className="icon-button" aria-label="Close dialog" onClick={requestClose}><X size={22} /></button></div>
-    {discard && <div className="discard-panel" role="alert"><h3>Discard unsaved changes?</h3><p>Your draft has not been saved.</p><div className="actions"><button className="secondary" autoFocus onClick={() => { setDiscard(false); pendingNavigation.current = null; }}>Keep editing</button><button className="danger" onClick={() => { setDiscard(false); pendingNavigation.current?.(); pendingNavigation.current = null; }}>Discard changes</button></div></div>}
+    <div className="modal-header"><h2 id="sp-dialog-title">{title}</h2><button type="button" className="icon-button" aria-label={tx('Close dialog')} onClick={requestClose}><X size={22} /></button></div>
+    {discard && <div className="discard-panel" role="alert"><h3>{tx('Discard unsaved changes?')}</h3><p>{tx('Your draft has not been saved.')}</p><div className="actions"><button className="secondary" autoFocus onClick={() => { setDiscard(false); pendingNavigation.current = null; }}>{tx('Keep editing')}</button><button className="danger" onClick={() => { setDiscard(false); pendingNavigation.current?.(); pendingNavigation.current = null; }}>{tx('Discard changes')}</button></div></div>}
     <div className="modal-body" hidden={discard}>{backLabel && <div className="actions"><button type="button" className="dialog-back" onClick={requestClose}><ArrowLeft size={18} aria-hidden="true" />{backLabel}</button></div>}{notice && <p className="info-panel" role="status">{notice}</p>}{children}</div>
   </dialog>;
 }

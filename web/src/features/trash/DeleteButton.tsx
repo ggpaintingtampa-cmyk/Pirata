@@ -4,6 +4,7 @@ import { can, type TrashKind } from '@pirata/contracts/index';
 import type { ModuleProps } from '../../services/moduleProps';
 import { useT } from '../../i18n';
 import { runCommand } from '../work/commands';
+import { useConfirm } from '../../components/ConfirmDialog';
 import './styles.css';
 /** Whether to show a Delete control. Mirrors assertMayDelete in server/src/modules/trash; the server remains the guarantee. */
 export function mayDelete(app: ModuleProps, kind: TrashKind, row: Record<string, unknown>): boolean {
@@ -26,9 +27,9 @@ export function mayDelete(app: ModuleProps, kind: TrashKind, row: Record<string,
 }
 /** One "Delete" control for any record: confirms, moves the record to Deleted items and reports the outcome. */
 export function DeleteButton({ app, kind, id, label, className = '', onDone, children }: { app: ModuleProps; kind: TrashKind; id: string; label: string; className?: string; onDone?(): void; children?: ReactNode }) {
-  const t = useT(), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const t = useT(), [busy, setBusy] = useState(false), [error, setError] = useState(''), { confirm, dialog } = useConfirm();
   const remove = async () => {
-    if (!window.confirm(t('trash.confirm', { label }))) return;
+    if (!await confirm({ title: t('trash.delete'), message: t('trash.confirm', { label }), confirmLabel: t('trash.delete'), danger: true })) return;
     setBusy(true);
     const failure = await runCommand(app, { type: 'record.delete', kind, id });
     setBusy(false);
@@ -38,5 +39,6 @@ export function DeleteButton({ app, kind, id, label, className = '', onDone, chi
   return <>
     <button type="button" className={'delete-button ' + className} disabled={busy} onClick={() => void remove()}><Trash2 size={15} aria-hidden="true" />{children ?? t('trash.delete')}</button>
     {error && <p role="alert" className="work-error">{error}</p>}
+    {dialog}
   </>;
 }

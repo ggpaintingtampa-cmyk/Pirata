@@ -11,16 +11,17 @@ import { runCommand } from '../work/commands';
 import { SignOutDialog } from './SignOutDialog';
 import '../materials/styles.css';
 import { DeleteButton, mayDelete } from '../trash';
+import { useConfirm } from '../../components/ConfirmDialog';
 /** Current holder, broken state and actions for one tool. Used on the Tools screen and inside the equipment details. */
 export function ToolStatus({ app, tool, compact = false }: { app: ModuleProps; tool: Equipment; compact?: boolean }) {
   const t = useT(), locale = useLocale(), admin = useCan('equipment.admin'), office = useCan('plan.others'), me = app.snapshot.currentUser?.id;
-  const [dialog, setDialog] = useState<null | 'take' | 'report'>(null), [body, setBody] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState(''), [history, setHistory] = useState(false);
+  const [dialog, setDialog] = useState<null | 'take' | 'report'>(null), [body, setBody] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState(''), [history, setHistory] = useState(false), { confirm, dialog: confirmDialog } = useConfirm();
   const team = app.snapshot.team ?? [], name = (id: string | null | undefined) => team.find(m => m.id === id)?.name ?? '—', project = (id: string | null | undefined) => app.snapshot.projects.find(p => p.id === id)?.name;
   const signOuts = (app.snapshot.toolSignOuts ?? []).filter(row => row.equipmentId === tool.id).sort((a, b) => b.takenAt - a.takenAt), out = signOuts.find(row => row.returnedAt === null);
   const reports = (app.snapshot.equipmentReports ?? []).filter(row => row.equipmentId === tool.id).sort((a, b) => b.createdAt - a.createdAt), openReport = reports.find(row => row.resolvedAt === null);
   const cleanings = (app.snapshot.cleanupObligations ?? []).filter(row => row.equipmentId === tool.id && row.completedAt).sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
   const run = async (command: Parameters<typeof runCommand>[1], message?: string) => { setBusy(true); const failure = await runCommand(app, command); setBusy(false); setError(failure ?? ''); if (!failure) { if (message) app.onSaved(message); setDialog(null); setBody(''); } return !failure; };
-  const returnTool = async () => { if (!out || !window.confirm(t('tools.returnConfirm', { name: tool.name }))) return false; return run({ type: 'tool.return', id: out.id, returnedAt: null }, t('tools.dialog.returned')); };
+  const returnTool = async () => { if (!out || !await confirm({ title: t('tools.return'), message: t('tools.returnConfirm', { name: tool.name }), confirmLabel: t('tools.return') })) return false; return run({ type: 'tool.return', id: out.id, returnedAt: null }, t('tools.dialog.returned')); };
   return <div className={'tool-row' + (openReport ? ' is-broken' : '') + (out ? ' is-out' : '')}>
     <div className="tool-status"><Wrench size={15} aria-hidden="true" /><strong>{tool.name}</strong>{tool.requiresSignOut ? <span className="day-chip">{t('tools.needsSignOut')}</span> : null}{openReport && <span className="day-chip tool-broken"><AlertTriangle size={13} aria-hidden="true" />{t('tools.broken', { body: openReport.body })}</span>}</div>
     <p className="muted">{out ? t('tools.with', { name: name(out.takenBy), project: project(out.projectId) ? t('tools.at', { project: project(out.projectId) ?? '' }) : '', time: formatDateTime(locale, out.takenAt) }) : t('tools.inShop')}</p>
@@ -35,7 +36,7 @@ export function ToolStatus({ app, tool, compact = false }: { app: ModuleProps; t
       {!compact && <button type="button" className="work-link-button" onClick={() => setHistory(open => !open)}>{t('tools.history')}</button>}
     </div>
     {history && <ul className="tool-history">{signOuts.slice(0, 10).map(row => <li key={row.id}>{mayDelete(app, 'toolSignOut', row as unknown as Record<string, unknown>) && <DeleteButton app={app} kind="toolSignOut" id={row.id} label={tool.name + ' · ' + formatDateTime(locale, row.takenAt)} className="work-link-button" />}{t('tools.taken', { name: name(row.takenBy), time: formatDateTime(locale, row.takenAt) })}{project(row.projectId) ? ' · ' + project(row.projectId) : ''}{row.returnedAt ? ' — ' + t('tools.returned', { name: name(row.returnedBy), time: formatDateTime(locale, row.returnedAt) }) : ''}</li>)}{cleanings.slice(0, 5).map(row => <li key={row.id}>{t('tools.cleanedBy', { name: name(row.completedBy), time: formatDateTime(locale, row.completedAt ?? 0) })}</li>)}{reports.slice(0, 5).map(row => <li key={row.id}>{t('tools.reportedBy', { name: name(row.reportedBy), time: formatDateTime(locale, row.createdAt) })}: <TranslatedText kind="equipmentReport" id={row.id} field="body" text={row.body} compact />{row.resolvedAt ? ' — ' + t('tools.resolvedBy', { name: name(row.resolvedBy) }) : ''}</li>)}</ul>}
-    {error && <p role="alert" className="work-error">{error}</p>}
+    {error && <p role="alert" className="work-error">{error}</p>}{confirmDialog}
     {dialog === 'take' && <SignOutDialog app={app} equipmentId={tool.id} onClose={() => setDialog(null)} onDone={() => setDialog(null)} />}
     {dialog === 'report' && <WorkDialog title={t('tools.report.title') + ' · ' + tool.name} onClose={() => setDialog(null)}><label className="work-field">{t('tools.report.body')}<textarea rows={3} value={body} onChange={e => setBody(e.target.value)} /></label><div className="live-actions"><button type="button" className="work-primary" disabled={busy || !body.trim()} onClick={() => void run({ type: 'equipment.reportBroken', id: tool.id, body: body.trim(), attachmentId: null }, t('tools.report.saved'))}>{t('tools.report.save')}</button><button type="button" onClick={() => setDialog(null)}>{t('templates.cancel')}</button></div></WorkDialog>}
   </div>;

@@ -23,9 +23,11 @@ Status vocabulary: **implemented, awaiting final verification** means the code i
 - Surfaces wired to `TranslatedText`: Daily cards (title, description, note, child titles, pinned paint titles), All tasks (titles, parent context), task detail dialog (title, description, note, parent), task checklist rows, task extras (questions, answers, paint titles), project notes (title, body), team messages, materials (title, note), templates (names, notes, node titles/descriptions by tree path), daily report (tasks, notes, questions, answers, requests, broken reports), tools (report bodies), insights (tasks, questions, requests), facts (custom labels). Dates in those views use the viewer locale.
 - Tests authored: `web/tests/unit/translated.test.ts`, `web/tests/unit/i18n-parity.test.ts` (dictionary parity, legacy coverage, server-message coverage). `serverStore.test.ts` mock extended with `call`. Not run.
 
+### Interface-string sweep (implemented, awaiting final verification)
+- Live-app hard-coded strings converted to `tx()`/keys with Spanish (193 new `legacy.ts` entries); inventory and exclusions recorded in `web/implementation/i18n-inventory-2026-09-29.md`. `window.confirm` call sites now use `ConfirmDialog`.
+- The browser demo keeps English (out of P13 scope).
+
 ### Still open inside P13
-- Remaining hard-coded interface strings in the live app (scan recorded in `web/implementation/i18n-inventory-2026-09-29.md`): task dialogs and editors, calendar labels, updates/notes forms, Ask page, AI settings, data tools, timer controls. Being converted to `tx()`/keys with Spanish entries.
-- `window.confirm` call sites still to move to `ConfirmDialog`: `DeleteButton`, `NodeCheck`, hours remove, tools return.
 - Bilingual review of synthetic translations and the rendered-layout review at 320/390/768/desktop belong to phase 7.
 
 ## Phases 2–7
