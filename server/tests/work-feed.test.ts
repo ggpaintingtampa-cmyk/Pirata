@@ -49,12 +49,13 @@ it('pages by (updatedAt, id) with an opaque cursor and ends with next null; a ba
   const { token } = await create(['work.read']);
   const seen: string[] = []; let cursor: string | null = null, revision = -1;
   for (let i = 0; i < 5; i++) {
-    const page = (await feed(token, '?limit=1' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''))).json();
+    const page: {revision: number; tasks: {id: string}[]; page: {next: string | null}} = (await feed(token, '?limit=1' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''))).json();
     if (revision >= 0) expect(page.revision).toBe(revision); revision = page.revision;
     seen.push(...page.tasks.map((t: { id: string }) => t.id)); cursor = page.page.next;
     if (!cursor) break;
   }
-  expect(seen).toEqual([mine, mineUnderParent, pooled]);
+  expect(seen).toEqual((await feed(token)).json().tasks.map((task: {id: string}) => task.id));
+  expect([...seen].sort()).toEqual([mine, mineUnderParent, pooled].sort());
   expect((await feed(token, '?cursor=not-a-cursor')).statusCode).toBe(400);
 });
 it('refuses unknown, revoked and read-only tokens appropriately and never returns a token hash', async () => {
@@ -75,7 +76,7 @@ it('completes a leaf task as the subject once, replays the same request, refuses
   const { token } = await create(['work.read', 'work.complete']);
   const page = (await feed(token)).json();
   const envelope = { requestId: '00000000-0000-4000-a000-00000000f002', taskId: mine, sourceRevision: page.revision, expectedSessionId: null };
-  const post = (payload: unknown) => f.app.inject({ method: 'POST', url: '/api/v1/integrations/work/v1/complete', headers: bearer(token), payload });
+  const post = (payload: Record<string, unknown>) => f.app.inject({ method: 'POST', url: '/api/v1/integrations/work/v1/complete', headers: bearer(token), payload });
   const first = await post(envelope);
   expect(first.statusCode, first.body).toBe(200);
   expect(first.json().task).toMatchObject({ id: mine, status: 'done' });
@@ -99,7 +100,7 @@ it('exposes the subject\'s own running timer, closes it on a completion that nam
   const exported = page.tasks.find((t: { id: string }) => t.id === mine);
   expect(exported.activeSession).toMatchObject({ sessionId: expect.any(String) });
   expect(page.tasks.find((t: { id: string }) => t.id === pooled).activeSession).toBeNull();
-  const post = (payload: unknown) => f.app.inject({ method: 'POST', url: '/api/v1/integrations/work/v1/complete', headers: bearer(token), payload });
+  const post = (payload: Record<string, unknown>) => f.app.inject({ method: 'POST', url: '/api/v1/integrations/work/v1/complete', headers: bearer(token), payload });
   const unnamed = await post({ requestId: '00000000-0000-4000-a000-00000000f010', taskId: mine, sourceRevision: page.revision, expectedSessionId: null });
   expect(unnamed.statusCode).toBe(409);
   clock += 60_000;

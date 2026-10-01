@@ -54,7 +54,7 @@ test('the owner plans a worker’s day; the worker sees the ordered tree, comple
   await phone.getByRole('button',{name:'Use delicate tape',exact:true}).click();
   await expect(cards.nth(1)).toHaveClass(/is-done/);
   await cards.nth(1).getByRole('button',{name:'Details'}).click();
-  await phone.getByRole('button',{name:'Ask a question'}).click();
+  await phone.getByRole('button',{name:'Ask the team'}).click();
   await phone.getByLabel('Your question').fill('Which tape for the delicate paint?');
   await phone.getByRole('button',{name:'Save',exact:true}).click();
   const after=await snapshot(phone);

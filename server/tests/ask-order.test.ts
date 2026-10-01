@@ -27,7 +27,7 @@ async function prepare(answer: (ids: string[]) => unknown) {
 }
 const good = (ids: string[]) => ({ options: [{ name: 'Prep first', orderedIds: [ids[0], ids[1], ids[2], ids[3]], reasons: ['Washing before priming'], assumptions: ['Surfaces are dry'] }, { name: 'Fewest tool changes', orderedIds: [ids[1], ids[0], ids[2], ids[3]], reasons: ['Keep the sprayer out'], assumptions: [] }, { name: 'Duplicate of the first', orderedIds: [ids[0], ids[1], ids[2], ids[3]], reasons: [], assumptions: [] }] });
 it('returns distinct valid options with reasons and assumptions, keeps done tasks fixed, and applies one order exactly once', async () => {
-  const { owner, ids, suggest, apply, order } = await prepare(good);
+  const { owner, ids, suggest, apply, order } = await prepare(ids => ({options: good(ids).options.map(option => ({...option, orderedIds: option.orderedIds.filter(id => id !== ids[3])}))}));
   await ok(owner, { type: 'task.setStatus', id: ids[3], status: 'done', expectedSessionId: null });
   const before = await order(owner);
   const response = await suggest(owner);

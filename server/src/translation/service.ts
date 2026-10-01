@@ -55,10 +55,10 @@ export function createTranslationService({ db, now, apiKey, fetcher }: ServiceOp
     if (detected.locale === target && detected.confidence >= 50) return { ...base, status: 'same', sourceLocale: detected.locale, confidence: detected.confidence, sourceHash, text: original };
     const cached = getCached(db, owner, base, target);
     if (cached && cached.sourceHash === sourceHash && cached.status !== 'failed') {
-      if (cached.status === 'corrected') return { ...base, status: 'corrected', sourceLocale: cached.sourceLocale, confidence: 100, sourceHash, text: cached.text };
-      if (cached.sourceLocale === target) return { ...base, status: 'same', sourceLocale: cached.sourceLocale, confidence: cached.confidence, sourceHash, text: original };
+      if (cached.status === 'corrected') return { ...base, status: 'corrected', sourceLocale: stated ?? cached.sourceLocale, confidence: 100, sourceHash, text: cached.text };
+      if ((stated ?? cached.sourceLocale) === target) return { ...base, status: 'same', sourceLocale: stated ?? cached.sourceLocale, confidence: cached.confidence, sourceHash, text: original };
       const status = cached.confidence < 50 && !stated ? 'unsure' : 'ready';
-      return { ...base, status, sourceLocale: cached.sourceLocale, confidence: cached.confidence, sourceHash, text: cached.text, ...(cached.glossaryVersion < v.glossaryVersion ? { stale: true as const } : {}) };
+      return { ...base, status, sourceLocale: stated ?? cached.sourceLocale, confidence: cached.confidence, sourceHash, text: cached.text, ...(cached.glossaryVersion < v.glossaryVersion ? { stale: true as const } : {}) };
     }
     return { ...base, status: 'pending', sourceLocale: detected.locale, confidence: detected.confidence, sourceHash, original };
   }
@@ -72,7 +72,7 @@ export function createTranslationService({ db, now, apiKey, fetcher }: ServiceOp
     async translate(owner: string, userId: string, snapshot: BusinessSnapshot, target: Locale, items: TranslationItem[]): Promise<TranslationResult[]> {
       const v = settings(db, owner);
       const first = items.map(item => lookupOne(owner, snapshot, v, target, item));
-      const todo = first.filter(r => r.status === 'pending' || r.stale);
+      const todo = first.filter(r => r.status === 'pending' || r.stale).map(r => ({...r, original: readField(snapshot, r.kind, r.id, r.field)}));
       if (!todo.length) return first.map(({ original: _, ...r }) => { void _; return r; });
       const provider = providerFor(v);
       const unavailable = (reason: Unavailable): TranslationResult[] => first.map(({ original: _, ...r }) => { void _; return r.status === 'pending' ? { ...r, status: 'unavailable', reason } : r; });

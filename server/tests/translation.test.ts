@@ -180,6 +180,7 @@ describe('translation lookup and translate', () => {
     expect(stale.json().epoch).toBeGreaterThan(epochBefore);
     await translate(auth, 'es', [item]);
     expect(fetcher).toHaveBeenCalledTimes(2);
+    expect((await lookup(auth, 'es', [item])).json().items[0].text).toBe('[es] Paint the wall before the coat');
     expect((await lookup(auth, 'es', [item])).json().items[0].stale).toBeUndefined();
     const worker = await userOf(f, 'worker', auth);
     expect((await runAs(f, worker.headers, { type: 'glossary.save', en: 'tape', es: 'cinta', note: '' })).statusCode).toBe(403);
@@ -210,7 +211,8 @@ describe('translation lookup and translate', () => {
   it('rejects unknown kinds, fields and over-long batches, and requires CSRF on translate', async () => {
     const { auth } = await prepare();
     expect((await lookup(auth, 'es', [{ kind: 'password', id: 'x', field: 'hash' }])).statusCode).toBe(400);
-    expect((await lookup(auth, 'es', [{ kind: 'task', id: 'x', field: 'owner_id' }])).json().items[0]).toMatchObject({ status: 'unavailable', reason: 'missing' });
+    expect((await lookup(auth, 'es', [{ kind: 'task', id: 'x', field: 'owner_id' }])).statusCode).toBe(400);
+    expect((await lookup(auth, 'es', [{ kind: 'task', id: 'x', field: 'password' }])).json().items[0]).toMatchObject({ status: 'unavailable', reason: 'missing' });
     expect((await translate(auth, 'es', Array.from({ length: 41 }, (_, i) => ({ kind: 'task', id: 't' + i, field: 'title' })))).statusCode).toBe(400);
     const noCsrf = await f.app.inject({ method: 'POST', url: '/api/v1/translations/translate', headers: { cookie: auth.cookie, origin: auth.origin }, payload: { target: 'es', items: [{ kind: 'task', id: 'x', field: 'title' }] } });
     expect(noCsrf.statusCode).toBe(403);

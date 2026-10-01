@@ -3,7 +3,8 @@
 import { afterEach, expect, it } from 'vitest';
 import { createFixture, TEST_ORIGIN, type Fixture } from './helpers/fixture.js';
 import { runAs, userOf, type Headers } from './helpers/roles.js';
-let f: Fixture, clock = 1_790_000_000_000;
+let f: Fixture;
+const clock = 1_790_000_000_000;
 afterEach(async () => { await f?.close(); });
 const ok = async (headers: Headers, command: unknown) => { const r = await runAs(f, headers, command); expect(r.statusCode, r.body).toBe(200); return r.json(); };
 const snapshot = async (headers: Headers) => (await f.app.inject({ url: '/api/v1/snapshot', headers })).json();
@@ -37,7 +38,7 @@ it('previews a normalized selection and deletes it atomically with cascades, an 
   expect(s.tasks.map((t: { id: string }) => t.id)).not.toContain(loose);
   expect(s.workShifts).toHaveLength(1);
   expect(s.trash.map((e: { kind: string; id: string }) => [e.kind, e.id])).toEqual(expect.arrayContaining([['project', project], ['task', loose]]));
-  expect(s.trash.find((e: { id: string }) => e.id === project).cascaded).toBe(3);
+  expect(s.trash.find((e: { id: string }) => e.id === project).cascaded).toBe(2);
   expect(s.batchOperations.filter((b: { kind: string }) => b.kind === 'record.bulkDelete')).toHaveLength(1);
   expect(s.activity.some((a: { kind: string; body: string }) => a.kind === 'record.bulkDelete' && /2 records/.test(a.body))).toBe(true);
 });

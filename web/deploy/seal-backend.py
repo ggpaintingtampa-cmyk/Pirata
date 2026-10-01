@@ -2,7 +2,7 @@
 """Seal pnpm 11 legacy deployment's workspace links into a standalone backend."""
 import json, os, shutil, sys
 from pathlib import Path
-ROOT=Path('/home/andre/Desktop/LargeConcierge/Morgan el Pirata').resolve()
+ROOT=Path(__file__).resolve().parents[2]
 def seal(target):
     target=Path(target).absolute()
     if target.parent!=Path('/tmp') or not target.name.startswith('pirata-server-candidate-') or target.is_symlink(): raise ValueError('Expected a new Pirata candidate under /tmp')

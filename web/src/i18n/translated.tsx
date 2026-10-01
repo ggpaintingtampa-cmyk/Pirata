@@ -19,7 +19,7 @@ export class TranslationStore {
   readonly #mounted = new Map<string, { item: Item; count: number }>();
   readonly #lookupQueue = new Set<string>();
   readonly #listeners = new Set<() => void>();
-  #timer: number | undefined; #translating = false; #pausedUntil = 0; #version = 0;
+  #timer: ReturnType<typeof setTimeout> | undefined; #translating = false; #pausedUntil = 0; #version = 0;
   readonly service: Pick<PirataService, 'call'>; readonly now: () => number;
   constructor(service: Pick<PirataService, 'call'>, now: () => number = Date.now) { this.service = service; this.now = now; }
   subscribe = (listener: () => void) => { this.#listeners.add(listener); return () => { this.#listeners.delete(listener); }; };
@@ -35,7 +35,7 @@ export class TranslationStore {
   /** Forget an entry so it is looked up (and translated) again, e.g. after Retry or a correction. */
   retry(key: string): void { this.entries.delete(key); this.#pausedUntil = 0; if (this.#mounted.has(key)) { this.#lookupQueue.add(key); this.#schedule(); } }
   clear(): void { this.entries.clear(); this.#lookupQueue.clear(); this.#pausedUntil = 0; this.#publish(); }
-  #schedule() { if (this.#timer !== undefined) return; this.#timer = window.setTimeout(() => { this.#timer = undefined; void this.#flush(); }, DEBOUNCE_MS); }
+  #schedule() { if (this.#timer !== undefined) return; this.#timer = setTimeout(() => { this.#timer = undefined; void this.#flush(); }, DEBOUNCE_MS); }
   #byTarget(keys: string[]): Map<Locale, string[]> { const groups = new Map<Locale, string[]>(); for (const key of keys) { const slot = this.#mounted.get(key); if (!slot) continue; const list = groups.get(slot.item.target) ?? []; list.push(key); groups.set(slot.item.target, list); } return groups; }
   async #flush(): Promise<void> {
     const keys = [...this.#lookupQueue].filter(key => this.#mounted.has(key)).slice(0, LOOKUP_BATCH);

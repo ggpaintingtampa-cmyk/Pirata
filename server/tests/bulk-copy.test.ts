@@ -16,11 +16,11 @@ async function setup() {
   const child = (await ok(owner, { type: 'task.create', title: 'Sand', projectId: source, parentTaskId: root, estimatedMinutes: 30, note: '' })).result.id as string;
   const grandchild = (await ok(owner, { type: 'task.create', title: 'Wipe', projectId: source, parentTaskId: child, estimatedMinutes: 10, note: '' })).result.id as string;
   await ok(owner, { type: 'task.setRequirements', taskId: root, requirements: [{ kind: 'material', name: 'Patch compound', quantity: '1', unit: 'tub' }, { kind: 'tool', name: 'Ladder' }] });
-  await ok(owner, { type: 'task.setStatus', id: grandchild, status: 'done', expectedSessionId: null });
   await ok(owner, { type: 'timer.start', taskId: child });
   clock += 20 * 60 * 1000;
   const snap = (await f.app.inject({ url: '/api/v1/snapshot', headers: owner })).json();
   await ok(owner, { type: 'timer.pause', expectedSessionId: snap.runningTimer.sessionId });
+  await ok(owner, { type: 'task.setStatus', id: grandchild, status: 'done', expectedSessionId: null });
   await ok(owner, { type: 'question.ask', taskId: root, body: 'Which primer?' });
   return { owner, worker: worker.headers, source, target, root, child, grandchild };
 }

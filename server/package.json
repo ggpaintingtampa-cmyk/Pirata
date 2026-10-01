@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.tests.json",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.tests.json && cp src/ai/skill/pirata-app.md dist/ai/skill/pirata-app.md",
     "start": "node dist/main.js",
     "test": "vitest run",
     "migrate": "node --import tsx src/cli.ts migrate",

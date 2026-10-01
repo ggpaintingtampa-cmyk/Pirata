@@ -18,6 +18,12 @@ pirata.andresinbox.tech {
         max_size 27MB
     }
     route {
+        # The work connection authenticates with its scoped bearer token.
+        handle /api/v1/integrations/work/v1/* {
+            reverse_proxy 127.0.0.1:3001 {
+                flush_interval -1
+            }
+        }
         handle /api/* {
             reverse_proxy 127.0.0.1:3001 {
                 header_up -Authorization

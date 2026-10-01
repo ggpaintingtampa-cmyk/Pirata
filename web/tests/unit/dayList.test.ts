@@ -42,7 +42,7 @@ describe('day list helpers', () => {
     const groups = groupByTimeThenProject(snapshot, rows, '2026-09-25');
     expect(groups.map(g => g.startMinute)).toEqual([480, 540, 600]);
     expect(groups[0].projects.map(p => [p.projectId, p.rows.map(r => r.id)])).toEqual([['q', ['r2']], ['p', ['r3']]]);
-    expect(groups[2].projects[0].rows.map(r => r.id)).toEqual(['r4', 'r5']);
+    expect(groups[2].projects.map(p => p.rows.map(r => r.id))).toEqual([['r4'], ['r5']]);
     expect(flattenGroups(groups).map(r => r.id)).toEqual(['r2', 'r3', 'r1', 'r4', 'r5']);
     const unscheduled = groupByTimeThenProject({ ...snapshot, schedule: [] }, rows, '2026-09-25');
     expect(unscheduled).toHaveLength(1); expect(unscheduled[0].startMinute).toBeNull();
