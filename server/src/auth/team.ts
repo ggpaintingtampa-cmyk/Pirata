@@ -7,7 +7,7 @@ import {ApiError} from '../core/errors.js';
 import {hashPassword} from './password.js';
 import {checkMutation,requireSession,requireOwner} from './sessions.js';
 import {Repositories} from '../core/repositories.js';
-const password=z.string().min(15,'Use at least 15 characters.').max(128);
+const password=z.string().min(8,'Use at least 8 characters.').max(128);
 const roleSchema=z.enum(ROLES);
 const ROLE_LABEL:Record<Role,string>={owner:'owners',manager:'managers',sales:'sales reps',worker:'workers'};
 /** Active accounts per role (2 owners, 5 managers, 5 sales, 10 workers); `except` ignores one member when re-enabling or changing role. */

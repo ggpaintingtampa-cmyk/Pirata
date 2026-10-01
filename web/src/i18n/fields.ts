@@ -2,6 +2,8 @@
 // English text the code emits (same approach as legacy.ts); the parity test greps the sources against this map.
 import type { Locale } from './index';
 export const fieldStrings: Record<string, string> = {
+  'Use at least 8 characters.': 'Usa al menos 8 caracteres.',
+  'Use a password between 8 and 128 characters.': 'Usa una contraseña de entre 8 y 128 caracteres.',
   'The read scope is required.': 'Se requiere el permiso de lectura.',
   'Duplicate scope.': 'Permiso duplicado.',
   'The owner must secure the API key file.': 'El propietario debe proteger el archivo de la clave de API.',

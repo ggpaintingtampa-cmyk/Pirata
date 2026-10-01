@@ -41,7 +41,7 @@ export function TeamSettings(app: ModuleProps) {
       <p className="team-form-help">{t('team.help')}</p>
       {!selected && <div className="team-form-grid"><label>{t('team.name')}<input disabled={busy} required value={name} onChange={event => setName(event.target.value)} maxLength={100} /></label><label>{t('team.username')}<input disabled={busy} required autoCapitalize="none" autoComplete="off" spellCheck={false} pattern="[a-z0-9][a-z0-9._-]{1,39}" value={username} onChange={event => setUsername(event.target.value.toLowerCase())} /></label>
         <label>{t('team.roleLabel')}<select disabled={busy} value={role} onChange={event => setRole(event.target.value as Role)}>{ROLES.map(r => <option key={r} value={r} disabled={active(r) >= ROLE_CAPS[r]}>{t('team.role.' + r)} ({active(r)}/{ROLE_CAPS[r]})</option>)}</select></label></div>}
-      <label>{t('team.password')}<input disabled={busy} required type="password" autoComplete="new-password" minLength={15} maxLength={128} value={password} onChange={event => setPassword(event.target.value)} /></label>
+      <label>{t('team.password')}<input disabled={busy} required type="password" autoComplete="new-password" minLength={8} maxLength={128} value={password} onChange={event => setPassword(event.target.value)} /></label>
       <div className="live-actions"><button type="submit" className="primary" disabled={busy}>{busy ? t('team.saving') : selected ? t('team.savePassword') : t('team.create')}</button>{selected && <button type="button" disabled={busy} onClick={() => { setSelected(''); setPassword(''); }}>{t('team.cancelReset')}</button>}</div>
     </form>
     {error && <p className="team-error" role="alert">{error}</p>}

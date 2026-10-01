@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { Sqlite } from '../db/database.js';
 // OWASP Argon2id minimum: m=19 MiB, t=2, p=1. Explicitly pinned and verified.
 export const PASSWORD_OPTIONS={type:argon2.argon2id,memoryCost:19456,timeCost:2,parallelism:1,hashLength:32} as const;
-export function validatePassword(password:string):void {if(password.length<15||password.length>128)throw new Error('Use a password between 15 and 128 characters.');}
+export function validatePassword(password:string):void {if(password.length<8||password.length>128)throw new Error('Use a password between 8 and 128 characters.');}
 export async function hashPassword(password:string):Promise<string>{validatePassword(password);return argon2.hash(password,PASSWORD_OPTIONS);}
 export async function verifyPassword(hash:string,password:string):Promise<boolean>{if(password.length>128)return false;try{return await argon2.verify(hash,password);}catch{return false;}}
 export async function setOwnerPassword(db:Sqlite,password:string,mode:'setup'|'recover',now=Date.now()):Promise<string> {
