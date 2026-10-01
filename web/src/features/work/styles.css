@@ -109,7 +109,15 @@
 .day-group-title button{display:inline-flex;align-items:center;gap:4px;background:none;border:0;color:inherit;padding:0;font:inherit;text-transform:inherit;letter-spacing:inherit}
 .day-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 12px;display:grid;gap:8px}
 .day-card.is-done{opacity:.72}
-.day-card-head{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start}
+.day-card-head{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:start}
+.day-number{min-width:1.75rem;padding-top:4px;font-variant-numeric:tabular-nums;font-size:.9rem;opacity:.7;text-align:right}
+.day-mode{display:inline-flex;gap:4px;padding:3px;border-radius:999px;background:rgba(255,255,255,.06);margin:4px 0}
+.day-mode button{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:inherit;font:inherit}
+.day-mode button[aria-pressed="true"]{background:#f0b429;color:#111;font-weight:600}
+.day-time-group{display:grid;gap:8px}
+.day-time-title{margin:10px 0 0;font-size:1rem;font-weight:700;font-variant-numeric:tabular-nums}
+.day-time-group .day-group-title{margin-top:2px}
+.plan-times-hint{margin:0 0 6px;font-size:.85rem}
 .day-card-title{min-width:0}
 .day-card-open{background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;font-size:1.05rem}
 .day-card.is-done .day-card-open strong{text-decoration:line-through}

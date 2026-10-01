@@ -11,6 +11,7 @@ export function dateTimeFormat(locale: Locale, options: Intl.DateTimeFormatOptio
 }
 /** Short date with time, e.g. "Sep 29, 3:05 PM" / "29 sept, 3:05 p. m.". */
 export const formatDateTime = (locale: Locale, at: number) => dateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(at);
+export const formatClockMinute = (locale: Locale, minute: number) => new Intl.DateTimeFormat(localeTag(locale), { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(Date.UTC(2000, 0, 1, Math.floor(minute / 60), minute % 60));
 export const formatTime = (locale: Locale, at: number) => dateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).format(at);
 export const formatShortDate = (locale: Locale, at: number) => dateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(at);
 /** Calendar dates (YYYY-MM-DD) are formatted through UTC so they never shift. */

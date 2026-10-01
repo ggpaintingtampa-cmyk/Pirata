@@ -44,6 +44,7 @@ export function PlanEditor({ app, date, scope, rows, onClose }: { app: ModulePro
     {project && !roots.length && <p className="empty-state">{t('work.empty')}</p>}
     <ul className="plan-tree">{roots.map(task => <Node key={task.id} task={task} />)}</ul>
     <h3>{t('work.plan.chosen')}</h3>
+    <p className="muted plan-times-hint">{t('work.plan.timesHint')}</p>
     {!chosen.length && <p className="empty-state">{t('work.plan.nothing')}</p>}
     <ol className="plan-chosen">{chosen.map((task, index) => <li key={task.id}><span>{index + 1}. {task.title}<small>{app.snapshot.projects.find(p => p.id === task.projectId)?.name}</small></span>
       <span className="plan-chosen-actions"><button type="button" aria-label={t('work.plan.up')} disabled={index === 0} onClick={() => move(index, -1)}><ArrowUp size={14} aria-hidden="true" /></button><button type="button" aria-label={t('work.plan.down')} disabled={index === chosen.length - 1} onClick={() => move(index, 1)}><ArrowDown size={14} aria-hidden="true" /></button><button type="button" aria-label={t('work.plan.remove')} onClick={() => setIds(ids.filter(id => id !== task.id))}><X size={14} aria-hidden="true" /></button></span></li>)}</ol>

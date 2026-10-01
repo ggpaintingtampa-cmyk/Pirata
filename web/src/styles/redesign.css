@@ -43,6 +43,14 @@ h3 { font-size: 18px; letter-spacing: -.02em; }
 .live-app .heading-dot { color: #73797f; }
 .live-app .today-date { font-size: 11px; white-space: nowrap; color: var(--color-muted); display: flex; align-items: center; }
 .live-app .today-date svg { display: none; }
+.live-app .refresh-button { width: 36px; height: 36px; margin-left: 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid rgba(255,255,255,.16); background: transparent; color: inherit; padding: 0; }
+.live-app .today-date .refresh-button svg, .live-app .brand-tools .refresh-button svg { display: block; }
+.live-app .refresh-button.is-busy svg { animation: refresh-spin 1s linear infinite; }
+.live-app .refresh-button.is-done { color: #7ddc9a; }
+.live-app .refresh-button.is-failed, .live-app .refresh-button.is-offline { color: #f5d38a; }
+.live-app .brand-tools { display: inline-flex; align-items: center; gap: 4px; }
+@keyframes refresh-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .live-app .refresh-button.is-busy svg { animation: none; } }
 .page-caption { color: var(--color-muted); font-size: 14px; line-height: 1.55; margin: 0 0 23px; max-width: 60ch; }
 .live-app .bottom-nav { grid-row: 3; border-color: var(--color-border); background: var(--color-nav); z-index: 16; }
 .live-app .nav-inner { min-height: 68px; max-width: 600px; grid-template-columns: repeat(4,minmax(0,1fr)); padding: 5px 8px; gap: 4px; }

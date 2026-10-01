@@ -22,6 +22,35 @@ export function groupByProject(snapshot: Pick<BusinessSnapshot, 'projects'>, row
   }
   return groups;
 }
+export type DayGroupMode = 'time' | 'project';
+export interface TimeGroup { startMinute: number | null; projects: DayGroup[] }
+/** P01: a row's time on `date` is its own schedule block that day, else the nearest ancestor's block that day, else null (unscheduled). */
+export function rowStartMinute(snapshot: Pick<BusinessSnapshot, 'schedule' | 'tasks'>, taskId: string | null, date: string): number | null {
+  let id: string | null = taskId;
+  for (let depth = 0; id && depth < 32; depth++) {
+    const blocks = snapshot.schedule.filter(block => block.taskId === id && block.date === date);
+    if (blocks.length) return Math.min(...blocks.map(block => block.startMinute));
+    id = snapshot.tasks.find(task => task.id === id)?.parentTaskId ?? null;
+  }
+  return null;
+}
+/** P01: rows grouped by start time (ascending, unscheduled last), then by project in first-appearance order; rows keep the plan's order. */
+export function groupByTimeThenProject(snapshot: Pick<BusinessSnapshot, 'projects' | 'schedule' | 'tasks'>, rows: readonly DayAssignment[], date: string): TimeGroup[] {
+  const groups: TimeGroup[] = [];
+  for (const row of rows) {
+    const startMinute = rowStartMinute(snapshot, row.taskId, date);
+    let group = groups.find(item => item.startMinute === startMinute);
+    if (!group) { group = { startMinute, projects: [] }; groups.push(group); }
+    let project = group.projects.find(item => item.projectId === row.projectId);
+    if (!project) { project = { projectId: row.projectId, name: snapshot.projects.find(item => item.id === row.projectId)?.name ?? '—', rows: [] }; group.projects.push(project); }
+    project.rows.push(row);
+  }
+  return groups.sort((a, b) => a.startMinute === b.startMinute ? 0 : a.startMinute === null ? 1 : b.startMinute === null ? -1 : a.startMinute - b.startMinute);
+}
+/** P06: the rows in render order, so display numbers always read top to bottom. */
+export function flattenGroups(groups: readonly (TimeGroup | DayGroup)[]): DayAssignment[] {
+  return groups.flatMap(group => 'projects' in group ? group.projects.flatMap(project => project.rows) : group.rows);
+}
 /** The session id to confirm when my running timer sits on the node or inside its subtree. */
 export function affectedSession(snapshot: Pick<BusinessSnapshot, 'runningTimer' | 'tasks'>, taskId: string): string | null {
   const timer = snapshot.runningTimer;
