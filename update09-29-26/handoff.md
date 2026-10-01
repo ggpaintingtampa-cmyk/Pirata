@@ -48,5 +48,12 @@ Tests authored (not run): `server/tests/template-requirements.test.ts`, `server/
 - Decisions applied from section 20: task-only feed (no goal import), explicit dispositions instead of inferred deletion, completion write-back with `work.complete` scope and stored `integration_operations`, timer only as the completion consequence (the shared timer extension is not built).
 - **Deployment (phase 7):** production Camino is schema 2 → the release needs `caminosctl migrate --db <abs> --to-schema 3 --apply --backup <abs>` before `current` moves; `CAMINOS_WORK_FEED_HOST` defaults to `pirata.andresinbox.tech`. Pirata needs migration 005 (already in this branch) and the owner creates the token under Settings → Connections.
 
-## Phases 6–7
-Not started. Order per the spec: P11/P12 → consolidated verification.
+## Phase 6 — P11, P12 (implemented, awaiting final verification)
+Commit `38f9276`: `server/src/ai/skill/pirata-app.md` + `skill/index.ts` (`SKILL_VERSION pirata-app/1`, `loadSkill` at startup, `skillFor(role, locale)`), `ai/index.ts` (`ASK_RULES` + skill, `skillVersion` in responses, reservation counts the skill bytes), `ai/order.ts` (`suggest` / `apply` / `undo`, allowance kind `order`, validation), `modules/bulk` `task.applyOrder` (audit row atomic), contract `task.applyOrder` + `OrderProposal`, capability map; web `features/ordering/`. Tests authored: `ask.test.ts` (+3), `ask-order.test.ts`.
+
+## Phase 7 — consolidated verification (owner-run)
+Not run by the implementing agent, by the owner's instruction. `update09-29-26/VERIFICATION.md` lists the commands, the suites touched, expected first-run follow-ups and the browser scenarios; `update09-29-26/RELEASE-NOTES.md` is the owner-facing draft; Camino rollout steps are in `camino/docs/update-2026-09-29.md`.
+
+## Commits
+Pirata `update-2026-09-29`: 72f52ee P00 · 76d6189 P13 · 5b35310 P13 sweep · 10ac72d P01/P05/P06/P07 · 44962ca P04/P08 · 3b0589e P02/P03/P09 · 35678c1 P10 · 38f9276 P11/P12 (+ handoff commits).
+Camino `update-2026-09-29` (base 453d97b): 4ec1657 C00 · 292e122 C01 · 4e360de C02/P10.
