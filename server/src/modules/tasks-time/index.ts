@@ -1,5 +1,5 @@
 import type { Task } from '@pirata/contracts/index';
-import { can, subtree, taskDepth } from '@pirata/contracts/index';
+import { can, subtree, taskDepth, type TaskRequirement, type TemplateRequirement } from '@pirata/contracts/index';
 import type { HandlerMap, TransactionContext } from '../../core/context.js';
 import { ApiError, conflict, invalid } from '../../core/errors.js';
 import { assertReference, closeTimer, createTaskWithSchedule, expectTimer, setTaskStatus, setTaskBlock, reconcileParent } from '../../core/shared.js';
@@ -7,6 +7,29 @@ import { assertReference, closeTimer, createTaskWithSchedule, expectTimer, setTa
 export const capability: 'blocked' | 'ready' = 'ready';
 /** R-ROLE-4: the person who completed a task may undo it for ten minutes; afterwards only an owner may change it. */
 export const UNDO_WINDOW_MS = 10 * 60 * 1000;
+/** P02: a task's requirement rows in order (materials, tools, preparation notes). */
+export function requirementsOf(ctx: TransactionContext, taskId: string): TaskRequirement[] {
+  return ctx.repo.list('task_requirements').filter(row => row.taskId === taskId).sort((a, b) => a.position - b.position || a.createdAt - b.createdAt || a.id.localeCompare(b.id));
+}
+const sameRequirement = (row: TaskRequirement, next: TemplateRequirement) => row.kind === next.kind && row.name === next.name && row.materialId === next.materialId && row.equipmentId === next.equipmentId && row.quantity === next.quantity && row.unit === next.unit && row.note === next.note;
+/** P02: replace a task's requirement set as a snapshot. Catalog references must exist; free text needs none. Returns false when identical. */
+export function setRequirements(ctx: TransactionContext, taskId: string, requirements: readonly TemplateRequirement[], source: { templateId: string | null; version: number | null }): boolean {
+  const existing = requirementsOf(ctx, taskId);
+  if (existing.length === requirements.length && existing.every((row, index) => sameRequirement(row, requirements[index]) && row.sourceTemplateId === source.templateId && row.sourceTemplateVersion === source.version)) return false;
+  for (const item of requirements) {
+    if (item.materialId && !ctx.repo.get('materials', item.materialId)) invalid('Choose a material from inventory or leave the reference empty.');
+    if (item.equipmentId && !ctx.repo.get('equipment', item.equipmentId)) invalid('Choose a tool from the equipment list or leave the reference empty.');
+  }
+  for (const row of existing) ctx.repo.remove('task_requirements', row.id);
+  requirements.forEach((item, position) => ctx.repo.insert('task_requirements', { id: ctx.newId(), createdAt: ctx.serverNow, updatedAt: ctx.serverNow, taskId, kind: item.kind, name: item.name, materialId: item.materialId, equipmentId: item.equipmentId, quantity: item.quantity, unit: item.unit, note: item.note, position, sourceTemplateId: source.templateId, sourceTemplateVersion: source.version }));
+  return true;
+}
+/** P03: copy requirement rows onto a new task, keeping their template provenance. */
+export function copyRequirements(ctx: TransactionContext, fromTaskId: string, toTaskId: string): number {
+  const rows = requirementsOf(ctx, fromTaskId);
+  for (const row of rows) ctx.repo.insert('task_requirements', { ...row, id: ctx.newId(), taskId: toTaskId, createdAt: ctx.serverNow, updatedAt: ctx.serverNow });
+  return rows.length;
+}
 const result = (kind: string, id: string, changed = true) => ({ changed, result: { kind, id } });
 const byPosition = (a: Task, b: Task) => (a.position ?? 0) - (b.position ?? 0) || a.createdAt - b.createdAt || a.id.localeCompare(b.id);
 export function canEditDone(ctx: TransactionContext, task: Task): boolean {
@@ -144,6 +167,14 @@ export const handlers = {
     for (const title of JSON.parse(template.titles) as string[]) { const id = createTask(ctx, title, { projectId: c.projectId, parentTaskId: c.parentTaskId }); first ||= id; }
     return result('tasks', first);
   },
+  'task.setRequirements': (ctx, c) => {
+    const task = ctx.repo.require('tasks', c.taskId);
+    if (task.archivedAt) invalid('Restore this task before editing what it needs.');
+    assertEditable(ctx, task);
+    const changed = setRequirements(ctx, c.taskId, c.requirements, { templateId: null, version: null });
+    if (changed) ctx.repo.update('tasks', c.taskId, { updatedAt: ctx.serverNow });
+    return result('task', c.taskId, changed);
+  },
   'task.setStatus': (ctx, c) => {
     const all = ctx.repo.list('tasks'), task = ctx.repo.require('tasks', c.id);
     if (c.status !== 'done' && task.status === 'done') assertEditable(ctx, task);
@@ -211,5 +242,5 @@ export const handlers = {
     if (changed) ctx.repo.update('time_entries', c.id, { ...patch, updatedAt: ctx.serverNow });
     return result('timeEntry', c.id, changed);
   },
-} satisfies Pick<HandlerMap, 'task.create' | 'task.update' | 'task.batchCreate' | 'task.archive' | 'taskTemplate.save' | 'taskTemplate.apply' | 'task.setStatus' | 'timer.start' | 'timer.pause' | 'timer.switch' | 'timer.correctStart' | 'timer.discard' | 'timeEntry.createManual' | 'timeEntry.correct'>;
+} satisfies Pick<HandlerMap, 'task.create' | 'task.update' | 'task.batchCreate' | 'task.archive' | 'taskTemplate.save' | 'taskTemplate.apply' | 'task.setRequirements' | 'task.setStatus' | 'timer.start' | 'timer.pause' | 'timer.switch' | 'timer.correctStart' | 'timer.discard' | 'timeEntry.createManual' | 'timeEntry.correct'>;
 export { byPosition };

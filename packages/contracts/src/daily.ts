@@ -33,6 +33,9 @@ export const dailyCommands=[
  command('projectTemplate.save',{name:title,note:z.string().trim().max(1000).default(''),tree:templateTreeSchema}),
  command('projectTemplate.apply',{templateId:id,projectId:id}),
  command('projectTemplate.fromProject',{projectId:id,name:title}),
+ // P02: templates become editable; each edit bumps `version`, which travels into copied requirements.
+ command('taskTemplate.updateTree',{id,name:title,tree:templateTreeSchema}),
+ command('projectTemplate.update',{id,name:title,note:z.string().trim().max(1000).default(''),tree:templateTreeSchema}),
 ] as const;
 
 export const dayAssignmentSchema=z.object({...record,date:z.string(),projectId:id,taskId:nullableId,userId:nullableId,position:z.number().int(),createdBy:id}).strict();

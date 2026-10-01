@@ -3,7 +3,7 @@ import type { DayAssignment, TemplateNode } from '@pirata/contracts/index';
 import { can, isOfficeRole, orderedChildren, taskDepth, templateDepth } from '@pirata/contracts/index';
 import type { HandlerMap, TransactionContext } from '../../core/context.js';
 import { ApiError, invalid } from '../../core/errors.js';
-import { assignTask, byPosition, createTask } from '../tasks-time/index.js';
+import { assignTask, byPosition, createTask, requirementsOf, setRequirements } from '../tasks-time/index.js';
 const result = (kind: string, id?: string, changed = true) => ({ changed, result: { kind, ...(id ? { id } : {}) } });
 const forbidden = (message: string): never => { throw new ApiError(403, 'FORBIDDEN', message); };
 function plannableTask(ctx: TransactionContext, id: string) {
@@ -15,11 +15,19 @@ function plannableTask(ctx: TransactionContext, id: string) {
 const personRows = (ctx: TransactionContext, date: string, userId: string) => ctx.repo.list('day_assignments').filter(r => r.date === date && r.taskId !== null && r.userId === userId);
 const poolRows = (ctx: TransactionContext, date: string, projectId: string) => ctx.repo.list('day_assignments').filter(r => r.date === date && r.taskId !== null && r.userId === null && r.projectId === projectId);
 const nextPosition = (rows: readonly DayAssignment[]) => rows.length ? Math.max(...rows.map(r => r.position)) + 1 : 0;
-function applyTree(ctx: TransactionContext, nodes: readonly TemplateNode[], projectId: string, parentTaskId: string | null): string {
+/** P02: each created task gets a snapshot of the node's requirements with the template's identity and version. Old trees have none. */
+function applyTree(ctx: TransactionContext, nodes: readonly TemplateNode[], projectId: string, parentTaskId: string | null, source: { templateId: string; version: number }): string {
   let first = '';
-  for (const node of nodes) { const id = createTask(ctx, node.title, { projectId, parentTaskId }, 0, '', node.description ?? ''); first ||= id; applyTree(ctx, node.children ?? [], projectId, id); }
+  for (const node of nodes) {
+    const id = createTask(ctx, node.title, { projectId, parentTaskId }, 0, '', node.description ?? ''); first ||= id;
+    if (node.requirements?.length) setRequirements(ctx, id, node.requirements, source);
+    applyTree(ctx, node.children ?? [], projectId, id, source);
+  }
   return first;
 }
+const templateVersion = (row: { version?: number | null }) => row.version ?? 1;
+/** Stored trees are compared as JSON after parsing, so an unchanged edit does not bump the version. */
+const sameTree = (stored: string, next: readonly TemplateNode[]) => { try { return JSON.stringify(JSON.parse(stored)) === JSON.stringify(next); } catch { return false; } };
 export const handlers = {
   'task.reorder': (ctx, c) => {
     const siblings = ctx.repo.list('tasks').filter(t => !t.archivedAt && (t.parentTaskId ?? null) === c.parentTaskId && (c.parentTaskId !== null || (t.projectId ?? null) === c.projectId));
@@ -98,7 +106,7 @@ export const handlers = {
     ctx.repo.require('projects', c.projectId);
     const tree = JSON.parse(template.tree) as TemplateNode[], base = c.parentTaskId ? taskDepth(ctx.repo.list('tasks'), c.parentTaskId) + 1 : 0;
     if (base + templateDepth(tree) > 3) invalid('This template would nest deeper than three levels here.');
-    return result('task', applyTree(ctx, tree, c.projectId, c.parentTaskId));
+    return result('task', applyTree(ctx, tree, c.projectId, c.parentTaskId, { templateId: template.id, version: templateVersion(template) }));
   },
   'projectTemplate.save': (ctx, c) => {
     const id = ctx.newId();
@@ -108,16 +116,28 @@ export const handlers = {
   'projectTemplate.apply': (ctx, c) => {
     const template = ctx.repo.require('project_templates', c.templateId);
     ctx.repo.require('projects', c.projectId);
-    return result('task', applyTree(ctx, JSON.parse(template.tree) as TemplateNode[], c.projectId, null));
+    return result('task', applyTree(ctx, JSON.parse(template.tree) as TemplateNode[], c.projectId, null, { templateId: template.id, version: templateVersion(template) }));
   },
   'projectTemplate.fromProject': (ctx, c) => {
     ctx.repo.require('projects', c.projectId);
     const all = ctx.repo.list('tasks');
-    const build = (parentId: string | null, projectId: string): TemplateNode[] => orderedChildren(all, parentId, projectId).map(t => ({ title: t.title, description: t.description ?? '', children: build(t.id, projectId) }));
+    const build = (parentId: string | null, projectId: string): TemplateNode[] => orderedChildren(all, parentId, projectId).map(t => { const requirements = requirementsOf(ctx, t.id).map(({ kind, name, materialId, equipmentId, quantity, unit, note }) => ({ kind, name, materialId, equipmentId, quantity, unit, note })); return { title: t.title, description: t.description ?? '', ...(requirements.length ? { requirements } : {}), children: build(t.id, projectId) }; });
     const tree = build(null, c.projectId);
     if (!tree.length) invalid('This project has no tasks to save as a template.');
     const id = ctx.newId();
     ctx.repo.insert('project_templates', { id, createdAt: ctx.serverNow, updatedAt: ctx.serverNow, name: c.name, note: '', tree: JSON.stringify(tree), createdBy: ctx.userId });
     return result('projectTemplate', id);
   },
-} satisfies Pick<HandlerMap,'task.reorder'|'dayList.replace'|'dayList.take'|'dayList.release'|'dayList.setPresence'|'question.ask'|'question.answer'|'taskTemplate.saveTree'|'taskTemplate.applyTree'|'projectTemplate.save'|'projectTemplate.apply'|'projectTemplate.fromProject'>;
+  'taskTemplate.updateTree': (ctx, c) => {
+    const template = ctx.repo.require('task_templates', c.id);
+    if (template.name === c.name && template.tree && sameTree(template.tree, c.tree)) return result('taskTemplate', c.id, false);
+    ctx.repo.update('task_templates', c.id, { name: c.name, titles: JSON.stringify(c.tree.map(node => node.title)), tree: JSON.stringify(c.tree), version: templateVersion(template) + 1, updatedAt: ctx.serverNow });
+    return result('taskTemplate', c.id);
+  },
+  'projectTemplate.update': (ctx, c) => {
+    const template = ctx.repo.require('project_templates', c.id);
+    if (template.name === c.name && template.note === c.note && sameTree(template.tree, c.tree)) return result('projectTemplate', c.id, false);
+    ctx.repo.update('project_templates', c.id, { name: c.name, note: c.note, tree: JSON.stringify(c.tree), version: templateVersion(template) + 1, updatedAt: ctx.serverNow });
+    return result('projectTemplate', c.id);
+  },
+} satisfies Pick<HandlerMap,'task.reorder'|'dayList.replace'|'dayList.take'|'dayList.release'|'dayList.setPresence'|'question.ask'|'question.answer'|'taskTemplate.saveTree'|'taskTemplate.applyTree'|'projectTemplate.save'|'projectTemplate.apply'|'projectTemplate.fromProject'|'taskTemplate.updateTree'|'projectTemplate.update'>;

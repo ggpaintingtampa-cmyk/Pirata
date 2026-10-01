@@ -15,6 +15,7 @@ import { useServerNow } from '../tasks-time/useServerNow';
 import { PlanEditor } from './PlanEditor';
 import { QuestionDialog } from './QuestionDialog';
 import { WhoWorked } from './WhoWorked';
+import { RequirementChips } from '../templates/RequirementsEditor';
 import { ScheduleTaskDialog } from '../planning';
 import { useRetryableCommand } from './commands';
 import { affectedSession, canEditDone, flattenGroups, groupByProject, groupByTimeThenProject, parseScope, scopeKey, treeCompletion, type DayGroupMode } from './dayList';
@@ -37,13 +38,15 @@ function NodeCheck({ app, task, now, label }: { app: ModuleProps; task: Task; no
   return <span className="day-check-wrap"><button type="button" className={'day-check' + (done ? ' is-done' : '') + (done && !editable ? ' is-locked' : '')} aria-pressed={done} aria-label={label} disabled={busy} title={done && !editable ? t('work.locked') : undefined} onClick={() => void toggle()}>{done && <Check size={14} aria-hidden="true" />}</button>{error && <span role="alert" className="work-error">{error}{runner.pending && <button type="button" className="work-link-button" disabled={busy} onClick={() => void retry()}>{t('shell.command.retryAction')}</button>}</span>}{dialog}</span>;
 }
 
-function DayCard({ app, row, task, now, number, onAsk, onSetTime }: { app: ModuleProps; row: DayAssignment; task: Task; now: number; number: number; onAsk(taskId: string): void; onSetTime(taskId: string): void }) {
+export interface MaterialRequestInput { title: string; quantity: string; projectId?: string; taskId: string }
+function DayCard({ app, row, task, now, number, onAsk, onSetTime, onRequestMaterial }: { app: ModuleProps; row: DayAssignment; task: Task; now: number; number: number; onAsk(taskId: string): void; onSetTime(taskId: string): void; onRequestMaterial?(input: MaterialRequestInput): void }) {
   const t = useT(), locale = useLocale(), [expanded, setExpanded] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(''), runner = useRetryableCommand(app), canOthers = useCan('plan.others');
   const snapshot = app.snapshot, me = snapshot.currentUser?.id, tasks = snapshot.tasks;
   const nodes = subtree(tasks, task.id), children = nodes.slice(1), completion = treeCompletion(tasks, task.id);
   const assignee = snapshot.team?.find(member => member.id === task.assigneeId), completer = snapshot.team?.find(member => member.id === task.completedBy);
   const pinned = (snapshot.projectNotes ?? []).filter(note => note.projectId === task.projectId && note.pinned);
   const attachments = (snapshot.attachments ?? []).filter(file => file.parentType === 'task' && nodes.some(node => node.id === file.parentId));
+  const bring = (snapshot.taskRequirements ?? []).filter(r => nodes.some(node => node.id === r.taskId));
   const run = async (command: BusinessCommand) => { setBusy(true); setError((await runner.run(command)) ?? ''); setBusy(false); };
   const retry = async () => { setBusy(true); setError((await runner.retry()) ?? ''); setBusy(false); };
   const status = task.status === 'done' ? t('work.done') : task.status === 'blocked' ? t('work.blocked') : t('work.open');
@@ -59,6 +62,7 @@ function DayCard({ app, row, task, now, number, onAsk, onSetTime }: { app: Modul
     {expanded && <div className="day-card-details">
       {task.note && <TranslatedText kind="task" id={task.id} field="note" text={task.note} as="p" className="day-note" />}
       {pinned.length > 0 && <div className="day-paint"><strong>{t('work.paint')}</strong>{pinned.map(note => <p key={note.id}><span><TranslatedText kind="projectNote" id={note.id} field="title" text={note.title} compact /></span> {[note.product, note.color, note.colorCode, note.finish, note.quantity].filter(Boolean).join(' · ')}</p>)}</div>}
+      {bring.length > 0 && <div className="day-bring"><strong>{t('work.bring')}</strong><RequirementChips rows={bring} onRequest={onRequestMaterial ? requirement => onRequestMaterial({ title: requirement.name, quantity: [requirement.quantity, requirement.unit].filter(Boolean).join(' '), projectId: task.projectId ?? undefined, taskId: task.id }) : undefined} /></div>}
       <ThumbStrip attachments={attachments} />
       {task.completedAt && <p className="muted">{t('work.doneBy', { name: completer?.name ?? '—', time: formatDateTime(locale, task.completedAt) })}</p>}
       <div className="live-actions"><button type="button" onClick={() => app.onOpenTask(task.id)}>{t('work.openTask')}</button><button type="button" onClick={() => onAsk(task.id)}><Users size={15} aria-hidden="true" />{t('work.ask')}</button>{(row.userId === me || canOthers) && <button type="button" onClick={() => onSetTime(task.id)}><Clock3 size={15} aria-hidden="true" />{t('work.setTime')}</button>}
@@ -71,7 +75,7 @@ function DayCard({ app, row, task, now, number, onAsk, onSetTime }: { app: Modul
 
 /** P01: the grouping choice is remembered for the browser session only (memory, never storage). */
 let rememberedMode: DayGroupMode = 'time';
-export function WorkView(app: ModuleProps & { onOpenProjects?(): void; onOpenTasks?(): void; onOpenHours?(date: string): void }) {
+export function WorkView(app: ModuleProps & { onOpenProjects?(): void; onOpenTasks?(): void; onOpenHours?(date: string): void; onRequestMaterial?(input: MaterialRequestInput): void }) {
   const t = useT(), locale = useLocale(), now = useServerNow(app.snapshot), canOthers = useCan('plan.others');
   const snapshot = app.snapshot, me = snapshot.currentUser?.id ?? '', tasks = snapshot.tasks;
   const [date, setDate] = useState(app.businessDate), [scopeId, setScopeId] = useState('person:' + me), [planning, setPlanning] = useState(false), [question, setQuestion] = useState<string | null>(null), [timing, setTiming] = useState<string | null>(null);
@@ -81,7 +85,7 @@ export function WorkView(app: ModuleProps & { onOpenProjects?(): void; onOpenTas
   const rows = dayItems(snapshot, date, scope), completion = dayCompletion(tasks, rows);
   const timeGroups = mode === 'time' ? groupByTimeThenProject(snapshot, rows, date) : null, projectGroups = mode === 'project' ? groupByProject(snapshot, rows) : null;
   const numbers = new Map(flattenGroups(timeGroups ?? projectGroups ?? []).map((row, index) => [row.id, index + 1] as const));
-  const cards = (list: readonly DayAssignment[]) => list.map(row => { const task = tasks.find(item => item.id === row.taskId); return task ? <DayCard key={row.id} app={app} row={row} task={task} now={now} number={numbers.get(row.id) ?? 0} onAsk={setQuestion} onSetTime={setTiming} /> : null; });
+  const cards = (list: readonly DayAssignment[]) => list.map(row => { const task = tasks.find(item => item.id === row.taskId); return task ? <DayCard key={row.id} app={app} row={row} task={task} now={now} number={numbers.get(row.id) ?? 0} onAsk={setQuestion} onSetTime={setTiming} onRequestMaterial={app.onRequestMaterial} /> : null; });
   const projectHeading = (projectId: string, name: string) => <button type="button" onClick={() => app.onOpenProject(projectId)}>{name}<ChevronRight size={16} aria-hidden="true" /></button>;
   const people = (snapshot.team ?? []).filter(member => !member.disabledAt), projects = snapshot.projects.filter(project => project.status !== 'completed');
   const canPlan = scope.kind === 'project' || scope.userId === me || canOthers;

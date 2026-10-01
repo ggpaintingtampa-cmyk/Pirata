@@ -175,3 +175,5 @@
 .who-worked-total{font-variant-numeric:tabular-nums}
 .who-worked-badges{display:inline-flex;gap:4px}
 .who-worked-empty,.who-worked-note{margin:0;font-size:.85rem}
+/* P02 */
+.day-bring{display:grid;gap:4px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.04)}

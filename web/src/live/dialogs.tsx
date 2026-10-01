@@ -28,7 +28,7 @@ import { ScheduleTaskDialog } from '../features/planning';
 import { ExpenseForm } from '../features/spending';
 import { MaterialDetail, MaintenanceDetail } from '../features/inventory';
 import { FollowUpForm } from '../features/clients-projects/forms';
-export type Dialog = {kind:'quick'|'task-new'|'expense'|'task'|'task-edit'|'plan'|'time'|'time-edit'|'manual'|'material'|'maintenance'|'adjustment'|'lead'|'follow-up'|'objectives'|'registry';id?:string;projectId?:string;parentTaskId?:string;fromQuick?:boolean;focusChoice?:string;name?:RegisteredDialogName;date?:string}|{kind:'action';title:string;command:BusinessCommand;description:string};
+export type Dialog = {kind:'quick'|'task-new'|'expense'|'task'|'task-edit'|'plan'|'time'|'time-edit'|'manual'|'material'|'maintenance'|'adjustment'|'lead'|'follow-up'|'objectives'|'registry';id?:string;projectId?:string;parentTaskId?:string;fromQuick?:boolean;focusChoice?:string;name?:RegisteredDialogName;date?:string;prefill?:{title?:string;quantity?:string}}|{kind:'action';title:string;command:BusinessCommand;description:string};
 type Props={app:ModuleProps;dialog:Dialog;open(d:Dialog|null,confirmedClose?:boolean):void;now:number};
 export function LiveDialogs({app,dialog:d,open,now}:Props){
  const leadName=useRef(''),t=useT();
@@ -44,7 +44,7 @@ export function LiveDialogs({app,dialog:d,open,now}:Props){
  if(d.kind==='material')return <MaterialDetail {...app} selection={{materialId:d.id}} onClose={close}/>;
  if(d.kind==='maintenance')return <MaintenanceDetail {...app} selection={{maintenanceId:d.id}} onClose={close}/>;
  if(d.kind==='action')return <WorkDialog title={d.title} onClose={close}><WorkForm app={app} initial={{startedDate:localDate(app.snapshot.runningTimer?.startedAt??now),startedTime:localTime(app.snapshot.runningTimer?.startedAt??now)}} command={v=>d.command.type==='timer.correctStart'?{...d.command,startedAt:localTimestamp(v.startedDate,v.startedTime)}:d.command} message={d.title+' '+tx('saved.')} done={done} submitLabel={tx('Confirm')+' '+d.title.toLowerCase()}>{draft=><><p>{d.description}</p>{d.command.type==='timer.correctStart'&&<>{draft.field('startedDate',t('tasks.startDate'),{type:'date'})}{draft.field('startedTime',t('tasks.startTime'),{type:'time',hint:t('tasks.timeHint')})}</>}</>}</WorkForm></WorkDialog>;
- if(d.kind==='registry'&&d.name){const Registered=dialogRegistry[d.name];return <Suspense fallback={null}><Registered app={app} projectId={d.projectId} taskId={d.id} date={d.date} onClose={close} onDone={done}/></Suspense>;}
+ if(d.kind==='registry'&&d.name){const Registered=dialogRegistry[d.name];return <Suspense fallback={null}><Registered app={app} projectId={d.projectId} taskId={d.id} date={d.date} prefill={d.prefill} onClose={close} onDone={done}/></Suspense>;}
  if(d.kind==='quick'){
   // Explicit Add menu (update 2026-09-25): one tap per record type, no 'Back to Add menu' step. Chunk dialogs come from dialogRegistry.
   const role=app.snapshot.currentUser?.role;

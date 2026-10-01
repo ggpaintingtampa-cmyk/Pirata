@@ -11,3 +11,19 @@
 .template-node-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center}
 .template-node-fields input{min-height:40px}
 @media (max-width:600px){.template-node-fields{grid-template-columns:1fr auto}.template-node-fields input:nth-child(2){grid-column:1/-1}}
+/* P02 */
+.requirements-editor{display:grid;gap:8px;margin:6px 0}
+.requirement-row{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding:6px;border:1px solid rgba(255,255,255,.1);border-radius:10px}
+.requirement-row input{min-height:40px;min-width:0}
+.requirement-row>input:nth-of-type(2){grid-column:1/-1}
+.requirement-amount{display:grid;grid-template-columns:1fr 72px;gap:6px;grid-column:1/-1}
+.requirement-kind button{min-height:36px;padding:0 10px}
+.requirement-chips{display:grid;gap:6px;margin:6px 0}
+.requirement-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.requirement-group>small{opacity:.7;min-width:60px}
+.requirement-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.08);font-size:.85rem}
+.requirement-chip.kind-note{border-radius:10px;background:rgba(240,180,41,.12)}
+.requirement-chip .work-link-button{font-size:.8rem;padding:0 4px;min-height:28px}
+.template-node details{margin:4px 0}
+.template-node summary{cursor:pointer;font-size:.9rem;opacity:.85}
+.template-version{font-size:.78rem;opacity:.7;margin-left:6px}

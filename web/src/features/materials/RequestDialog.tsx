@@ -5,12 +5,12 @@ import { useT } from '../../i18n';
 import { WorkDialog } from '../tasks-time/WorkDialog';
 import { runCommand } from '../work/commands';
 /** Request materials for a project, a task or a person (R-MAT-1). Also edits an existing request's item, quantity and notes. */
-export function RequestDialog({ app, projectId, taskId, onClose, onDone, item }: RegisteredDialogProps & { item?: ShoppingItem }) {
+export function RequestDialog({ app, projectId, taskId, onClose, onDone, item, prefill }: RegisteredDialogProps & { item?: ShoppingItem }) {
   const t = useT(), me = app.snapshot.currentUser?.id ?? '', projects = app.snapshot.projects.filter(p => p.status !== 'completed'), team = (app.snapshot.team ?? []).filter(m => !m.disabledAt);
   const initialTask = taskId ? app.snapshot.tasks.find(task => task.id === taskId) : undefined;
   const [target, setTarget] = useState<'project' | 'person'>(initialTask || projectId || !team.length ? 'project' : 'project');
   const [project, setProject] = useState(initialTask?.projectId ?? projectId ?? projects[0]?.id ?? ''), [task, setTask] = useState(taskId ?? ''), [person, setPerson] = useState(me);
-  const [title, setTitle] = useState(item?.title ?? ''), [quantity, setQuantity] = useState(item?.quantity ?? ''), [note, setNote] = useState(item?.note ?? ''), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const [title, setTitle] = useState(item?.title ?? prefill?.title ?? ''), [quantity, setQuantity] = useState(item?.quantity ?? prefill?.quantity ?? ''), [note, setNote] = useState(item?.note ?? ''), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const tasks = project ? app.snapshot.tasks.filter(candidate => candidate.projectId === project && !candidate.archivedAt && candidate.status !== 'done') : [];
   const label = (id: string) => { const candidate = app.snapshot.tasks.find(c => c.id === id); if (!candidate) return id; const parent = candidate.parentTaskId ? app.snapshot.tasks.find(c => c.id === candidate.parentTaskId) : undefined; return (parent ? parent.title + ' › ' : '') + candidate.title; };
   const save = async () => {

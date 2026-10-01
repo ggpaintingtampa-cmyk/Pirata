@@ -16,9 +16,15 @@ export type TemplateRequirementInput=z.input<typeof templateRequirementSchema>;
 
 export const taskRequirementSchema=z.object({...record,taskId:id,kind:z.enum(REQUIREMENT_KINDS),name:z.string(),materialId:nullableId,equipmentId:nullableId,quantity:z.string(),unit:z.string(),note:z.string(),position:z.number().int(),sourceTemplateId:nullableId,sourceTemplateVersion:z.number().int().nullable()}).strict();
 export type TaskRequirement=z.infer<typeof taskRequirementSchema>;
+const command=<T extends string,S extends z.ZodRawShape>(type:T,fields:S)=>z.object({type:z.literal(type),...fields}).strict();
+/** P02: replace a task's own requirement set (a snapshot; later template edits never touch it). */
+export const requirementCommands=[
+ command('task.setRequirements',{taskId:id,requirements:z.array(templateRequirementSchema).max(30)}),
+] as const;
 export const requirementsSnapshot={taskRequirements:z.array(taskRequirementSchema).optional()};
 export interface RequirementsSnapshot {taskRequirements?:TaskRequirement[]}
 
 /** Audit row for batch operations (P03, P09, P12). Summary holds ids and counts only. */
 export const BATCH_KINDS=['task.bulkCopy','record.bulkDelete','record.bulkRestore','task.applyOrder'] as const;
-export interface BatchOperation {id:string;createdAt:number;userId:string;kind:typeof BATCH_KINDS[number];summaryJson:string}
+export const batchOperationSchema=z.object({id,createdAt:stamp,userId:id,kind:z.enum(BATCH_KINDS),summaryJson:z.string()}).strict();
+export type BatchOperation=z.infer<typeof batchOperationSchema>;

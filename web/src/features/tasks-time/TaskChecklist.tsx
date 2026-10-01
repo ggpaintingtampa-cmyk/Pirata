@@ -14,6 +14,7 @@ import { WorkForm } from './WorkForm';
 import { CompletionRing } from './CompletionRing';
 import { runCommand } from '../work/commands';
 import { affectedSession, canEditDone, treeCompletion } from '../work/dayList';
+import { SelectBox, SelectToggle } from '../bulk';
 
 /** Retains a request through uncertain responses, including a successful write whose refresh failed. */
 export function CommandButton({ app, command, children, message, disabled = false, onSuccess }: { app: ModuleProps; command: BusinessCommand; children: ReactNode; message: string; disabled?: boolean; onSuccess?(): void }) {
@@ -72,6 +73,7 @@ export function TaskCheck({ app, task, showEstimate = false }: { app: ModuleProp
   const command:BusinessCommand={type:'task.setStatus',id:task.id,status:finishing?'done':'open',expectedSessionId:finishing?sessionId:null};
   const label=(finishing?tx('Complete'):tx('Reopen'))+' '+task.title;
   return <div className={"task-check-row "+(task.status==='done'?'task-check-complete':'')}>
+    <SelectBox kind="task" id={task.id} label={task.title}/>
     {!finishing && !editable ? <span className="task-check-box is-locked" title={t('tasks.locked')} aria-label={t('tasks.locked')}><Check size={15}/></span>
       : finishing&&(completion.done<completion.total&&completion.total>1||affectedTimer) ? <button type="button" aria-label={label} onClick={()=>setConfirm(true)}><span className="task-check-box" aria-hidden="true"/></button>
       : <CommandButton app={app} command={command} message={finishing?tx('Task complete.'):tx('Task reopened.')}><span className="task-check-box" aria-hidden="true">{!finishing&&<Check size={15}/>}</span><span className="visually-hidden">{label}</span></CommandButton>}
@@ -91,7 +93,7 @@ export function TaskChecklist(app: ModuleProps & { parentTaskId?: string; compac
   const heading = parentDepth === 1 ? t('tasks.tiny') : parent ? t('tasks.subtasks') : tx('Tasks');
   return <section className={'work-module task-checklist'+(parent?' task-subtask-list':'')} aria-label={heading}>
     {parent&&completion&&!app.compact&&<div className="task-checklist-summary"><CompletionRing fraction={completion.fraction} label={tx('Task completion')} size={64}/><div><h3>{heading}</h3><p>{completion.total>1?t('work.steps',{done:completion.done,total:completion.total}):tx('Break it into a few simple steps.')}</p></div></div>}
-    <div className="task-checklist-heading"><h3>{heading}</h3>{progress!==null&&!parent&&<span>{tx('Project completion:')} {completionPercent(progress)}%</span>}{!parent&&<button className="work-primary" onClick={()=>app.onAddTask(app.selection?.projectId??null)}><Plus size={16} aria-hidden="true"/>{tx('Add task')}</button>}</div>
+    <div className="task-checklist-heading"><h3>{heading}</h3>{progress!==null&&!parent&&<span>{tx('Project completion:')} {completionPercent(progress)}%</span>}{!parent&&<SelectToggle/>}{!parent&&<button className="work-primary" onClick={()=>app.onAddTask(app.selection?.projectId??null)}><Plus size={16} aria-hidden="true"/>{tx('Add task')}</button>}</div>
     {!tasks.length&&<p>{parent?tx('Add the practical steps for this task.'):tx('Add the next piece of work.')}</p>}
     {tasks.map(task=><div key={task.id}><TaskCheck app={app} task={task} showEstimate={Boolean(parent)}/>
       {taskDepth(all, task.id) < 2 && !app.compact && orderedChildren(all, task.id, task.projectId ?? null).map(child=><div className="task-child" key={child.id}><TaskCheck app={app} task={child}/>

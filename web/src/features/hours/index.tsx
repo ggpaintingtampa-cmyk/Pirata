@@ -10,6 +10,7 @@ import { DateField, addDays } from '../../components/DateField';
 import { useRetryableCommand } from '../work/commands';
 import { ShiftDialog } from './ShiftDialog';
 import { prefillDate } from './defaults';
+import { SelectBox, SelectToggle } from '../bulk';
 import { useConfirm } from '../../components/ConfirmDialog';
 import './styles.css';
 const fmt = (minutes: number) => (minutes / 60).toFixed(minutes % 60 ? 2 : 0);
@@ -21,6 +22,7 @@ function ShiftRow({ app, shift, onEdit }: { app: ModuleProps; shift: WorkShift; 
   const retry = async () => { setBusy(true); const message = await runner.retry(); setBusy(false); if (message) app.onSaved(message); };
   const editable = approver || (shift.userId === me && shift.status === 'submitted');
   return <li className={'shift-row status-' + shift.status}>
+    <SelectBox kind="shift" id={shift.id} label={shift.date + ' · ' + project} />
     <div className="shift-main"><strong>{shift.date}</strong><span>{project}</span>{shift.userId !== me && <span className="day-chip">{person}</span>}<span>{shift.kind === 'hours' ? clock(shift.startMinute) + '–' + clock(shift.endMinute) + (shift.breakMinutes ? ' · −' + shift.breakMinutes + 'm' : '') : (shift.daysMinor ?? 0) / 100 + ' ' + tx('d')}</span><strong>{t('hours.total', { hours: fmt(shift.minutes) })}</strong></div>
     <div className="shift-meta"><span className={'badge badge-' + (shift.status === 'approved' ? 'done' : shift.status === 'rejected' ? 'blocked' : 'open')}>{t('hours.status.' + shift.status)}</span>{shift.status === 'rejected' && shift.decisionNote && <small>{t('hours.rejected', { note: shift.decisionNote })}</small>}{shift.note && <small>{shift.note}</small>}</div>
     <div className="live-actions">{mayDelete(app, 'shift', shift as unknown as Record<string, unknown>) && <DeleteButton app={app} kind="shift" id={shift.id} label={shift.date + ' · ' + project} />}{approver && shift.status !== 'approved' && <button type="button" className="work-primary" disabled={busy} onClick={() => void run({ type: 'shift.approve', id: shift.id })}>{t('hours.approve')}</button>}{approver && shift.status !== 'rejected' && <button type="button" disabled={busy} onClick={() => setRejecting(open => !open)}>{t('hours.reject')}</button>}{editable && <button type="button" onClick={() => onEdit(shift)}>{t('hours.edit')}</button>}{editable && <button type="button" disabled={busy} onClick={() => { void confirm({ title: t('hours.remove'), message: t('hours.removeConfirm'), confirmLabel: t('hours.remove'), danger: true }).then(ok => { if (ok) void run({ type: 'shift.remove', id: shift.id }); }); }}>{t('hours.remove')}</button>}</div>{dialog}
@@ -44,7 +46,7 @@ export function HoursView(app: ModuleProps & { date?: string }) {
     {office && <div className="cp-tabs hours-tabs" role="group"><button type="button" aria-pressed={tab === 'mine'} onClick={() => setTab('mine')}>{t('hours.mine')}</button><button type="button" aria-pressed={tab === 'team'} onClick={() => setTab('team')}>{t('hours.team')}</button></div>}
     <div className="day-date"><button type="button" aria-label={t('work.previousDay')} onClick={() => setAnchor(addDays(anchor, tab === 'team' ? -1 : -7))}><ChevronLeft size={18} aria-hidden="true" /></button><DateField label={t('work.date')} value={anchor} onChange={setAnchor} /><button type="button" aria-label={t('work.nextDay')} onClick={() => setAnchor(addDays(anchor, tab === 'team' ? 1 : 7))}><ChevronRight size={18} aria-hidden="true" /></button><a className="work-link-button" href={exportHref} download><Download size={15} aria-hidden="true" />{t('hours.export')}</a></div>
     {tab === 'mine' && <>
-      <div className="task-results-heading"><span>{t('hours.week', { from: week.from })} · {t('hours.total', { hours: fmt(minutesOf(mine)) })}</span><button type="button" className="work-primary" onClick={() => setDialog({})}><Plus size={16} aria-hidden="true" />{t('hours.add')}</button></div>
+      <div className="task-results-heading"><span>{t('hours.week', { from: week.from })} · {t('hours.total', { hours: fmt(minutesOf(mine)) })}</span><SelectToggle /><button type="button" className="work-primary" onClick={() => setDialog({})}><Plus size={16} aria-hidden="true" />{t('hours.add')}</button></div>
       {!mine.length && <p className="empty-state">{t('hours.none')}</p>}
       <ul className="shift-list">{mine.map(shift => <ShiftRow key={shift.id} app={app} shift={shift} onEdit={s => setDialog({ shift: s })} />)}</ul>
     </>}

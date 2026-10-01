@@ -1,0 +1,81 @@
+// P09: owner-only batch deletion into the Trash with a reviewed preview, atomic abort on blocked items, stale-preview
+// rejection, an audit row, and batch restore. Linked hours and time history are never touched.
+import { afterEach, expect, it } from 'vitest';
+import { createFixture, TEST_ORIGIN, type Fixture } from './helpers/fixture.js';
+import { runAs, userOf, type Headers } from './helpers/roles.js';
+let f: Fixture, clock = 1_790_000_000_000;
+afterEach(async () => { await f?.close(); });
+const ok = async (headers: Headers, command: unknown) => { const r = await runAs(f, headers, command); expect(r.statusCode, r.body).toBe(200); return r.json(); };
+const snapshot = async (headers: Headers) => (await f.app.inject({ url: '/api/v1/snapshot', headers })).json();
+const preview = (headers: Headers, items: unknown[]) => f.app.inject({ method: 'POST', url: '/api/v1/trash/preview', headers: { ...headers, origin: TEST_ORIGIN }, payload: { items } });
+async function setup() {
+  f = await createFixture({ now: () => clock });
+  const owner = await f.authenticate(), manager = await userOf(f, 'manager', owner);
+  const client = (await ok(owner, { type: 'client.create', name: 'Smith', phone: '', email: '', note: '' })).result.id as string;
+  const project = (await ok(owner, { type: 'project.create', name: 'Smith exterior', clientId: client, clientName: '', address: '', note: '' })).result.id as string;
+  const other = (await ok(owner, { type: 'project.create', name: 'Jones', clientId: client, clientName: '', address: '', note: '' })).result.id as string;
+  const root = (await ok(owner, { type: 'task.create', title: 'Prep', projectId: project, parentTaskId: null, estimatedMinutes: 0, note: '' })).result.id as string;
+  const child = (await ok(owner, { type: 'task.create', title: 'Sand', projectId: project, parentTaskId: root, estimatedMinutes: 0, note: '' })).result.id as string;
+  const loose = (await ok(owner, { type: 'task.create', title: 'Loose', projectId: other, parentTaskId: null, estimatedMinutes: 0, note: '' })).result.id as string;
+  await ok(owner, { type: 'task.setRequirements', taskId: root, requirements: [{ kind: 'tool', name: 'Ladder' }] });
+  await ok(owner, { type: 'shift.enter', userId: manager.id, projectId: project, date: '2026-09-25', kind: 'hours', startMinute: 480, endMinute: 960, breakMinutes: 0, daysMinor: null, note: '' });
+  return { owner, manager: manager.headers, client, project, other, root, child, loose };
+}
+it('previews a normalized selection and deletes it atomically with cascades, an audit row and linked hours untouched', async () => {
+  const { owner, project, root, child, loose } = await setup();
+  const seen = await preview(owner, [{ kind: 'task', id: child }, { kind: 'project', id: project }, { kind: 'task', id: root }, { kind: 'task', id: loose }]);
+  expect(seen.statusCode, seen.body).toBe(200);
+  const plan = seen.json();
+  expect(plan.roots.map((r: { kind: string; id: string }) => [r.kind, r.id])).toEqual([['project', project], ['task', loose]]);
+  expect(plan.dropped).toHaveLength(2);
+  expect(plan.totals).toEqual({ roots: 2, cascaded: 3 });
+  const done = await ok(owner, { type: 'record.bulkDelete', items: [{ kind: 'task', id: child }, { kind: 'project', id: project }, { kind: 'task', id: root }, { kind: 'task', id: loose }], expected: plan.totals });
+  expect(done.result.kind).toBe('batch');
+  const s = await snapshot(owner);
+  expect(s.projects.find((p: { id: string }) => p.id === project)).toBeUndefined();
+  expect(s.tasks.map((t: { id: string }) => t.id)).not.toContain(root);
+  expect(s.tasks.map((t: { id: string }) => t.id)).not.toContain(loose);
+  expect(s.workShifts).toHaveLength(1);
+  expect(s.trash.map((e: { kind: string; id: string }) => [e.kind, e.id])).toEqual(expect.arrayContaining([['project', project], ['task', loose]]));
+  expect(s.trash.find((e: { id: string }) => e.id === project).cascaded).toBe(3);
+  expect(s.batchOperations.filter((b: { kind: string }) => b.kind === 'record.bulkDelete')).toHaveLength(1);
+  expect(s.activity.some((a: { kind: string; body: string }) => a.kind === 'record.bulkDelete' && /2 records/.test(a.body))).toBe(true);
+});
+it('rejects non-owners, stale previews, and aborts the whole batch when one item is blocked', async () => {
+  const { owner, manager, project, root, loose } = await setup();
+  const forbidden = await runAs(f, manager, { type: 'record.bulkDelete', items: [{ kind: 'task', id: loose }], expected: { roots: 1, cascaded: 0 } });
+  expect(forbidden.statusCode).toBe(403);
+  expect((await preview(manager, [{ kind: 'task', id: loose }])).statusCode).toBe(403);
+  const stale = await runAs(f, owner, { type: 'record.bulkDelete', items: [{ kind: 'task', id: root }], expected: { roots: 1, cascaded: 0 } });
+  expect(stale.statusCode).toBe(409); expect(stale.json().error.code).toBe('BULK_PREVIEW_STALE');
+  await ok(manager, { type: 'timer.start', taskId: root });
+  const plan = (await preview(owner, [{ kind: 'task', id: loose }, { kind: 'project', id: project }])).json();
+  expect(plan.blocked).toEqual([{ kind: 'project', id: project, reason: expect.stringMatching(/timing/) }]);
+  const blocked = await runAs(f, owner, { type: 'record.bulkDelete', items: [{ kind: 'task', id: loose }, { kind: 'project', id: project }], expected: plan.totals });
+  expect(blocked.statusCode).toBe(409); expect(blocked.json().error.code).toBe('TEAM_TIMER_ACTIVE');
+  const s = await snapshot(owner);
+  expect(s.tasks.map((t: { id: string }) => t.id)).toContain(loose);
+  expect(s.trash ?? []).toHaveLength(0);
+});
+it('restores a whole batch, skips roots already restored, and replays an identical batch delete once', async () => {
+  const { owner, project, root, loose } = await setup();
+  const snap = await snapshot(owner);
+  const plan = (await preview(owner, [{ kind: 'project', id: project }, { kind: 'task', id: loose }])).json();
+  const envelope = { requestId: '00000000-0000-4000-a000-00000000de01', baseRevision: snap.revision, command: { type: 'record.bulkDelete', items: [{ kind: 'project', id: project }, { kind: 'task', id: loose }], expected: plan.totals } };
+  const first = await f.app.inject({ method: 'POST', url: '/api/v1/commands', headers: owner, payload: envelope });
+  const replay = await f.app.inject({ method: 'POST', url: '/api/v1/commands', headers: owner, payload: envelope });
+  expect(first.statusCode).toBe(200); expect(replay.statusCode).toBe(200);
+  expect(replay.json().result.id).toBe(first.json().result.id);
+  const batchId = first.json().result.id as string;
+  expect((await snapshot(owner)).batchOperations.filter((b: { kind: string }) => b.kind === 'record.bulkDelete')).toHaveLength(1);
+  await ok(owner, { type: 'record.restore', kind: 'task', id: loose });
+  const restored = await ok(owner, { type: 'record.bulkRestore', batchId });
+  expect(restored.changed).toBe(true);
+  const s = await snapshot(owner);
+  expect(s.projects.find((p: { id: string }) => p.id === project)).toBeDefined();
+  expect(s.tasks.map((t: { id: string }) => t.id)).toEqual(expect.arrayContaining([root, loose]));
+  expect(s.taskRequirements.filter((r: { taskId: string }) => r.taskId === root)).toHaveLength(1);
+  expect(s.trash).toHaveLength(0);
+  const again = await ok(owner, { type: 'record.bulkRestore', batchId });
+  expect(again.changed).toBe(false);
+});

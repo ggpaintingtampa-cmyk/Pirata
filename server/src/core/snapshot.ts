@@ -56,6 +56,6 @@ export function readSnapshot(db:Sqlite,ownerId:string,capabilities:Capabilities,
       toolSignOuts:r.list('tool_sign_outs').filter(s=>equipmentIds.has(s.equipmentId)),equipmentReports:r.list('equipment_reports').filter(e=>equipmentIds.has(e.equipmentId)),
       // update 2026-09-29 slices
       taskRequirements:r.list('task_requirements').filter(q=>taskIds.has(q.taskId)).sort((a,b)=>a.position-b.position||a.createdAt-b.createdAt||a.id.localeCompare(b.id)),translationGlossary:r.list('translation_glossary'),translationEpoch:r.translationEpoch(),
-      ...(can(role,'records.delete')?{trash:trashEntries(r,team)}:{})};
+      ...(can(role,'records.delete')?{trash:trashEntries(r,team),batchOperations:r.list('batch_operations')}:{})};
   })();
 }
