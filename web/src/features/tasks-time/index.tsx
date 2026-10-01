@@ -1,4 +1,5 @@
 import { tx } from '../../i18n';
+import { TranslatedText } from '../../components/TranslatedText';
 import { taskDepth } from '@pirata/contracts/index';
 import { useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Clipboard, ListFilter, Pause, Play, Plus, Search, Timer } from 'lucide-react';
@@ -35,9 +36,9 @@ export function TaskList(app: ModuleProps) {
       return <article key={task.id} className={'task-library-item '+(task.status==='done'?'is-complete':'')+' depth-'+taskDepth(app.snapshot.tasks,task.id)}>
         <button className="task-library-open" aria-label={'Open task: '+task.title} aria-describedby={contextId} onClick={()=>app.onOpenTask(task.id)}>
           <span className={'task-status-icon task-status-'+task.status} aria-hidden="true">{task.status==='done'?<Check size={18}/>:running?<Timer size={18}/>:<Clipboard size={18}/>}</span>
-          <span className="task-library-content"><strong className="task-library-name">{task.title}</strong>
+          <span className="task-library-content"><strong className="task-library-name"><TranslatedText kind="task" id={task.id} field="title" text={task.title} compact/></strong>
             <span id={contextId}>
-              {parent&&<span className="task-parent-context">Subtask of {parent.title}</span>}
+              {parent&&<span className="task-parent-context">{tx('Subtask of')} <TranslatedText kind="task" id={parent.id} field="title" text={parent.title} compact/></span>}
               <span className="task-library-meta"><span>{app.snapshot.projects.find(item=>item.id===task.projectId)?.name??'Unfiled'}</span><span className="task-library-duration">{total===null?'Clock correction needed':total===0&&task.estimatedMinutes>0?formatDuration(task.estimatedMinutes*60000)+' estimated':formatDuration(total)+' logged'}</span></span>
               {(assigned||task.status!=='open'||running)&&<span className="task-library-secondary">{assigned?.name}{assigned&&(task.status!=='open'||running)?' · ':''}{task.status==='done'?'Complete':task.status==='blocked'?'Blocked':running?'In progress':''}</span>}
               {total!==null&&task.estimatedMinutes>0&&(total>task.estimatedMinutes*60000||task.status==='done')&&<span className="task-library-secondary">{total>task.estimatedMinutes*60000?formatDuration(total-task.estimatedMinutes*60000)+' over estimate':formatDuration(task.estimatedMinutes*60000-total)+' under estimate'}</span>}

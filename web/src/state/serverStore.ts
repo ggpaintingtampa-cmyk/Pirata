@@ -14,6 +14,7 @@ export function createServerStore(api:PirataService,clock=Date.now){
     login:api.login.bind(api),logout:api.logout.bind(api),snapshot:api.snapshot.bind(api),exportData:observed(()=>api.exportData()),
     execute:async(request)=>{const epoch=generation;const result=await observed(()=>api.execute(request))();if(epoch!==generation)throw new Error('Session changed. Sign in and reload.');return acknowledge(result);},
     previewImport:input=>observed(()=>api.previewImport(input))(),importData:async input=>acknowledge(await observed(()=>api.importData(input))()),
+    call:(path,body)=>observed(()=>api.call(path,body))() as never,
   };
   async function load(epoch:number){
     const started=clock();const data=await api.snapshot();

@@ -15,12 +15,17 @@ export type Capability=
  |'equipment.admin'      // requires-sign-out flag, resolve broken reports
  |'facts.hidden'         // read facts with workerVisible=0
  |'template.manage'      // save project / task templates
- |'records.delete';      // delete anything into the Trash and restore from it; creators may delete their own unprocessed items
+ |'records.delete'       // delete anything into the Trash and restore from it; creators may delete their own unprocessed items
+ |'records.bulkDelete'   // owner-only batch deletion with a reviewed preview (2026-09-29)
+ |'translation.manage'   // glossary and translation corrections for everyone's records (2026-09-29)
+ |'integration.admin'    // Camino work-feed tokens (2026-09-29)
+ |'order.suggest';       // AI task-order proposals for a project (2026-09-29)
 const OFFICE:readonly Role[]=['owner','manager','sales'];
 export const CAPABILITIES:Readonly<Record<Capability,readonly Role[]>>={
  'money.costs':['owner'],'money.sales':OFFICE,'team.admin':['owner'],'ask.admin':['owner'],'settings.admin':['owner'],'data.admin':['owner'],
  'project.review':['owner','manager'],'shift.approve':['owner','manager'],'shift.enterForOthers':['owner','manager'],'task.editDone':['owner'],
  'plan.others':OFFICE,'equipment.admin':['owner','manager'],'facts.hidden':OFFICE,'template.manage':OFFICE,'records.delete':['owner','manager'],
+ 'records.bulkDelete':['owner'],'translation.manage':['owner','manager'],'integration.admin':['owner'],'order.suggest':OFFICE,
 };
 export function can(role:Role|string|undefined|null,capability:Capability):boolean {
  return !!role&&(CAPABILITIES[capability] as readonly string[]).includes(role);
@@ -35,4 +40,5 @@ export const COMMAND_CAPABILITY:Readonly<Record<string,Capability>>={
  'dayList.setPresence':'plan.others',
  'equipment.setSignOutRequired':'equipment.admin','equipment.resolveReport':'equipment.admin',
  'projectTemplate.save':'template.manage','projectTemplate.fromProject':'template.manage','taskTemplate.saveTree':'template.manage',
+ 'glossary.save':'translation.manage','glossary.remove':'translation.manage',
 };

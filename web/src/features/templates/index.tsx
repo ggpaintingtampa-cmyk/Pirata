@@ -4,6 +4,7 @@ import { ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { templateDepth, type TemplateNode } from '@pirata/contracts/index';
 import type { ModuleProps } from '../../services/moduleProps';
 import { useT } from '../../i18n';
+import { TranslatedText } from '../../components/TranslatedText';
 import { useCan } from '../../state/permissions';
 import { WorkDialog } from '../tasks-time/WorkDialog';
 import { runCommand } from '../work/commands';
@@ -12,8 +13,8 @@ type Draft = { title: string; description: string; children: Draft[] };
 const empty = (): Draft => ({ title: '', description: '', children: [] });
 const clean = (nodes: Draft[]): TemplateNode[] => nodes.filter(n => n.title.trim()).map(n => ({ title: n.title.trim(), description: n.description.trim(), children: clean(n.children) }));
 function parseTree(text: string | null | undefined): TemplateNode[] { try { return text ? JSON.parse(text) as TemplateNode[] : []; } catch { return []; } }
-function TreePreview({ nodes, depth = 0 }: { nodes: readonly TemplateNode[]; depth?: number }) {
-  return <ul className={'template-tree depth-' + depth}>{nodes.map((node, i) => <li key={i}><span>{node.title}</span>{node.description && <small>{node.description}</small>}{node.children?.length ? <TreePreview nodes={node.children} depth={depth + 1} /> : null}</li>)}</ul>;
+function TreePreview({ nodes, depth = 0, kind, id, prefix = 'tree' }: { nodes: readonly TemplateNode[]; depth?: number; kind: 'taskTemplate' | 'projectTemplate'; id: string; prefix?: string }) {
+  return <ul className={'template-tree depth-' + depth}>{nodes.map((node, i) => <li key={i}><span><TranslatedText kind={kind} id={id} field={`${prefix}.${i}.title`} text={node.title} compact /></span>{node.description && <small><TranslatedText kind={kind} id={id} field={`${prefix}.${i}.description`} text={node.description} compact /></small>}{node.children?.length ? <TreePreview nodes={node.children} depth={depth + 1} kind={kind} id={id} prefix={`${prefix}.${i}`} /> : null}</li>)}</ul>;
 }
 function NodeEditor({ node, depth, onChange, onRemove, t }: { node: Draft; depth: number; onChange(next: Draft): void; onRemove(): void; t(key: string): string }) {
   const update = (i: number, child: Draft) => onChange({ ...node, children: node.children.map((c, j) => j === i ? child : c) });
@@ -34,10 +35,10 @@ export function TemplatesView(app: ModuleProps) {
     {canManage && <div className="live-actions"><button className="work-primary" onClick={() => setEditor({ kind: 'project', nodes: [empty()], name: '', note: '' })}><Plus size={16} aria-hidden="true" />{t('templates.newProject')}</button><button onClick={() => setEditor({ kind: 'task', nodes: [empty()], name: '', note: '' })}><Plus size={16} aria-hidden="true" />{t('templates.newTask')}</button></div>}
     <h3>{t('templates.projectTemplates')}</h3>
     {!(app.snapshot.projectTemplates ?? []).length && <p className="empty-state">{t('templates.noneProject')}</p>}
-    {(app.snapshot.projectTemplates ?? []).map(item => <article key={item.id} className="card template-card"><h4>{item.name}</h4>{item.note && <p>{item.note}</p>}<TreePreview nodes={parseTree(item.tree)} /><div className="live-actions"><button type="button" onClick={() => setApply({ kind: 'project', id: item.id, projectId: projects[0]?.id ?? '' })}>{t('templates.applyProject')}<ChevronRight size={15} aria-hidden="true" /></button>{canManage && <DeleteButton app={app} kind="projectTemplate" id={item.id} label={item.name} />}</div></article>)}
+    {(app.snapshot.projectTemplates ?? []).map(item => <article key={item.id} className="card template-card"><h4><TranslatedText kind="projectTemplate" id={item.id} field="name" text={item.name} compact /></h4>{item.note && <TranslatedText kind="projectTemplate" id={item.id} field="note" text={item.note} as="p" />}<TreePreview nodes={parseTree(item.tree)} kind="projectTemplate" id={item.id} /><div className="live-actions"><button type="button" onClick={() => setApply({ kind: 'project', id: item.id, projectId: projects[0]?.id ?? '' })}>{t('templates.applyProject')}<ChevronRight size={15} aria-hidden="true" /></button>{canManage && <DeleteButton app={app} kind="projectTemplate" id={item.id} label={item.name} />}</div></article>)}
     <h3>{t('templates.taskTemplates')}</h3>
     {!(app.snapshot.taskTemplates ?? []).length && <p className="empty-state">{t('templates.noneTask')}</p>}
-    {(app.snapshot.taskTemplates ?? []).map(item => { const tree = parseTree(item.tree); return <article key={item.id} className="card template-card"><h4>{item.name}</h4>{tree.length ? <TreePreview nodes={tree} /> : <p className="muted">{(JSON.parse(item.titles) as string[]).join(' · ')}</p>}<div className="live-actions">{tree.length > 0 && <button type="button" onClick={() => setApply({ kind: 'task', id: item.id, projectId: projects[0]?.id ?? '' })}>{t('templates.applyTask')}<ChevronRight size={15} aria-hidden="true" /></button>}{canManage && <DeleteButton app={app} kind="taskTemplate" id={item.id} label={item.name} />}</div></article>; })}
+    {(app.snapshot.taskTemplates ?? []).map(item => { const tree = parseTree(item.tree); return <article key={item.id} className="card template-card"><h4><TranslatedText kind="taskTemplate" id={item.id} field="name" text={item.name} compact /></h4>{tree.length ? <TreePreview nodes={tree} kind="taskTemplate" id={item.id} /> : <p className="muted">{(JSON.parse(item.titles) as string[]).join(' · ')}</p>}<div className="live-actions">{tree.length > 0 && <button type="button" onClick={() => setApply({ kind: 'task', id: item.id, projectId: projects[0]?.id ?? '' })}>{t('templates.applyTask')}<ChevronRight size={15} aria-hidden="true" /></button>}{canManage && <DeleteButton app={app} kind="taskTemplate" id={item.id} label={item.name} />}</div></article>; })}
     {editor && <WorkDialog title={t(editor.kind === 'project' ? 'templates.newProject' : 'templates.newTask')} onClose={() => setEditor(null)}>
       <label className="work-field">{t('templates.name')}<input value={editor.name} onChange={e => setEditor({ ...editor, name: e.target.value })} /></label>
       {editor.kind === 'project' && <label className="work-field">{t('templates.note')}<input value={editor.note} onChange={e => setEditor({ ...editor, note: e.target.value })} /></label>}

@@ -1,0 +1,9 @@
+/* P13: translated content. Subtle by design: the text reads normally; the chip and links are small and secondary. */
+.translated-text[data-translation="pending"]{text-decoration:underline dotted rgba(255,255,255,.25);text-underline-offset:3px}
+.translated-tools{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-left:8px;vertical-align:middle;font-size:.74rem;color:var(--color-muted)}
+.translated-chip{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.08);font-weight:600;letter-spacing:.01em}
+.translated-link{background:none;border:0;padding:0;min-height:0;color:var(--color-muted);text-decoration:underline;text-underline-offset:2px;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:3px}
+.translated-link:hover,.translated-link:focus-visible{color:inherit}
+.translated-unsure{font-style:italic}
+p.translated-text .translated-tools{display:flex;margin:4px 0 0}
+.translated-original-block{white-space:pre-wrap;background:rgba(255,255,255,.05);border-radius:8px;padding:8px 10px}

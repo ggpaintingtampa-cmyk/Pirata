@@ -3,8 +3,8 @@ import { realpathSync } from 'node:fs';
 import { checkIntegrity } from './backup.js';
 import { migrations, type Sqlite } from './database.js';
 
-export const RESET_TABLES = ['clients','projects','tasks','objectives','schedule_blocks','time_entries','running_timers','expenses','materials','material_requirements','material_adjustments','equipment','maintenance_items','leads','lead_follow_ups','daily_goals','task_templates','attachments','activity','project_notes','shopping_items','cleanup_obligations','cleanup_snoozes','day_assignments','task_questions','day_notes','project_templates','project_facts','work_shifts','tool_sign_outs','equipment_reports','attachment_tags','attachment_comments'];
-export const PRESERVED_TABLES = ['schema_versions','owners','team_members','sessions','auth_rate_limits','command_receipts','business_settings','ai_settings','pay_rates'];
+export const RESET_TABLES = ['clients','projects','tasks','objectives','schedule_blocks','time_entries','running_timers','expenses','materials','material_requirements','material_adjustments','equipment','maintenance_items','leads','lead_follow_ups','daily_goals','task_templates','attachments','activity','project_notes','shopping_items','cleanup_obligations','cleanup_snoozes','day_assignments','task_questions','day_notes','project_templates','project_facts','work_shifts','tool_sign_outs','equipment_reports','attachment_tags','attachment_comments','translations','translation_source_locales','task_requirements','batch_operations'];
+export const PRESERVED_TABLES = ['schema_versions','owners','team_members','sessions','auth_rate_limits','command_receipts','business_settings','ai_settings','pay_rates','translation_settings','translation_glossary','integration_tokens'];
 const allTables = [...RESET_TABLES,...PRESERVED_TABLES,'data_revisions','ai_usage'].sort();
 const rows = (db:Sqlite,table:string) => JSON.stringify(db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all());
 
@@ -19,7 +19,7 @@ export function resetBusinessRecords(db:Sqlite, expectedRevision:number, backupP
       const tables=(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as {name:string}[]).map(r=>r.name);
       if (JSON.stringify(tables)!==JSON.stringify(allTables)) throw new Error('Unreviewed tables; reset refused.');
       const schema=db.prepare('SELECT version,checksum FROM schema_versions ORDER BY version').all();
-      if (JSON.stringify(schema)!==JSON.stringify(migrations().map(({version,checksum})=>({version,checksum}))) || migrations().length!==4) throw new Error('Unreviewed schema; reset refused.');
+      if (JSON.stringify(schema)!==JSON.stringify(migrations().map(({version,checksum})=>({version,checksum}))) || migrations().length!==5) throw new Error('Unreviewed schema; reset refused.');
       const revisions=db.prepare('SELECT revision FROM data_revisions').all() as {revision:number}[];
       if (revisions.length!==1 || revisions[0].revision!==expectedRevision || expectedRevision===Number.MAX_SAFE_INTEGER) throw new Error('Revision changed; reset refused.');
       // Compare privately: no account, credential or business values reach output.

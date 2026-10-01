@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Anchor, ArrowRight, LockKeyhole } from 'lucide-react';
 import { useServer } from '../state/serverContext';
-import { useT } from '../i18n';
+import { useT, useLocale, useLocaleOverride, LOCALE_NAMES } from '../i18n';
 export function SignIn() {
- const {store,state}=useServer(),t=useT();
+ const {store,state}=useServer(),t=useT(),locale=useLocale(),{setOverride}=useLocaleOverride();
  const [password,setPassword]=useState(''),[username,setUsername]=useState('');
  return <main className="signin">
   <header className="signin-brand"><div className="brand-mark"><Anchor size={44} aria-hidden="true"/></div><h1>Morgan el Pirata</h1><p>{t('signin.tagline')}</p></header>
+  <div className="language-toggle signin-language" role="group" aria-label={t('shell.account.language')}>{(['en','es'] as const).map(code=><button key={code} type="button" className={locale===code?'selected':''} aria-pressed={locale===code} onClick={()=>setOverride(code)}>{LOCALE_NAMES[code]}</button>)}</div>
   {state.status==='loading'?<p role="status">{state.error?t('signin.reconnecting'):t('signin.connecting')}</p>:<form onSubmit={e=>{e.preventDefault();void store.login(password,username).then(()=>setPassword('')).catch(()=>{});}}>
    <label htmlFor="username">{t('signin.username')}</label><input id="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={t('signin.usernamePlaceholder')} required value={username} onChange={e=>setUsername(e.target.value)} disabled={state.busy}/>
    <label htmlFor="owner-password">{t('signin.password')}</label><input id="owner-password" type="password" autoComplete="current-password" placeholder={t('signin.passwordPlaceholder')} required value={password} onChange={e=>setPassword(e.target.value)} disabled={state.busy}/>

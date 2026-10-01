@@ -3,7 +3,9 @@ import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, MessageSquare
 import { dayCompletion, dayItems, presence, subtree, taskDepth, type DayAssignment, type DayScope, type Task } from '@pirata/contracts/index';
 import { projectCompletion, completionPercent } from '@pirata/contracts/progress';
 import type { ModuleProps } from '../../services/moduleProps';
-import { useT } from '../../i18n';
+import { useT, useLocale } from '../../i18n';
+import { formatDateTime } from '../../i18n/locale';
+import { TranslatedText } from '../../components/TranslatedText';
 import { useCan } from '../../state/permissions';
 import { DateField, addDays } from '../../components/DateField';
 import { ThumbStrip } from '../../components/ThumbStrip';
@@ -15,7 +17,6 @@ import { runCommand } from './commands';
 import { affectedSession, canEditDone, groupByProject, parseScope, scopeKey, treeCompletion } from './dayList';
 import './styles.css';
 
-const timeFormat = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 /** One node's done toggle: completes the subtree (with confirmation) or reopens within the rules. */
 function NodeCheck({ app, task, now, label }: { app: ModuleProps; task: Task; now: number; label: string }) {
@@ -33,7 +34,7 @@ function NodeCheck({ app, task, now, label }: { app: ModuleProps; task: Task; no
 }
 
 function DayCard({ app, row, task, now, onAsk }: { app: ModuleProps; row: DayAssignment; task: Task; now: number; onAsk(taskId: string): void }) {
-  const t = useT(), [expanded, setExpanded] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const t = useT(), locale = useLocale(), [expanded, setExpanded] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const snapshot = app.snapshot, me = snapshot.currentUser?.id, tasks = snapshot.tasks;
   const nodes = subtree(tasks, task.id), children = nodes.slice(1), completion = treeCompletion(tasks, task.id);
   const assignee = snapshot.team?.find(member => member.id === task.assigneeId), completer = snapshot.team?.find(member => member.id === task.completedBy);
@@ -44,16 +45,16 @@ function DayCard({ app, row, task, now, onAsk }: { app: ModuleProps; row: DayAss
   return <article className={'day-card' + (task.status === 'done' ? ' is-done' : '')} data-testid="day-card">
     <div className="day-card-head">
       <NodeCheck app={app} task={task} now={now} label={task.title} />
-      <div className="day-card-title"><button type="button" className="day-card-open" onClick={() => app.onOpenTask(task.id)}><strong>{task.title}</strong></button>{task.description && <p className="day-card-description">{task.description}</p>}
+      <div className="day-card-title"><button type="button" className="day-card-open" onClick={() => app.onOpenTask(task.id)}><strong><TranslatedText kind="task" id={task.id} field="title" text={task.title} compact /></strong></button>{task.description && <TranslatedText kind="task" id={task.id} field="description" text={task.description} as="p" className="day-card-description" compact />}
         <div className="day-card-meta"><span className={'badge badge-' + task.status}>{status}</span><span className="day-chip">{assignee?.name ?? t('work.unassigned')}</span>{completion.total > 1 && <span className="day-chip">{t('work.steps', { done: completion.done, total: completion.total })}</span>}{row.userId === null && <span className="day-chip day-chip-pool">{t('work.pool')}</span>}</div></div>
       <button type="button" className="day-card-expand" aria-expanded={expanded} aria-label={expanded ? t('work.hide') : t('work.details')} onClick={() => setExpanded(open => !open)}>{expanded ? <ChevronUp size={18} aria-hidden="true" /> : <ChevronDown size={18} aria-hidden="true" />}</button>
     </div>
-    {children.length > 0 && <ul className="day-tree">{children.map(child => <li key={child.id} className={'day-tree-node depth-' + taskDepth(tasks, child.id) + (child.status === 'done' ? ' is-done' : '')}><NodeCheck app={app} task={child} now={now} label={child.title} /><span className="day-tree-text"><span>{child.title}</span>{child.description && <small>{child.description}</small>}</span></li>)}</ul>}
+    {children.length > 0 && <ul className="day-tree">{children.map(child => <li key={child.id} className={'day-tree-node depth-' + taskDepth(tasks, child.id) + (child.status === 'done' ? ' is-done' : '')}><NodeCheck app={app} task={child} now={now} label={child.title} /><span className="day-tree-text"><TranslatedText kind="task" id={child.id} field="title" text={child.title} compact />{child.description && <small><TranslatedText kind="task" id={child.id} field="description" text={child.description} compact /></small>}</span></li>)}</ul>}
     {expanded && <div className="day-card-details">
-      {task.note && <p className="day-note">{task.note}</p>}
-      {pinned.length > 0 && <div className="day-paint"><strong>{t('work.paint')}</strong>{pinned.map(note => <p key={note.id}><span>{note.title}</span> {[note.product, note.color, note.colorCode, note.finish, note.quantity].filter(Boolean).join(' · ')}</p>)}</div>}
+      {task.note && <TranslatedText kind="task" id={task.id} field="note" text={task.note} as="p" className="day-note" />}
+      {pinned.length > 0 && <div className="day-paint"><strong>{t('work.paint')}</strong>{pinned.map(note => <p key={note.id}><span><TranslatedText kind="projectNote" id={note.id} field="title" text={note.title} compact /></span> {[note.product, note.color, note.colorCode, note.finish, note.quantity].filter(Boolean).join(' · ')}</p>)}</div>}
       <ThumbStrip attachments={attachments} />
-      {task.completedAt && <p className="muted">{t('work.doneBy', { name: completer?.name ?? '—', time: timeFormat.format(task.completedAt) })}</p>}
+      {task.completedAt && <p className="muted">{t('work.doneBy', { name: completer?.name ?? '—', time: formatDateTime(locale, task.completedAt) })}</p>}
       <div className="live-actions"><button type="button" onClick={() => app.onOpenTask(task.id)}>{t('work.openTask')}</button><button type="button" onClick={() => onAsk(task.id)}><MessageSquare size={15} aria-hidden="true" />{t('work.ask')}</button>
         {row.userId === null && <button type="button" className="work-primary" disabled={busy} onClick={() => void run({ type: 'dayList.take', id: row.id })}>{t('work.take')}</button>}
         {row.userId !== null && row.userId === me && <button type="button" disabled={busy} onClick={() => void run({ type: 'dayList.release', id: row.id })}>{t('work.release')}</button>}</div>

@@ -1,0 +1,32 @@
+# Update 2026-09-29 — implementation handoff
+
+Spec: `/home/andre/Personal Files/Camino Dash Pirata Update September 29.md` (Part I requirements, Part II construction, section 20 latest decisions). Branch `update-2026-09-29` in this worktree, cut from `master` e6bf5cf. Option B: the 2026-09-28 reset tooling was carried in unchanged as the first commit (`P00`). No tests, lint gates or browser passes are run per phase (Part I §7); type checks and lint below are development diagnostics only.
+
+Status vocabulary: **implemented, awaiting final verification** means the code is written and type-checks; **verified** is reserved for phase 7.
+
+## Phase 1 — P13 Pirata English/Spanish
+
+### Server (implemented, awaiting final verification)
+- Migration `server/src/db/migrations/005-update-2026-09-29.sql`: translations cache, source-language overrides, glossary, translation settings (with `cache_epoch`), `ai_usage.kind`, task requirements, template `version`, batch audit, integration tokens. Additive only.
+- Registries: `core/repositories.ts` (`Tables`, `TABLES`, `DELETABLE`, `remove` whitelist, `translationEpoch()`, `bumpTranslationEpoch()`), `core/snapshot.ts` (`taskRequirements`, `translationGlossary`, `translationEpoch`), `db/reset.ts` (five migrations, new reset/preserved buckets), `modules/index.ts` (`translation-admin`).
+- Contracts: `packages/contracts/src/translation.ts` (kinds, field addressing, DTOs, settings, glossary commands, search DTOs), `requirements.ts` (record shapes only; P02 commands come with phase 4), `daily.ts` (`TemplateNode.requirements?` without default, template `version`), `extra.ts` (`version`), `permissions.ts` (four new capabilities), `index.ts` composition. Manifest rewritten.
+- Translation module `server/src/translation/`: `fields.ts` (complete registry over every free-text column; literals excluded), `detect.ts` (heuristic), `provider.ts` (OpenAI Responses API with strict JSON output; `none`), `cache.ts` (hash-keyed rows, corrected rows protected, late results dropped, epoch bumps), `service.ts` (lookup, bounded translate with dedupe, batches of 40 / 6,000 chars, 20 s timeout, allowance on `ai_usage` kind `translation`), `index.ts` (routes: lookup, translate, correct, source, admin settings, backfill).
+- `routes/search.ts` (`GET /api/v1/search`), `routes/export.ts` (`locale` parameter, on-demand translation bounded to 200 fields, `_original` and `translation_status` columns), `ai/index.ts` (Ask allowance counts only `kind='ask'`; `apiKey` exported).
+- Tests authored: `server/tests/translation.test.ts` (12 cases), `server/tests/migration-005.test.ts` (2 cases). Not run.
+
+### Web (implemented, awaiting final verification)
+- `services/api.ts` + `state/serverStore.ts`: `call(path, body)` with the in-memory CSRF token.
+- `i18n/locale.ts` (locale-aware Intl helpers; business timezone unchanged), `i18n/errors.ts` (error codes → `shell.error.*`, server text fallback), `i18n/fields.ts` (every contract/server validation message with Spanish; Zod prefixes), `i18n/translated.tsx` (`TranslationStore`, `TranslationProvider`, `useTranslated`; keys carry text hash + epoch; lookups batched, translation only for mounted pending items; pause after disabled/budget; offline handling), `i18n/index.tsx` (`useLocaleOverride`, `currentLocaleValue`).
+- `components/TranslatedText.tsx` (+ `translated.css`): chip, View original, Show translation for `unsure`, Written in buttons (`translations/source`), Retry, Report translation dialog (`translations/correct`). `components/ConfirmDialog.tsx` + `useConfirm` (dictionary buttons).
+- `features/team/translationSettings.tsx` (`TranslationSettingsView`, `GlossaryPanel`), view `translation-settings` (`ask.admin`) in navigation, sidebar, settings links; language selector on Settings and on the sign-in screen (in-memory override until sign-in).
+- Dictionaries: `shell.ts` (translated/confirm/form/command/time/error keys), `team/strings.ts` (`translation.*`), `legacy.ts` (three new phrases). `WorkForm`, `WorkDialog`, `CommandButton`, `runCommand`, `navigation.ts` leave prompt now read from the dictionaries and map error codes.
+- Surfaces wired to `TranslatedText`: Daily cards (title, description, note, child titles, pinned paint titles), All tasks (titles, parent context), task detail dialog (title, description, note, parent), task checklist rows, task extras (questions, answers, paint titles), project notes (title, body), team messages, materials (title, note), templates (names, notes, node titles/descriptions by tree path), daily report (tasks, notes, questions, answers, requests, broken reports), tools (report bodies), insights (tasks, questions, requests), facts (custom labels). Dates in those views use the viewer locale.
+- Tests authored: `web/tests/unit/translated.test.ts`, `web/tests/unit/i18n-parity.test.ts` (dictionary parity, legacy coverage, server-message coverage). `serverStore.test.ts` mock extended with `call`. Not run.
+
+### Still open inside P13
+- Remaining hard-coded interface strings in the live app (scan recorded in `web/implementation/i18n-inventory-2026-09-29.md`): task dialogs and editors, calendar labels, updates/notes forms, Ask page, AI settings, data tools, timer controls. Being converted to `tx()`/keys with Spanish entries.
+- `window.confirm` call sites still to move to `ConfirmDialog`: `DeleteButton`, `NodeCheck`, hours remove, tools return.
+- Bilingual review of synthetic translations and the rendered-layout review at 320/390/768/desktop belong to phase 7.
+
+## Phases 2–7
+Not started. Order per the spec: C01/P01/P05/P06/P07 → P04/P08 → P02/P03/P09 → P10+C02 (per section 20) → P11/P12 → consolidated verification.

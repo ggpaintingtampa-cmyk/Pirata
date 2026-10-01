@@ -5,6 +5,7 @@ import type { ModuleProps } from '../../services/moduleProps';
 import { useT } from '../../i18n';
 import { useCan } from '../../state/permissions';
 import { CopyField } from '../../components/CopyField';
+import { useTranslated } from '../../i18n/translated';
 import { WorkDialog } from '../tasks-time/WorkDialog';
 import { runCommand } from '../work/commands';
 import './styles.css';
@@ -23,9 +24,14 @@ export function FactsCard({ app, project }: { app: ModuleProps; project: Project
     {!rows.length && !custom.length && !pinned.length && <p className="muted">{t('facts.empty')}</p>}
     {rows.map(row => <CopyField key={row.key} label={t('facts.' + row.key) + (row.fact && !row.fact.workerVisible ? ' · ' + t('facts.hiddenTag') : '')} value={row.value} />)}
     {pinned.map(note => <CopyField key={note.id} label={t('facts.paint') + ': ' + note.title} value={[note.product, note.color, note.colorCode, note.finish, note.quantity, note.store].filter(Boolean).join(' · ')} hint={note.body || undefined} />)}
-    {custom.map(fact => <CopyField key={fact.id} label={fact.label + (!fact.workerVisible ? ' · ' + t('facts.hiddenTag') : '')} value={fact.value} />)}
+    {custom.map(fact => <CustomFact key={fact.id} fact={fact} hiddenTag={!fact.workerVisible ? ' · ' + t('facts.hiddenTag') : ''} />)}
     {editing && <FactsEditor app={app} project={project} facts={facts} office={office} onClose={() => setEditing(false)} />}
   </section>;
+}
+/** A custom fact: its label is user text (translated), its value is literal (never translated). */
+function CustomFact({ fact, hiddenTag }: { fact: ProjectFact; hiddenTag: string }) {
+  const label = useTranslated('projectFact', fact.id, 'label', fact.label);
+  return <CopyField label={label.text + hiddenTag} value={fact.value} />;
 }
 function FactsEditor({ app, project, facts, office, onClose }: { app: ModuleProps; project: Project; facts: ProjectFact[]; office: boolean; onClose(): void }) {
   const t = useT(), [busy, setBusy] = useState(false), [error, setError] = useState('');

@@ -10,6 +10,7 @@ import { createServerStore } from './state/serverStore';
 import { ServerProvider } from './state/serverProvider';
 import { LiveApp } from './live/LiveApp';
 import { LocaleProvider } from './i18n';
+import { TranslationProvider } from './i18n/translated';
 import './styles/tokens.css';
 import './styles/global.css';
 import './styles/app.css';
@@ -25,5 +26,5 @@ if(new URLSearchParams(window.location.search).get('demo')==='1'){
  root.render(<StrictMode><ErrorBoundary><AppProvider store={store}><App/></AppProvider></ErrorBoundary></StrictMode>);
 }else{
  const store=createServerStore(createBusinessService());void store.initialize();
- root.render(<StrictMode><ErrorBoundary><ServerProvider store={store}><LocaleProvider><LiveApp/></LocaleProvider></ServerProvider></ErrorBoundary></StrictMode>);
+ root.render(<StrictMode><ErrorBoundary><ServerProvider store={store}><LocaleProvider><TranslationProvider><LiveApp/></TranslationProvider></LocaleProvider></ServerProvider></ErrorBoundary></StrictMode>);
 }

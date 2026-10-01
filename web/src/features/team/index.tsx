@@ -6,6 +6,7 @@ import { teamRequest } from '../../services/teamApi';
 import { useT, LOCALE_NAMES, type Locale } from '../../i18n';
 import './styles.css';
 export { AISettingsView } from './aiSettings';
+export { TranslationSettingsView } from './translationSettings';
 
 /** Team accounts (owner): four roles with caps, passwords, access, language per member (R-ROLE-1). */
 export function TeamSettings(app: ModuleProps) {

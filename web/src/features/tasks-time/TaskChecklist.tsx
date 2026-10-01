@@ -6,7 +6,9 @@ import { completionPercent, projectCompletion } from '@pirata/contracts/progress
 import { formatDuration } from '@pirata/domain/lib/time';
 import type { ModuleProps } from '../../services/moduleProps';
 import { createMutation, createSubmission, ServiceError } from '../../services/api';
-import { tx, useT } from '../../i18n';
+import { tx, useLocale, useT } from '../../i18n';
+import { errorMessage } from '../../i18n/errors';
+import { TranslatedText } from '../../components/TranslatedText';
 import { WorkDialog } from './WorkDialog';
 import { WorkForm } from './WorkForm';
 import { CompletionRing } from './CompletionRing';
@@ -15,24 +17,25 @@ import { affectedSession, canEditDone, treeCompletion } from '../work/dayList';
 
 /** Retains a request through uncertain responses, including a successful write whose refresh failed. */
 export function CommandButton({ app, command, children, message, disabled = false, onSuccess }: { app: ModuleProps; command: BusinessCommand; children: ReactNode; message: string; disabled?: boolean; onSuccess?(): void }) {
+  const t = useT(), locale = useLocale();
   const pending = useRef<ReturnType<typeof createSubmission> | null>(null), acknowledged = useRef(false), lock = useRef(false), refreshSession=useRef(false);
   const [phase,setPhase] = useState<'idle'|'busy'|'retry'|'conflict'>('idle'), [error,setError] = useState('');
   async function save() {
     if (lock.current) return;
     lock.current = true;
-    if (phase === 'conflict') { try { await app.refresh(); pending.current = null; setPhase('idle'); setError('Latest records loaded. Review and try the action again.'); } catch { setError('Could not refresh. Try again.'); } finally { lock.current = false; } return; }
+    if (phase === 'conflict') { try { await app.refresh(); pending.current = null; setPhase('idle'); setError(t('shell.command.latestLoaded')); } catch { setError(t('shell.command.refreshFailed')); } finally { lock.current = false; } return; }
     pending.current ??= createSubmission(app.service, createMutation(command,app.snapshot.revision));
     setPhase('busy'); setError('');
-    try { if(refreshSession.current){const session=await app.service.session();if(!session.authenticated){setPhase('retry');setError('Sign in again, then retry this same action.');return;}refreshSession.current=false;} if (!acknowledged.current) { await pending.current.submit(); acknowledged.current = true; } await app.refresh(); app.onSaved(message); pending.current = null; acknowledged.current = false; setPhase('idle'); onSuccess?.(); }
+    try { if(refreshSession.current){const session=await app.service.session();if(!session.authenticated){setPhase('retry');setError(t('shell.command.signInRetry'));return;}refreshSession.current=false;} if (!acknowledged.current) { await pending.current.submit(); acknowledged.current = true; } await app.refresh(); app.onSaved(message); pending.current = null; acknowledged.current = false; setPhase('idle'); onSuccess?.(); }
     catch (cause) {
-      if (!acknowledged.current && cause instanceof ServiceError && cause.code === 'REVISION_CONFLICT') { setPhase('conflict'); setError('Records changed. Load the latest records and review.'); }
-      else if(!acknowledged.current&&cause instanceof ServiceError&&[401,403].includes(cause.status)){refreshSession.current=cause.status===401;setPhase(cause.status===401?'retry':'idle');pending.current=cause.status===401?pending.current:null;setError(cause.status===401?'Your sign-in needs refreshing. Retry the same action.':cause.message);}
-      else if (!acknowledged.current && cause instanceof ServiceError && [400,404,409,422].includes(cause.status)) { pending.current = null; setPhase('idle'); setError(cause.message); }
-      else { setPhase('retry'); setError(acknowledged.current ? 'Saved. Retry to refresh the result.' : 'Response not confirmed. Retry this same action safely.'); }
+      if (!acknowledged.current && cause instanceof ServiceError && cause.code === 'REVISION_CONFLICT') { setPhase('conflict'); setError(t('shell.command.conflictLoad')); }
+      else if(!acknowledged.current&&cause instanceof ServiceError&&[401,403].includes(cause.status)){refreshSession.current=cause.status===401;setPhase(cause.status===401?'retry':'idle');pending.current=cause.status===401?pending.current:null;setError(cause.status===401?t('shell.command.reauth'):errorMessage(locale, cause));}
+      else if (!acknowledged.current && cause instanceof ServiceError && [400,404,409,422].includes(cause.status)) { pending.current = null; setPhase('idle'); setError(errorMessage(locale, cause)); }
+      else { setPhase('retry'); setError(acknowledged.current ? t('shell.command.savedRetry') : t('shell.command.unconfirmed')); }
     } finally { lock.current = false; }
   }
   const savePhase=phase==='busy'?'saving':phase==='retry'?'uncertain':undefined;
-  return <span className="command-control" data-save-phase={savePhase}><button type="button" disabled={disabled || phase === 'busy'} onClick={() => void save()}>{phase === 'busy' ? 'Saving…' : phase === 'retry' ? 'Retry same action' : phase === 'conflict' ? 'Load latest records' : children}</button>{error && <span role="alert" className="work-error">{error}</span>}</span>;
+  return <span className="command-control" data-save-phase={savePhase}><button type="button" disabled={disabled || phase === 'busy'} onClick={() => void save()}>{phase === 'busy' ? t('shell.form.saving') : phase === 'retry' ? t('shell.command.retryAction') : phase === 'conflict' ? t('shell.command.loadLatest') : children}</button>{error && <span role="alert" className="work-error">{error}</span>}</span>;
 }
 
 export function QuickTaskCapture({ app, projectId = null, parentTaskId = null }: { app: ModuleProps; projectId?: string | null; parentTaskId?: string | null }) {
@@ -72,7 +75,7 @@ export function TaskCheck({ app, task, showEstimate = false }: { app: ModuleProp
     {!finishing && !editable ? <span className="task-check-box is-locked" title={t('tasks.locked')} aria-label={t('tasks.locked')}><Check size={15}/></span>
       : finishing&&(completion.done<completion.total&&completion.total>1||affectedTimer) ? <button type="button" aria-label={label} onClick={()=>setConfirm(true)}><span className="task-check-box" aria-hidden="true"/></button>
       : <CommandButton app={app} command={command} message={finishing?'Task complete.':'Task reopened.'}><span className="task-check-box" aria-hidden="true">{!finishing&&<Check size={15}/>}</span><span className="visually-hidden">{label}</span></CommandButton>}
-    <button className="task-name" aria-label={task.title} onClick={()=>app.onOpenTask(task.id)}><span>{task.title}{task.description&&<small>{task.description}</small>}<small>{children.length ? completionPercent(completion.fraction)+'% · '+completion.done+'/'+completion.total : task.status==='done'?'Complete':task.status==='blocked'?'Blocked':''}</small></span>{showEstimate&&task.estimatedMinutes>0?<span className="task-estimate-badge">{formatDuration(task.estimatedMinutes*60000)}</span>:<ChevronRight size={16} aria-hidden="true"/>}</button>
+    <button className="task-name" aria-label={task.title} onClick={()=>app.onOpenTask(task.id)}><span><TranslatedText kind="task" id={task.id} field="title" text={task.title} compact/>{task.description&&<small><TranslatedText kind="task" id={task.id} field="description" text={task.description} compact/></small>}<small>{children.length ? completionPercent(completion.fraction)+'% · '+completion.done+'/'+completion.total : task.status==='done'?'Complete':task.status==='blocked'?'Blocked':''}</small></span>{showEstimate&&task.estimatedMinutes>0?<span className="task-estimate-badge">{formatDuration(task.estimatedMinutes*60000)}</span>:<ChevronRight size={16} aria-hidden="true"/>}</button>
     <ReorderButtons app={app} task={task} />
     {confirm && <WorkDialog title={tx('Complete task and checklist')} onClose={()=>setConfirm(false)}><WorkForm app={app} initial={{}} command={()=>command} message={tx('Task and checklist complete.')} done={()=>setConfirm(false)} submitLabel={tx('Complete task and remaining steps')}>{()=> <p>Complete “{task.title}”{children.length?' and every step under it':''}{affectedTimer?', saving and stopping your running timer':''}?</p>}</WorkForm></WorkDialog>}
   </div>;

@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 import { useServer } from '../state/serverContext';
 import { shellStrings } from './shell';
 import { legacyStrings } from './legacy';
@@ -20,13 +20,20 @@ export function translate(locale:Locale,key:string,vars?:Record<string,string|nu
 let currentLocale:Locale='en';
 /** Hook-free translation for legacy screens: uses the locale of the last rendered LocaleProvider. Missing keys fall back to the English text itself. */
 export function tx(key:string,vars?:Record<string,string|number>):string {return translate(currentLocale,key,vars);}
+/** The locale of the last rendered LocaleProvider, for helpers that run outside React (error mapping in command helpers). */
+export function currentLocaleValue():Locale {return currentLocale;}
 const LocaleContext=createContext<Locale>('en');
+/** Signed-out screens may pick a language in memory until sign-in; the saved per-user preference wins once signed in. */
+const LocaleOverrideContext=createContext<{override:Locale|undefined;setOverride(locale:Locale|undefined):void}>({override:undefined,setOverride(){}});
 export function LocaleProvider({children,locale}:{children:ReactNode;locale?:Locale}) {
   const {state}=useServer();
-  const value=locale??(state.data?.currentUser?.locale as Locale|undefined)??detectLocale();
+  const [override,setOverride]=useState<Locale|undefined>(undefined);
+  const value=locale??(state.data?.currentUser?.locale as Locale|undefined)??override??detectLocale();
   useLayoutEffect(()=>{currentLocale=value;document.documentElement.lang=value;},[value]);
-  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
+  const overrideValue=useMemo(()=>({override,setOverride}),[override]);
+  return <LocaleOverrideContext.Provider value={overrideValue}><LocaleContext.Provider value={value}>{children}</LocaleContext.Provider></LocaleOverrideContext.Provider>;
 }
+export function useLocaleOverride(){return useContext(LocaleOverrideContext);}
 export function useLocale():Locale {return useContext(LocaleContext);}
 export function useT() {
   const locale=useLocale();

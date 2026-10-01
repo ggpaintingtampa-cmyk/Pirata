@@ -17,7 +17,10 @@ import { readSnapshot } from './core/snapshot.js';
 import { checkMutation, clearSessionCookie, findSession, newSession, rateLimit, requireOwner, requireSession, revokeSession, touchSession } from './auth/sessions.js';
 import { verifyPassword } from './auth/password.js';
 import { registerExports } from './routes/export.js';
-export interface AppOptions {storagePath?:string;storageLimitBytes?:number;fetcher?:typeof fetch;db:Sqlite;origin:string;now?:()=>number;audit?:(event:{event:'request';method:string;status:number})=>void;handlers?:PartialHandlers}
+import { registerSearch } from './routes/search.js';
+import { registerTranslation } from './translation/index.js';
+import type { TranslationService } from './translation/service.js';
+export interface AppOptions {storagePath?:string;storageLimitBytes?:number;fetcher?:typeof fetch;db:Sqlite;origin:string;now?:()=>number;audit?:(event:{event:'request';method:string;status:number})=>void;handlers?:PartialHandlers;translation?:TranslationService}
 export function createApp(options:AppOptions) {
   const {db,origin}=options,now=options.now??Date.now;
   if(new URL(origin).origin!==origin)throw new Error('Origin must be an exact URL origin.');
@@ -77,6 +80,8 @@ export function createApp(options:AppOptions) {
   registerTeam(app,{db,origin,now});
   registerFiles(app,{db,origin,now,storagePath:options.storagePath??process.env.PIRATA_UPLOADS_PATH,storageLimitBytes:options.storageLimitBytes??Number(process.env.PIRATA_STORAGE_LIMIT_BYTES??2147483648)});
   registerAsk(app,{db,origin,now,fetcher:options.fetcher});
-  registerExports(app,{db,now});
+  const translation=registerTranslation(app,{db,origin,now,fetcher:options.fetcher,service:options.translation});
+  registerExports(app,{db,now,translation});
+  registerSearch(app,{db,now});
   return app;
 }

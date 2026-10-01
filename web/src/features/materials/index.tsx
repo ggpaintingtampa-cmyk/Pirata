@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Check, Plus } from 'lucide-react';
 import type { ShoppingItem } from '@pirata/contracts/index';
 import type { ModuleProps } from '../../services/moduleProps';
-import { useT } from '../../i18n';
+import { useT, useLocale } from '../../i18n';
+import { formatDateTime } from '../../i18n/locale';
+import { TranslatedText } from '../../components/TranslatedText';
 import { useCan } from '../../state/permissions';
 import { runCommand } from '../work/commands';
 import { RequestDialog } from './RequestDialog';
 import { DeleteButton, mayDelete } from '../trash';
 import './styles.css';
-const timeFormat = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 export type MaterialsFilter = 'open' | 'received' | 'all';
 /** Pure filter shared with the unit test. */
 export function filterRequests(items: readonly ShoppingItem[], filter: MaterialsFilter, projectId = '', createdBy = ''): ShoppingItem[] {
@@ -16,7 +17,7 @@ export function filterRequests(items: readonly ShoppingItem[], filter: Materials
 }
 /** Materials requests (replaces the Shopping list): item, quantity, for a project / task / person, received yes/no. */
 export function MaterialsView(app: ModuleProps) {
-  const t = useT(), office = useCan('plan.others'), me = app.snapshot.currentUser?.id ?? '';
+  const t = useT(), locale = useLocale(), office = useCan('plan.others'), me = app.snapshot.currentUser?.id ?? '';
   const [filter, setFilter] = useState<MaterialsFilter>('open'), [projectId, setProjectId] = useState(''), [person, setPerson] = useState(''), [dialog, setDialog] = useState<null | { item?: ShoppingItem }>(null), [busy, setBusy] = useState('');
   const items = filterRequests(app.snapshot.shoppingItems ?? [], filter, projectId, person), team = app.snapshot.team ?? [];
   const name = (id: string | null | undefined) => team.find(m => m.id === id)?.name ?? '—', project = (id: string | null | undefined) => app.snapshot.projects.find(p => p.id === id)?.name ?? '', task = (id: string | null | undefined) => app.snapshot.tasks.find(item => item.id === id)?.title ?? '';
@@ -27,9 +28,9 @@ export function MaterialsView(app: ModuleProps) {
     {!items.length && <p className="empty-state">{t('materials.none')}</p>}
     <ul className="materials-list">{items.map(item => { const mine = item.createdBy === me, editable = mine || office; return <li key={item.id} className={'materials-row' + (item.receivedAt ? ' is-received' : '')}>
       <button type="button" className={'day-check' + (item.receivedAt ? ' is-done' : '')} aria-pressed={Boolean(item.receivedAt)} aria-label={item.receivedAt ? t('materials.markOpen') : t('materials.markReceived')} disabled={!editable || busy === item.id} onClick={() => void run(item.id, { type: 'materialRequest.setReceived', id: item.id, received: !item.receivedAt })}>{item.receivedAt && <Check size={14} aria-hidden="true" />}</button>
-      <div className="materials-main"><strong>{item.title}{item.quantity ? ' × ' + item.quantity : ''}</strong>
-        <small>{t('materials.for')}: {item.taskId ? task(item.taskId) + ' · ' + project(item.projectId) : item.projectId ? project(item.projectId) : item.forUserId === me ? t('materials.forMe') : name(item.forUserId)} · {t('materials.requestedBy', { name: name(item.createdBy), time: timeFormat.format(item.createdAt) })}</small>
-        {item.note && <small>{item.note}</small>}{item.receivedAt && <small className="materials-received">{t('materials.receivedBy', { name: name(item.receivedBy), time: timeFormat.format(item.receivedAt) })}</small>}</div>
+      <div className="materials-main"><strong><TranslatedText kind="materialRequest" id={item.id} field="title" text={item.title} compact />{item.quantity ? ' × ' + item.quantity : ''}</strong>
+        <small>{t('materials.for')}: {item.taskId ? task(item.taskId) + ' · ' + project(item.projectId) : item.projectId ? project(item.projectId) : item.forUserId === me ? t('materials.forMe') : name(item.forUserId)} · {t('materials.requestedBy', { name: name(item.createdBy), time: formatDateTime(locale, item.createdAt) })}</small>
+        {item.note && <small><TranslatedText kind="materialRequest" id={item.id} field="note" text={item.note} compact /></small>}{item.receivedAt && <small className="materials-received">{t('materials.receivedBy', { name: name(item.receivedBy), time: formatDateTime(locale, item.receivedAt) })}</small>}</div>
       {editable && <div className="live-actions"><button type="button" onClick={() => setDialog({ item })}>{t('materials.edit')}</button>{mayDelete(app, 'materialRequest', item as unknown as Record<string, unknown>) && <DeleteButton app={app} kind="materialRequest" id={item.id} label={item.title}>{t('materials.remove')}</DeleteButton>}</div>}
     </li>; })}</ul>
     {dialog && <RequestDialog app={app} item={dialog.item} onClose={() => setDialog(null)} onDone={() => setDialog(null)} />}

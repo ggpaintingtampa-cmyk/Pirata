@@ -1,15 +1,18 @@
 import { z } from 'zod';
 import { isLocalDate } from '@pirata/domain/lib/dates';
 import type { BusinessSnapshot, Task } from './index.js';
+import { templateRequirementSchema, type TemplateRequirement, type TemplateRequirementInput } from './requirements.js';
 // Chunk A contracts: three-level task tree helpers, day lists, questions, nested templates.
 const id=z.string().min(1).max(100), nullableId=id.nullable(), stamp=z.number().int().nonnegative(), title=z.string().trim().min(1).max(160);
 const dateSchema=z.string().refine(isLocalDate,'Enter a valid calendar date.');
 const record={id,createdAt:stamp,updatedAt:stamp};
 const command=<T extends string,S extends z.ZodRawShape>(type:T,fields:S)=>z.object({type:z.literal(type),...fields}).strict();
 
-export interface TemplateNode {title:string;description:string;children:TemplateNode[]}
-export interface TemplateNodeInput {title:string;description?:string;children?:TemplateNodeInput[]}
-export const templateNodeSchema:z.ZodType<TemplateNode,TemplateNodeInput>=z.lazy(()=>z.object({title,description:z.string().trim().max(300).default(''),children:z.array(templateNodeSchema).max(50).default([])}).strict()) as unknown as z.ZodType<TemplateNode,TemplateNodeInput>;
+/** `requirements` is optional with no default (update 2026-09-29): the server fingerprints the parsed request, so a default would
+ * change the fingerprint of an earlier saveTree request and make its exact retry fail. Readers normalise with `node.requirements ?? []`. */
+export interface TemplateNode {title:string;description:string;requirements?:TemplateRequirement[];children:TemplateNode[]}
+export interface TemplateNodeInput {title:string;description?:string;requirements?:TemplateRequirementInput[];children?:TemplateNodeInput[]}
+export const templateNodeSchema:z.ZodType<TemplateNode,TemplateNodeInput>=z.lazy(()=>z.object({title,description:z.string().trim().max(300).default(''),requirements:z.array(templateRequirementSchema).max(30).optional(),children:z.array(templateNodeSchema).max(50).default([])}).strict()) as unknown as z.ZodType<TemplateNode,TemplateNodeInput>;
 export const templateTreeSchema=z.array(templateNodeSchema).min(1).max(50);
 /** Depth of a template tree: 1 = titles only, 3 = tiny tasks present. */
 export function templateDepth(nodes:readonly TemplateNode[]):number {return nodes.length?1+Math.max(0,...nodes.map(n=>templateDepth(n.children))):0;}
@@ -36,7 +39,7 @@ export const dayAssignmentSchema=z.object({...record,date:z.string(),projectId:i
 export type DayAssignment=z.infer<typeof dayAssignmentSchema>;
 export const taskQuestionSchema=z.object({...record,taskId:id,projectId:id,askedBy:id,body:z.string(),answeredAt:stamp.nullable(),answeredBy:nullableId,answer:z.string()}).strict();
 export type TaskQuestion=z.infer<typeof taskQuestionSchema>;
-export const projectTemplateSchema=z.object({...record,name:z.string(),note:z.string(),tree:z.string(),createdBy:id}).strict();
+export const projectTemplateSchema=z.object({...record,name:z.string(),note:z.string(),tree:z.string(),createdBy:id,version:z.number().int().optional()}).strict();
 export type ProjectTemplate=z.infer<typeof projectTemplateSchema>;
 export const dailySnapshot={dayAssignments:z.array(dayAssignmentSchema).optional(),taskQuestions:z.array(taskQuestionSchema).optional(),projectTemplates:z.array(projectTemplateSchema).optional()};
 export interface DailySnapshot {dayAssignments?:DayAssignment[];taskQuestions?:TaskQuestion[];projectTemplates?:ProjectTemplate[]}

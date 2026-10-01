@@ -6,7 +6,9 @@ import type { ModuleProps } from '../services/moduleProps';
 import { createMutation } from '../services/api';
 import { useServer } from '../state/serverContext';
 import { can } from '../state/permissions';
-import { useT, LOCALE_NAMES, type Locale } from '../i18n';
+import { useT, useLocale, LOCALE_NAMES, type Locale } from '../i18n';
+import { localeTag } from '../i18n/locale';
+import { Languages } from 'lucide-react';
 import { SignIn } from './SignIn';
 import { LiveDialogs, type Dialog } from './dialogs';
 import { DataTools } from './DataTools';
@@ -17,7 +19,7 @@ import { WorkView, ProgressView } from '../features/work';
 import { CalendarView } from '../features/planning/CalendarView';
 import { UpdatesView, CleanupPanel, FilesView } from '../features/collaboration';
 import { AskView } from '../features/ask';
-import { TeamSettings, AISettingsView } from '../features/team';
+import { TeamSettings, AISettingsView, TranslationSettingsView } from '../features/team';
 import { WorkForm } from '../features/tasks-time/WorkForm';
 import { TaskList } from '../features/tasks-time';
 import { WorkBar } from '../features/work-bar/WorkBar';
@@ -34,7 +36,7 @@ import { WorkspaceMenu, WorkspaceShortcuts, WorkspaceSidebar } from './Workspace
 import { navigationAllowed, readView, viewHref, type View } from './navigation';
 export function LiveApp(){const {state}=useServer();return state.data?<Workspace snapshot={state.data}/>:<SignIn/>;}
 function Workspace({snapshot}:{snapshot:BusinessSnapshot}){
- const t=useT();
+ const t=useT(),locale=useLocale();
  const role=snapshot.currentUser?.role;
  const {store,state,now}=useServer(),[view,setView]=useState<View>(()=>readView(window.location.hash,role)),[dialog,setDialog]=useState<Dialog|null>(null),[announcement,announce]=useState('');
  const opener=useRef<HTMLElement|null>(null),date=businessDate(now);
@@ -67,7 +69,7 @@ function Workspace({snapshot}:{snapshot:BusinessSnapshot}){
  const setLocale=async(locale:Locale)=>{
   if(locale===(snapshot.currentUser?.locale??'en'))return;
   try{await store.service.execute(createMutation({type:'user.setLocale',locale},snapshot.revision));await store.refresh();announce(t('shell.language.saved'));}
-  catch{announce('Could not save the language. Refresh and try again.');}
+  catch{announce(t('shell.language.failed'));}
  };
  const hour=Number(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',hourCycle:'h23'}).format(now));
  const title=t('shell.view.'+view.name);
@@ -79,13 +81,13 @@ function Workspace({snapshot}:{snapshot:BusinessSnapshot}){
  <WorkspaceSidebar view={view} role={role} navigate={navigate}/>
  <div className="content-viewport" ref={scrollArea}><WorkBar app={app} onOpenTask={id=>open({kind:'task',id})}/><main id="main" className="page" tabIndex={-1}>
  <WorkspaceShortcuts view={view} navigate={navigate}/>
- {view.name!=='project'&&<><div className="page-title"><div><p className="eyebrow">{view.name==='work'?t('shell.eyebrow.work'):view.name==='more'?t('shell.eyebrow.more'):t('shell.eyebrow.default')}</p><h1>{title}<span className="heading-dot">.</span></h1></div><div className="today-date"><CalendarDays size={16} aria-hidden="true"/><time dateTime={date}>{new Intl.DateTimeFormat(snapshot.currentUser?.locale==='es'?'es-US':'en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric'}).format(now)}</time></div></div>
+ {view.name!=='project'&&<><div className="page-title"><div><p className="eyebrow">{view.name==='work'?t('shell.eyebrow.work'):view.name==='more'?t('shell.eyebrow.more'):t('shell.eyebrow.default')}</p><h1>{title}<span className="heading-dot">.</span></h1></div><div className="today-date"><CalendarDays size={16} aria-hidden="true"/><time dateTime={date}>{new Intl.DateTimeFormat(localeTag(locale),{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric'}).format(now)}</time></div></div>
  {description&&<p className="page-caption">{description}</p>}</>}
  {state.error&&<div className="inline-warning" role="alert">{state.error}<button onClick={()=>void store.refresh().catch(()=>{})}><RefreshCw size={16} aria-hidden="true"/>{t('shell.retry')}</button></div>}
  {view.name==='work'&&<><WorkView {...app} onOpenProjects={()=>navigate({name:'projects'})} onOpenTasks={()=>navigate({name:'tasks'})}/><CleanupPanel app={app}/></>}{view.name==='ask'&&<AskView {...app}/>}{view.name==='updates'&&<UpdatesView {...app}/>}{view.name==='calendar'&&<CalendarView {...app}/>}{view.name==='progress'&&<ProgressView {...app}/>}{view.name==='files'&&<FilesView {...app}/>}
  {view.name==='report'&&<ReportView {...app} date={view.id}/>}{view.name==='hours'&&<HoursView {...app}/>}{view.name==='pay'&&can(role,'money.costs')&&<PayView {...app}/>}{view.name==='insights'&&<InsightsView {...app} projectId={view.id}/>}{view.name==='materials'&&<MaterialsView {...app}/>}{view.name==='tools'&&<ToolsView {...app}/>}{view.name==='templates'&&<TemplatesView {...app}/>}{view.name==='trash'&&can(role,'records.delete')&&<TrashView {...app}/>}
- {view.name==='team'&&can(role,'team.admin')&&<TeamSettings {...app}/>}{view.name==='ai-settings'&&can(role,'ask.admin')&&<AISettingsView {...app}/>}{view.name==='settings'&&can(role,'settings.admin')&&<section className="card"><h2>{t('shell.settings.workday')}</h2><WorkForm key={settingsFormVersion} includeCancel={false} app={app} initial={{end:String(Math.floor((snapshot.settings?.workdayEndMinute??1020)/60)).padStart(2,'0')+':'+String((snapshot.settings?.workdayEndMinute??1020)%60).padStart(2,'0')}} command={v=>({type:'settings.update',workdayEndMinute:Number(v.end.split(':')[0])*60+Number(v.end.split(':')[1])})} message={t('shell.settings.saved')} done={()=>setSettingsFormVersion(version=>version+1)}>{f=><>{f.field('end',t('shell.settings.workdayEnd'),{type:'time',hint:t('shell.settings.workdayHint')})}</>}</WorkForm></section>}
- {view.name==='settings'&&can(role,'settings.admin')&&<div className="settings-links"><button onClick={()=>navigate({name:'team'})}><Users size={20}/><span>{t('shell.settings.team')}<small>{t('shell.settings.team.desc')}</small></span></button><button onClick={()=>navigate({name:'ai-settings'})}><MessageSquare size={20}/><span>{t('shell.settings.ask')}<small>{t('shell.settings.ask.desc')}</small></span></button><button onClick={()=>navigate({name:'more'})}><Settings2 size={20}/><span>{t('shell.settings.account')}<small>{t('shell.settings.account.desc')}</small></span></button></div>}
+ {view.name==='team'&&can(role,'team.admin')&&<TeamSettings {...app}/>}{view.name==='ai-settings'&&can(role,'ask.admin')&&<AISettingsView {...app}/>}{view.name==='translation-settings'&&can(role,'ask.admin')&&<TranslationSettingsView {...app}/>}{view.name==='settings'&&can(role,'settings.admin')&&<section className="card"><h2>{t('shell.settings.workday')}</h2><WorkForm key={settingsFormVersion} includeCancel={false} app={app} initial={{end:String(Math.floor((snapshot.settings?.workdayEndMinute??1020)/60)).padStart(2,'0')+':'+String((snapshot.settings?.workdayEndMinute??1020)%60).padStart(2,'0')}} command={v=>({type:'settings.update',workdayEndMinute:Number(v.end.split(':')[0])*60+Number(v.end.split(':')[1])})} message={t('shell.settings.saved')} done={()=>setSettingsFormVersion(version=>version+1)}>{f=><>{f.field('end',t('shell.settings.workdayEnd'),{type:'time',hint:t('shell.settings.workdayHint')})}</>}</WorkForm><div className="language-toggle" role="group" aria-label={t('shell.account.language')}><span>{t('shell.account.language')}</span>{(['en','es'] as const).map(code=><button key={code} type="button" className={locale===code?'selected':''} aria-pressed={locale===code} disabled={state.busy} onClick={()=>void setLocale(code)}>{LOCALE_NAMES[code]}</button>)}</div></section>}
+ {view.name==='settings'&&can(role,'settings.admin')&&<div className="settings-links"><button onClick={()=>navigate({name:'team'})}><Users size={20}/><span>{t('shell.settings.team')}<small>{t('shell.settings.team.desc')}</small></span></button><button onClick={()=>navigate({name:'ai-settings'})}><MessageSquare size={20}/><span>{t('shell.settings.ask')}<small>{t('shell.settings.ask.desc')}</small></span></button><button onClick={()=>navigate({name:'translation-settings'})}><Languages size={20}/><span>{t('shell.settings.translation')}<small>{t('shell.settings.translation.desc')}</small></span></button><button onClick={()=>navigate({name:'more'})}><Settings2 size={20}/><span>{t('shell.settings.account')}<small>{t('shell.settings.account.desc')}</small></span></button></div>}
  {view.name==='projects'&&<ProjectsView {...app}/>}{view.name==='project'&&<ProjectDetail key={view.id} {...app} selection={{projectId:view.id}} onClose={()=>navigate({name:'projects'})}/>}{view.name==='clients'&&<ClientsView key={view.id??'all'} {...app} selection={{clientId:view.id}}/>}{view.name==='inventory'&&<InventoryView {...app}/>}{view.name==='spending'&&can(role,'money.costs')&&<ExpensesView {...app}/>}{view.name==='tasks'&&<TaskList {...app}/>}
  {view.name==='more'&&<><WorkspaceMenu role={role} navigate={navigate} counts={{projects:snapshot.projects.filter(p=>p.status!=='completed').length,files:snapshot.attachments?.filter(f=>!f.removedAt).length??0}}/><section className="card"><div className="workspace-account"><span className="person-initial" aria-hidden="true">{snapshot.currentUser?.name.slice(0,1)}</span><div><h2>{snapshot.currentUser?.name}</h2><p>@{snapshot.currentUser?.username} · {roleLabel}</p></div></div>
   <div className="language-toggle" role="group" aria-label={t('shell.account.language')}><span>{t('shell.account.language')}</span>{(['en','es'] as const).map(locale=><button key={locale} type="button" className={(snapshot.currentUser?.locale??'en')===locale?'selected':''} aria-pressed={(snapshot.currentUser?.locale??'en')===locale} disabled={state.busy} onClick={()=>void setLocale(locale)}>{LOCALE_NAMES[locale]}</button>)}</div>

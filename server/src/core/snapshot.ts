@@ -54,6 +54,8 @@ export function readSnapshot(db:Sqlite,ownerId:string,capabilities:Capabilities,
       workShifts:office?r.list('work_shifts'):r.list('work_shifts').filter(s=>s.userId===userId),payRates:costs?r.list('pay_rates'):[],dayNotes:r.list('day_notes'),
       projectFacts:(hiddenFacts?r.list('project_facts'):r.list('project_facts').filter(f=>f.workerVisible===1)).filter(f=>projectIds.has(f.projectId)),attachmentTags:r.list('attachment_tags').filter(t=>attachmentIds.has(t.attachmentId)),attachmentComments:r.list('attachment_comments').filter(c=>attachmentIds.has(c.attachmentId)),
       toolSignOuts:r.list('tool_sign_outs').filter(s=>equipmentIds.has(s.equipmentId)),equipmentReports:r.list('equipment_reports').filter(e=>equipmentIds.has(e.equipmentId)),
+      // update 2026-09-29 slices
+      taskRequirements:r.list('task_requirements').filter(q=>taskIds.has(q.taskId)).sort((a,b)=>a.position-b.position||a.createdAt-b.createdAt||a.id.localeCompare(b.id)),translationGlossary:r.list('translation_glossary'),translationEpoch:r.translationEpoch(),
       ...(can(role,'records.delete')?{trash:trashEntries(r,team)}:{})};
   })();
 }
