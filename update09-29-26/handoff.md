@@ -30,5 +30,9 @@ Status vocabulary: **implemented, awaiting final verification** means the code i
 ### Still open inside P13
 - Bilingual review of synthetic translations and the rendered-layout review at 320/390/768/desktop belong to phase 7.
 
-## Phases 2–7
-Not started. Order per the spec: C01/P01/P05/P06/P07 → P04/P08 → P02/P03/P09 → P10+C02 (per section 20) → P11/P12 → consolidated verification.
+## Phase 2 — C01, P01, P05, P06, P07 (implemented, awaiting final verification)
+- Pirata commit `10ac72d`: `features/work/dayList.ts` (`groupByTimeThenProject`, `rowStartMinute`, `flattenGroups`), Daily view grouping control + numbering + Set time, `QuestionDialog` recipient line, `features/work/commands.ts` (`createRetryableRunner`, `useRetryableCommand`, saved-but-refresh-failed announcement), `state/serverStore.ts` (follow-up refresh, one retry behind an acknowledged revision, `refreshNow`), `state/serverProvider.tsx` (poll guard on `[data-save-phase]`), `components/RefreshButton.tsx` in `LiveApp`. Tests authored: `tests/unit/serverStore.test.ts` (3 new cases; the coalescing case now expects the follow-up request), `tests/unit/retryableCommand.test.ts`.
+- Camino: **worktree base corrected.** The first cut was from the stale local `main` (cca9aaf); the spec baseline is `redesign/v3-integration` 453d97b. Branch `update-2026-09-29` was rebuilt on 453d97b: `4ec1657 C00` (reset tooling carried from the canonical checkout, unchanged), `292e122 C01` (`src/planning-v2.css` grid, blank AM/PM label cell in `src/planning.tsx`, five Playwright cases in `tests/e2e/planning.spec.ts`). `tsc --noEmit` clean on the rebuilt tree. Local `main` is behind `origin/main`; nothing on it was used.
+
+## Phases 3–7
+Not started. Order per the spec: P04/P08 → P02/P03/P09 → P10+C02 (per section 20) → P11/P12 → consolidated verification.
