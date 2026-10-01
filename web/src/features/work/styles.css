@@ -167,3 +167,11 @@
 .task-reorder{display:inline-flex;gap:2px}
 .task-reorder button{min-width:30px;min-height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .task-grandchild{margin-left:28px}
+/* P08 */
+.who-worked{display:grid;gap:6px;padding:8px 10px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.03)}
+.who-worked .task-results-heading span{display:inline-flex;align-items:center;gap:6px}
+.who-worked-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.who-worked-list li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.92rem}
+.who-worked-total{font-variant-numeric:tabular-nums}
+.who-worked-badges{display:inline-flex;gap:4px}
+.who-worked-empty,.who-worked-note{margin:0;font-size:.85rem}

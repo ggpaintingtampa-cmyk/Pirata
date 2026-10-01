@@ -9,6 +9,7 @@ import { useCan } from '../../state/permissions';
 import { DateField, addDays } from '../../components/DateField';
 import { useRetryableCommand } from '../work/commands';
 import { ShiftDialog } from './ShiftDialog';
+import { prefillDate } from './defaults';
 import { useConfirm } from '../../components/ConfirmDialog';
 import './styles.css';
 const fmt = (minutes: number) => (minutes / 60).toFixed(minutes % 60 ? 2 : 0);
@@ -27,9 +28,9 @@ function ShiftRow({ app, shift, onEdit }: { app: ModuleProps; shift: WorkShift; 
     {rejecting && <div className="live-actions"><input placeholder={t('hours.rejectNote')} value={note} onChange={e => setNote(e.target.value)} /><button type="button" disabled={busy || !note.trim()} onClick={() => void run({ type: 'shift.reject', id: shift.id, note: note.trim() })}>{t('hours.reject')}</button></div>}
   </li>;
 }
-export function HoursView(app: ModuleProps) {
+export function HoursView(app: ModuleProps & { date?: string }) {
   const t = useT(), office = useCan('shift.approve'), me = app.snapshot.currentUser?.id ?? '';
-  const [tab, setTab] = useState<'mine' | 'team'>('mine'), [anchor, setAnchor] = useState(app.businessDate), [dialog, setDialog] = useState<null | { shift?: WorkShift; userId?: string; projectId?: string; date?: string }>(null);
+  const [tab, setTab] = useState<'mine' | 'team'>('mine'), [anchor, setAnchor] = useState(prefillDate(app.date, app.businessDate)), [dialog, setDialog] = useState<null | { shift?: WorkShift; userId?: string; projectId?: string; date?: string }>(null);
   const shifts = app.snapshot.workShifts ?? [], team = (app.snapshot.team ?? []).filter(m => !m.disabledAt), projects = app.snapshot.projects.filter(p => p.status !== 'completed' && p.status !== 'draft');
   const week = weekBounds(anchor), month = monthBounds(anchor);
   const inRange = (shift: WorkShift, range: { from: string; to: string }) => shift.date >= range.from && shift.date <= range.to;

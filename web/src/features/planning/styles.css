@@ -100,3 +100,9 @@
   .calendar-shared-toggle { padding-inline: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .calendar-shared-toggle input, .calendar-shared-toggle input::after { transition: none; } }
+/* P04 */
+.calendar-hours-list{margin-top:12px;display:grid;gap:8px}
+.calendar-hours-list .shift-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.calendar-hours-list .shift-row{display:grid;gap:6px;padding:8px 10px;border:1px solid rgba(255,255,255,.1);border-radius:10px}
+.calendar-hours-list .shift-main{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.calendar-add-hours{margin-left:8px}

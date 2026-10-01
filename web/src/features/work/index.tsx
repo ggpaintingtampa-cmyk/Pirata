@@ -14,6 +14,7 @@ import { CompletionRing } from '../tasks-time/CompletionRing';
 import { useServerNow } from '../tasks-time/useServerNow';
 import { PlanEditor } from './PlanEditor';
 import { QuestionDialog } from './QuestionDialog';
+import { WhoWorked } from './WhoWorked';
 import { ScheduleTaskDialog } from '../planning';
 import { useRetryableCommand } from './commands';
 import { affectedSession, canEditDone, flattenGroups, groupByProject, groupByTimeThenProject, parseScope, scopeKey, treeCompletion, type DayGroupMode } from './dayList';
@@ -70,7 +71,7 @@ function DayCard({ app, row, task, now, number, onAsk, onSetTime }: { app: Modul
 
 /** P01: the grouping choice is remembered for the browser session only (memory, never storage). */
 let rememberedMode: DayGroupMode = 'time';
-export function WorkView(app: ModuleProps & { onOpenProjects?(): void; onOpenTasks?(): void }) {
+export function WorkView(app: ModuleProps & { onOpenProjects?(): void; onOpenTasks?(): void; onOpenHours?(date: string): void }) {
   const t = useT(), locale = useLocale(), now = useServerNow(app.snapshot), canOthers = useCan('plan.others');
   const snapshot = app.snapshot, me = snapshot.currentUser?.id ?? '', tasks = snapshot.tasks;
   const [date, setDate] = useState(app.businessDate), [scopeId, setScopeId] = useState('person:' + me), [planning, setPlanning] = useState(false), [question, setQuestion] = useState<string | null>(null), [timing, setTiming] = useState<string | null>(null);
@@ -94,6 +95,7 @@ export function WorkView(app: ModuleProps & { onOpenProjects?(): void; onOpenTas
         <optgroup label={t('work.pools')}>{projects.map(project => <option key={project.id} value={'project:' + project.id}>{project.name}</option>)}</optgroup></select></label>
     </div>
     <div className="day-summary"><CompletionRing fraction={completion} label={t('work.steps', { done: doneLeaves, total: leaves })} size={56} /><div><strong>{t('work.steps', { done: doneLeaves, total: leaves })}</strong>{scope.kind === 'project' && <p className="muted">{onSite.length ? t('work.onSite', { names: onSite.join(', ') }) : t('work.nobodyPlanned')}</p>}</div>{canPlan && <button type="button" className="work-primary" onClick={() => setPlanning(true)}>{t('work.plan')}</button>}</div>
+    <WhoWorked app={app} date={date} onOpenHours={app.onOpenHours} />
     {!rows.length && <div className="work-empty-state"><div><h3>{t('work.empty')}</h3><p>{t('work.emptyHint')}</p></div></div>}
     {rows.length > 0 && <div className="day-mode" role="group" aria-label={t('work.groupMode')}><button type="button" aria-pressed={mode === 'time'} onClick={() => setMode('time')}>{t('work.group.time')}</button><button type="button" aria-pressed={mode === 'project'} onClick={() => setMode('project')}>{t('work.group.project')}</button></div>}
     {timeGroups?.map(group => <section key={group.startMinute ?? 'unscheduled'} className="day-time-group" aria-label={group.startMinute === null ? t('work.group.unscheduled') : formatClockMinute(locale, group.startMinute)}><h3 className="day-time-title">{group.startMinute === null ? t('work.group.unscheduled') : formatClockMinute(locale, group.startMinute)}</h3>

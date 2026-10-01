@@ -701,4 +701,10 @@ export const legacyStrings:Pick<Strings,'es'>={es:{
   "Something interrupted the app": "Algo interrumpió la app",
   "Your saved data has not been reset. Reload to try again.": "Tus datos guardados no se reiniciaron. Recarga para intentarlo de nuevo.",
   "Reload": "Recargar",
+  "Add hours": "Agregar horas",
+  "Hours": "Horas",
+  "No hours recorded for this day.": "No hay horas registradas para este día.",
+  "Approved": "Aprobada",
+  "Rejected": "Rechazada",
+  "Submitted": "Enviada",
 }};

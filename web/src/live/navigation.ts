@@ -8,7 +8,7 @@ const aliases: Record<string, ViewName> = { menu: 'more', today: 'work', shoppin
 /** Views that need a capability; everything else is open to every signed-in role. */
 export const viewCapability: Partial<Record<ViewName, Capability>> = { team: 'team.admin', 'ai-settings': 'ask.admin', 'translation-settings': 'ask.admin', settings: 'settings.admin', spending: 'money.costs', pay: 'money.costs', trash: 'records.delete' };
 /** Views that accept a second path segment. */
-const paramViews: Partial<Record<ViewName, 'id'|'date'>> = { project: 'id', clients: 'id', insights: 'id', report: 'date' };
+const paramViews: Partial<Record<ViewName, 'id'|'date'>> = { project: 'id', clients: 'id', insights: 'id', report: 'date', hours: 'date' };
 export function viewAllowed(name: ViewName, role: Role|undefined): boolean { const cap = viewCapability[name]; return !cap || can(role, cap); }
 export function viewHref(view: View): string {
   return '#/' + (view.name === 'more' ? 'menu' : view.name) + (view.id ? '/' + encodeURIComponent(view.id) : '');

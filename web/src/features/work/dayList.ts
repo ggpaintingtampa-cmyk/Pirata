@@ -51,6 +51,21 @@ export function groupByTimeThenProject(snapshot: Pick<BusinessSnapshot, 'project
 export function flattenGroups(groups: readonly (TimeGroup | DayGroup)[]): DayAssignment[] {
   return groups.flatMap(group => 'projects' in group ? group.projects.flatMap(project => project.rows) : group.rows);
 }
+export interface WorkedRow { userId: string; name: string; minutes: number; daysMinor: number; entries: number; approved: number; submitted: number }
+/** P08: one row per person with at least one non-rejected hours entry on `date`. Entries aggregate once; task timers are never included.
+ *  `minutes` is the server's per-entry total (a day entry already counts its standard-day minutes); `daysMinor` keeps day entries visible as days. */
+export function whoWorked(snapshot: Pick<BusinessSnapshot, 'workShifts' | 'team'>, date: string): WorkedRow[] {
+  const rows = new Map<string, WorkedRow>();
+  for (const shift of snapshot.workShifts ?? []) {
+    if (shift.date !== date || shift.status === 'rejected') continue;
+    const row = rows.get(shift.userId) ?? { userId: shift.userId, name: snapshot.team?.find(member => member.id === shift.userId)?.name ?? '—', minutes: 0, daysMinor: 0, entries: 0, approved: 0, submitted: 0 };
+    row.minutes += shift.minutes; row.entries += 1;
+    if (shift.kind === 'day') row.daysMinor += shift.daysMinor ?? 0;
+    if (shift.status === 'approved') row.approved += 1; else row.submitted += 1;
+    rows.set(shift.userId, row);
+  }
+  return [...rows.values()].sort((a, b) => a.name.localeCompare(b.name) || a.userId.localeCompare(b.userId));
+}
 /** The session id to confirm when my running timer sits on the node or inside its subtree. */
 export function affectedSession(snapshot: Pick<BusinessSnapshot, 'runningTimer' | 'tasks'>, taskId: string): string | null {
   const timer = snapshot.runningTimer;
