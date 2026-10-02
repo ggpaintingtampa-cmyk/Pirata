@@ -1,10 +1,12 @@
 import type { HandlerMap, HandlerResult, TransactionContext } from '../../core/context.js';
-import { conflict, invalid } from '../../core/errors.js';
+import { conflict, invalid, ApiError, notFound } from '../../core/errors.js';
+import { canAccessProjectJournals } from '@pirata/contracts/permissions';
 import { businessDate } from '@pirata/domain/lib/dates';
 
 const record = (ctx: TransactionContext) => ({ id: ctx.newId(), createdAt: ctx.serverNow, updatedAt: ctx.serverNow });
 const result = (kind: string, id: string, changed = true): HandlerResult => ({ changed, result: { kind, id } });
 const actor = (ctx: TransactionContext) => ctx.userId ?? ctx.ownerId;
+const forbidden = (message:string):never => {throw new ApiError(403,'FORBIDDEN',message);};
 const project = (ctx: TransactionContext, id: string | null) => { if (id) ctx.repo.require('projects', id); };
 
 /** Resolve the business day's local end, including DST; no fixed UTC offset. */
@@ -39,7 +41,10 @@ export const handlers = {
   },
   'note.save': (ctx, c) => {
     project(ctx, c.projectId);
-    if (c.id && ctx.repo.require('project_notes', c.id).noteKind === 'journal') invalid('Open this entry in the project journal.');
+    if (c.id && ctx.repo.require('project_notes', c.id).noteKind === 'journal') {
+      if(!canAccessProjectJournals(ctx.ownerId,ctx.userId,ctx.role)) notFound();
+      invalid('Open this entry in the project journal.');
+    }
     if (c.labelAttachmentId) {
       const file = ctx.repo.require('attachments', c.labelAttachmentId);
       const linkedTask = file.parentType === 'task' ? ctx.repo.require('tasks', file.parentId) : null;
@@ -52,6 +57,7 @@ export const handlers = {
     ctx.repo.insert('project_notes', note); return result('note', note.id);
   },
   'journal.save': (ctx, c) => {
+    if (!canAccessProjectJournals(ctx.ownerId,ctx.userId,ctx.role)) forbidden('Only the primary owner can access project journals.');
     project(ctx, c.projectId);
     if (c.id) {
       const previous = ctx.repo.require('project_notes', c.id);
@@ -66,7 +72,7 @@ export const handlers = {
   },
   'shopping.add': (ctx, c) => {
     project(ctx, c.projectId);
-    if (c.sourceNoteId) { const note = ctx.repo.require('project_notes', c.sourceNoteId); if (note.projectId !== c.projectId) invalid('The note belongs to a different project.'); }
+    if (c.sourceNoteId) { const note = ctx.repo.require('project_notes', c.sourceNoteId); if (note.noteKind==='journal'&&!canAccessProjectJournals(ctx.ownerId,ctx.userId,ctx.role)) forbidden('Only the primary owner can access project journals.'); if (note.projectId !== c.projectId) invalid('The note belongs to a different project.'); }
     const { type: _, ...fields } = c; void _;
     const item = { ...record(ctx), ...fields, checkedAt: null, createdBy: actor(ctx) };
     ctx.repo.insert('shopping_items', item); return result('shopping', item.id);

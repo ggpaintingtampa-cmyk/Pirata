@@ -50,7 +50,7 @@ export function LiveDialogs({app,dialog:d,open,now}:Props){
   // Explicit Add menu (update 2026-09-25): one tap per record type, no 'Back to Add menu' step. Chunk dialogs come from dialogRegistry.
   const role=app.snapshot.currentUser?.role;
   const entries:[Dialog,string,LucideIcon][]=[[{kind:'task-new',projectId:d.projectId,parentTaskId:d.parentTaskId},'task',ClipboardList],[{kind:'registry',name:'project-new'},'project',Folder],[{kind:'registry',name:'material-request',projectId:d.projectId},'materialRequest',PackagePlus],[{kind:'registry',name:'shift',projectId:d.projectId},'shift',Clock3],[{kind:'registry',name:'tool-signout',projectId:d.projectId},'toolSignOut',Wrench],[{kind:'registry',name:'question',projectId:d.projectId},'question',MessageSquare],...(can(role,'money.costs')?[[{kind:'expense',projectId:d.projectId},'expense',CircleDollarSign] as [Dialog,string,LucideIcon]]:[]),[{kind:'lead'},'lead',UserPlus]];
-  entries.splice(2,0,[{kind:'registry',name:'project-journal',projectId:d.projectId},'journal',NotebookPen]);
+  if(app.snapshot.projectJournalsVisible) entries.splice(2,0,[{kind:'registry',name:'project-journal',projectId:d.projectId},'journal',NotebookPen]);
   return <WorkDialog title={t('shell.add.title')} onClose={close} initialFocusSelector={d.focusChoice?'[data-quick-kind="'+d.focusChoice+'"]':undefined}><div className="quick-choices">{entries.map(([target,label,Icon])=><button key={label} data-quick-kind={label} onClick={()=>open(target)}><Icon size={22} aria-hidden="true"/><span><strong>{t('shell.add.'+label)}</strong><small>{t('shell.add.'+label+'.desc')}</small></span><ChevronRight size={17} aria-hidden="true"/></button>)}</div></WorkDialog>;
  }
  if(d.kind==='objectives')return <ObjectivesForm app={app} close={close}/>;

@@ -31,6 +31,8 @@ export function can(role:Role|string|undefined|null,capability:Capability):boole
  return !!role&&(CAPABILITIES[capability] as readonly string[]).includes(role);
 }
 export const isOfficeRole=(role:Role|string|undefined|null):boolean=>!!role&&(OFFICE as readonly string[]).includes(role);
+/** Private journals belong only to the primary owner account. */
+export const canAccessProjectJournals=(ownerId:string,userId:string,role:string|undefined):boolean=>role==='owner'&&userId===ownerId;
 /** Command types that need a capability before the handler runs. Every other command is open to every signed-in role;
  * record-level rules live in the handlers. Keyed by string to avoid an import cycle with index.ts. */
 export const COMMAND_CAPABILITY:Readonly<Record<string,Capability>>={

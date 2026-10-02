@@ -8,6 +8,7 @@ import { useConfirm } from '../../components/ConfirmDialog';
 import './styles.css';
 /** Whether to show a Delete control. Mirrors assertMayDelete in server/src/modules/trash; the server remains the guarantee. */
 export function mayDelete(app: ModuleProps, kind: TrashKind, row: Record<string, unknown>): boolean {
+  if(kind==='projectNote'&&row.noteKind==='journal'&&!app.snapshot.projectJournalsVisible)return false;
   const role = app.snapshot.currentUser?.role, me = app.snapshot.currentUser?.id;
   if (kind === 'expense') return can(role, 'money.costs');
   if (kind === 'taskTemplate' || kind === 'projectTemplate') return can(role, 'template.manage');

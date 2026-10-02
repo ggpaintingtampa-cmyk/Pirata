@@ -3,7 +3,7 @@ import { mutationRequestSchema, mutationResultSchema, type MutationRequest, type
 import type { Sqlite } from '../db/database.js';
 import { Repositories } from './repositories.js';
 import { ApiError } from './errors.js';
-import { COMMAND_CAPABILITY, can, type Role } from '@pirata/contracts/permissions';
+import { COMMAND_CAPABILITY, can, canAccessProjectJournals, type Role } from '@pirata/contracts/permissions';
 import { invokeHandler, type HandlerResult, type PartialHandlers } from './context.js';
 export function canonical(value:unknown):string {
   if(value===null||typeof value!=='object')return JSON.stringify(value);
@@ -13,6 +13,7 @@ export function canonical(value:unknown):string {
 export function revision(db:Sqlite,ownerId:string):number {const row=db.prepare('SELECT revision FROM data_revisions WHERE owner_id=?').get(ownerId) as {revision:number}|undefined;if(!row)throw new ApiError(401,'UNAUTHENTICATED','Sign in required.');return row.revision;}
 export function executeCommand(db:Sqlite,ownerId:string,input:MutationRequest,handlers:PartialHandlers,now:()=>number=Date.now,userId=ownerId,role:Role='owner'):MutationResult {
   const request=mutationRequestSchema.parse(input);
+  if(request.command.type==='journal.save'&&!canAccessProjectJournals(ownerId,userId,role))throw new ApiError(403,'FORBIDDEN','Only the primary owner can access project journals.');
   const capability=COMMAND_CAPABILITY[request.command.type];
   if(capability&&!can(role,capability))throw new ApiError(403,'FORBIDDEN','You do not have permission for this action.');
   const fingerprint=createHash('sha256').update(canonical(request)).digest('hex');

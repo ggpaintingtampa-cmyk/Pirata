@@ -12,6 +12,6 @@ export function registerTrashPreview(app: FastifyInstance, { db, origin, now }: 
     if (!can(s.role, 'records.bulkDelete')) throw new ApiError(403, 'FORBIDDEN', 'Only the owner can delete records in bulk.');
     const { items } = bulkDeletePreviewRequestSchema.parse(req.body ?? {});
     const repo = new Repositories(db, s.owner_id, () => true, s.user_id);
-    return deletionPlan({ repo, role: s.role, userId: s.user_id }, items).preview;
+    return deletionPlan({ repo, role: s.role, userId: s.user_id, ownerId:s.owner_id }, items).preview;
   });
 }

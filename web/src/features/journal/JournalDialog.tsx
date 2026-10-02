@@ -13,6 +13,7 @@ export function JournalDialog({ app, projectId, entry, onClose, onDone }: Regist
   const t = useT(), [editing, setEditing] = useState(!entry);
   const fixedProject = entry?.projectId ?? projectId;
   const project = app.snapshot.projects.find(item => item.id === fixedProject);
+  if (!app.snapshot.projectJournalsVisible) return null;
   return <WorkDialog title={entry ? businessDate(entry.createdAt) : t('journal.add')} className="journal-dialog" onClose={onClose}>
     {project && <p className="journal-project-name">{project.name}</p>}
     {!editing && entry ? <>

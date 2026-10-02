@@ -9,6 +9,7 @@ export function JournalPanel({ app, projectId }: { app: ModuleProps; projectId: 
   const entries = (app.snapshot.projectNotes ?? []).filter(entry => entry.projectId === projectId && entry.noteKind === 'journal').sort((a,b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
   const entry = entries.find(item => item.id === selected);
   const close = () => setSelected(null);
+  if (!app.snapshot.projectJournalsVisible) return null;
   return <section className="cp-project-section project-journal" aria-label={t('journal.title')}>
     <div className="cp-section-heading"><h3>{t('journal.title')}</h3><button type="button" onClick={() => setSelected('new')}>{t('journal.add')}</button></div>
     {!entries.length && <p className="empty-state">{t('journal.empty')}</p>}

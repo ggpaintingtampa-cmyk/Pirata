@@ -4,12 +4,13 @@
 // Update 2026-09-29 (P09): the same rules are split into a read-only plan and an apply step so an owner can review a
 // batch before it runs; the batch is one transaction with a stale-preview check and an audit row.
 import { can, type TrashKind, type BulkDeletePreview } from '@pirata/contracts/index';
+import { canAccessProjectJournals } from '@pirata/contracts/permissions';
 import type { HandlerMap, TransactionContext } from '../../core/context.js';
 import { ApiError, conflict, notFound } from '../../core/errors.js';
 import type { DeletionMark, TableName } from '../../core/repositories.js';
 import { TRASH_TABLE } from './tables.js';
 type Row = Record<string, unknown>;
-type ReadContext = Pick<TransactionContext, 'repo' | 'role' | 'userId'>;
+type ReadContext = Pick<TransactionContext, 'repo' | 'role' | 'userId' | 'ownerId'>;
 const forbidden = (message: string): never => { throw new ApiError(403, 'FORBIDDEN', message); };
 const KIND_LABEL: Record<TrashKind, string> = { project: 'project', task: 'task', client: 'client', lead: 'lead', expense: 'purchase', materialRequest: 'material request', toolSignOut: 'tool sign-out', question: 'question', shift: 'hours entry', taskTemplate: 'task template', projectTemplate: 'project template', equipment: 'equipment', material: 'material', maintenance: 'maintenance item', equipmentReport: 'equipment report', projectNote: 'project note' };
 const title = (row: Row) => String(row.name ?? row.title ?? row.description ?? row.body ?? row.date ?? row.id).slice(0, 80);
@@ -17,6 +18,7 @@ const title = (row: Row) => String(row.name ?? row.title ?? row.description ?? r
 const CASCADE_TABLES: TableName[] = [...new Set(Object.values(TRASH_TABLE)), 'task_requirements'];
 /** Who may delete what. Mirrors `mayDelete` in web/src/features/trash/DeleteButton.tsx, which only hides the control. */
 function assertMayDelete(ctx: ReadContext, kind: TrashKind, row: Row): void {
+  if (kind==='projectNote'&&row.noteKind==='journal'&&!canAccessProjectJournals(ctx.ownerId,ctx.userId,ctx.role)) notFound();
   if (kind === 'expense') { if (!can(ctx.role, 'money.costs')) forbidden('Only the owner can delete purchases.'); return; }
   if (kind === 'taskTemplate' || kind === 'projectTemplate') { if (!can(ctx.role, 'template.manage')) forbidden('Only the office can delete templates.'); return; }
   if (can(ctx.role, 'records.delete')) return;
@@ -43,7 +45,8 @@ function timerBlock(ctx: ReadContext, taskIds: string[]): Block | null {
 function log(ctx: TransactionContext, kind: TrashKind, row: Row, verb: 'Deleted' | 'Restored'): void {
   const projectId = kind === 'project' ? String(row.id) : typeof row.projectId === 'string' ? row.projectId : null;
   const taskId = kind === 'task' ? String(row.id) : typeof row.taskId === 'string' ? row.taskId : null;
-  ctx.repo.insert('activity', { id: ctx.newId(), createdAt: ctx.serverNow, updatedAt: ctx.serverNow, userId: ctx.userId, projectId, taskId, kind: verb === 'Deleted' ? 'record.delete' : 'record.restore', body: `${verb} ${KIND_LABEL[kind]} “${title(row)}”.` });
+  const prefix=kind==='projectNote'&&row.noteKind==='journal'?'journal':'record';
+  ctx.repo.insert('activity', { id: ctx.newId(), createdAt: ctx.serverNow, updatedAt: ctx.serverNow, userId: ctx.userId, projectId, taskId, kind: prefix+(verb==='Deleted'?'.delete':'.restore'), body: `${verb} ${KIND_LABEL[kind]} “${title(row)}”.` });
 }
 interface Block { code: string; reason: string }
 export interface DeletionRoot { kind: TrashKind; id: string; row: Row; cascades: { table: TableName; ids: string[] }[]; blocked: Block | null }
@@ -104,6 +107,7 @@ export function deletionPlan(ctx: ReadContext, items: readonly { kind: TrashKind
     if (seen.has(key)) continue; seen.add(key);
     const row = ctx.repo.get(TRASH_TABLE[item.kind], item.id) as unknown as Row | undefined;
     if (!row) notFound();
+    assertMayDelete(ctx,item.kind,row);
     const covered = item.kind === 'task' ? underSelection(item.id) || selectedProjects.has(String(row.projectId ?? ''))
       : item.kind === 'question' ? selectedTasks.has(String(row.taskId)) || underSelection(String(row.taskId)) || selectedProjects.has(String(row.projectId))
       : item.kind === 'materialRequest' || item.kind === 'projectNote' ? selectedProjects.has(String(row.projectId ?? '')) : false;
@@ -123,6 +127,7 @@ function restoreRecord(ctx: TransactionContext, kind: TrashKind, id: string, str
   const table = TRASH_TABLE[kind];
   const row = ctx.repo.getDeleted(table, id) as unknown as (Row & DeletionMark) | undefined;
   if (!row) { if (strict) notFound(); return false; }
+  if (kind==='projectNote'&&row.noteKind==='journal'&&!canAccessProjectJournals(ctx.ownerId,ctx.userId,ctx.role)) { if(strict) notFound(); return false; }
   if (row.deletedWith) conflict(`This item was deleted together with its ${KIND_LABEL[row.deletedWith.split(':')[0] as TrashKind] ?? 'parent'}. Restore that first.`);
   const live = (t: TableName, ref: unknown) => ref == null || ctx.repo.get(t, String(ref)) !== undefined;
   const parentsOk = kind === 'task' ? live('projects', row.projectId) && live('tasks', row.parentTaskId)

@@ -1,13 +1,13 @@
 import type { BusinessSnapshot, Capabilities, Role, TeamMember, TrashEntry, TrashKind } from '@pirata/contracts/index';
-import { can, isOfficeRole } from '@pirata/contracts/permissions';
+import { can, isOfficeRole, canAccessProjectJournals } from '@pirata/contracts/permissions';
 import type { Sqlite } from '../db/database.js';
 import { Repositories, type DeletionMark } from './repositories.js';
 import { revision } from './commands.js';
 import { TRASH_TABLE } from '../modules/trash/tables.js';
 /** Top-level Trash entries for the owner and managers: what was deleted, by whom, and how many rows come back with it. */
-function trashEntries(r:Repositories,team:TeamMember[]):TrashEntry[] {
+function trashEntries(r:Repositories,team:TeamMember[],journalsVisible:boolean):TrashEntry[] {
   const kinds=Object.keys(TRASH_TABLE) as TrashKind[];
-  const rows=kinds.flatMap(kind=>r.listDeleted(TRASH_TABLE[kind]).map(row=>({kind,row:row as unknown as Record<string,unknown>&DeletionMark})));
+  const rows=kinds.flatMap(kind=>r.listDeleted(TRASH_TABLE[kind]).filter(row=>journalsVisible||kind!=='projectNote'||!('noteKind' in row)||row.noteKind!=='journal').map(row=>({kind,row:row as unknown as Record<string,unknown>&DeletionMark})));
   const cascaded=new Map<string,number>();
   for(const {row} of rows)if(row.deletedWith)cascaded.set(row.deletedWith,(cascaded.get(row.deletedWith)??0)+1);
   const text=(value:unknown)=>typeof value==='string'?value:'';
@@ -36,6 +36,12 @@ function trashEntries(r:Repositories,team:TeamMember[]):TrashEntry[] {
 export function readSnapshot(db:Sqlite,ownerId:string,capabilities:Capabilities,now=Date.now(),userId=ownerId,role:Role='owner'):BusinessSnapshot {
   return db.transaction(()=>{
     const r=new Repositories(db,ownerId,()=>true,userId),team=r.team();
+    const journalsVisible=canAccessProjectJournals(ownerId,userId,role);
+    const journals=[...r.list('project_notes'),...r.listDeleted('project_notes')].filter(n=>n.noteKind==='journal');
+    // Also hide legacy generic delete/restore events written before journals became private.
+    const privateNoteEvents=new Set(journals.flatMap(n=>['Deleted','Restored'].map(verb=>`${verb} project note “${n.title.slice(0,80)}”.`)));
+    const batches=r.list('batch_operations'),privateBatches=new Set(journalsVisible?[]:batches.filter(b=>journals.some(n=>b.summaryJson.includes(n.id))).map(b=>b.id));
+    if(!journalsVisible) for(const b of batches) if([...privateBatches].some(id=>b.summaryJson.includes(id))) privateBatches.add(b.id);
     const costs=can(role,'money.costs'),sales=can(role,'money.sales'),hiddenFacts=can(role,'facts.hidden'),office=isOfficeRole(role);
     const clients=r.list('clients'),projects=r.list('projects'),tasks=r.list('tasks'),equipment=r.list('equipment'),materials=r.list('materials'),leads=r.list('leads'),followUps=r.list('lead_follow_ups');
     const ids=(rows:{id:string}[])=>new Set(rows.map(row=>row.id));
@@ -43,7 +49,7 @@ export function readSnapshot(db:Sqlite,ownerId:string,capabilities:Capabilities,
     const liveTask=(id:string|null|undefined)=>id==null||taskIds.has(id),liveProject=(id:string|null|undefined)=>id==null||projectIds.has(id),liveEquipment=(id:string|null|undefined)=>id==null||equipmentIds.has(id);
     const attachments=r.list('attachments').filter(a=>a.parentType==='task'?taskIds.has(a.parentId):a.parentType==='project'?projectIds.has(a.parentId):clientIds.has(a.parentId)),attachmentIds=ids(attachments);
     const cleanupObligations=r.list('cleanup_obligations').filter(o=>equipmentIds.has(o.equipmentId)),obligationIds=ids(cleanupObligations);
-    return {currentUser:team.find(p=>p.id===userId),team,runningTimers:r.listTimers(),dailyGoals:r.list('daily_goals').filter(g=>taskIds.has(g.taskId)),taskTemplates:r.list('task_templates'),attachments:attachments.map(({storageKey:_,previewKey:__,...a})=>{void _;void __;return a;}),activity:r.list('activity').slice(-500),projectNotes:r.list('project_notes').filter(n=>projectIds.has(n.projectId)),shoppingItems:r.list('shopping_items').filter(i=>liveProject(i.projectId)&&liveTask(i.taskId)),cleanupObligations,cleanupSnoozes:r.list('cleanup_snoozes').filter(s=>obligationIds.has(s.obligationId)),settings:r.settings(),schemaVersion:2 as const,timezone:'America/New_York' as const,currency:'USD' as const,revision:revision(db,ownerId),serverNow:now,capabilities,
+    return {currentUser:team.find(p=>p.id===userId),team,runningTimers:r.listTimers(),dailyGoals:r.list('daily_goals').filter(g=>taskIds.has(g.taskId)),taskTemplates:r.list('task_templates'),attachments:attachments.map(({storageKey:_,previewKey:__,...a})=>{void _;void __;return a;}),projectJournalsVisible:journalsVisible,activity:r.list('activity').filter(a=>journalsVisible||!a.kind.startsWith('journal.')&&!privateNoteEvents.has(a.body)).slice(-500),projectNotes:r.list('project_notes').filter(n=>projectIds.has(n.projectId)&&(journalsVisible||n.noteKind!=='journal')),shoppingItems:r.list('shopping_items').filter(i=>liveProject(i.projectId)&&liveTask(i.taskId)),cleanupObligations,cleanupSnoozes:r.list('cleanup_snoozes').filter(s=>obligationIds.has(s.obligationId)),settings:r.settings(),schemaVersion:2 as const,timezone:'America/New_York' as const,currency:'USD' as const,revision:revision(db,ownerId),serverNow:now,capabilities,
       clients,
       projects:projects.map(p=>sales?p:{...p,salesPriceCents:null,materialsPriceCents:null,laborPriceCents:null,salesNote:''}),
       tasks,objectives:r.list('objectives').map(o=>liveTask(o.taskId)?o:{...o,taskId:null}).sort((a,b)=>a.date.localeCompare(b.date)||a.rank-b.rank||a.id.localeCompare(b.id)),
@@ -56,6 +62,6 @@ export function readSnapshot(db:Sqlite,ownerId:string,capabilities:Capabilities,
       toolSignOuts:r.list('tool_sign_outs').filter(s=>equipmentIds.has(s.equipmentId)),equipmentReports:r.list('equipment_reports').filter(e=>equipmentIds.has(e.equipmentId)),
       // update 2026-09-29 slices
       taskRequirements:r.list('task_requirements').filter(q=>taskIds.has(q.taskId)).sort((a,b)=>a.position-b.position||a.createdAt-b.createdAt||a.id.localeCompare(b.id)),translationGlossary:r.list('translation_glossary'),translationEpoch:r.translationEpoch(),
-      ...(can(role,'records.delete')?{trash:trashEntries(r,team),batchOperations:r.list('batch_operations')}:{})};
+      ...(can(role,'records.delete')?{trash:trashEntries(r,team,journalsVisible),batchOperations:batches.filter(b=>!privateBatches.has(b.id))}:{})};
   })();
 }

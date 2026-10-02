@@ -81,11 +81,12 @@ try {
   const taskId = task.result.id;
   const clientId = (await command(owner, {type:'client.create',name:'Journal smoke client',phone:'',email:'',note:''})).result.id;
   const projectId = (await command(owner, {type:'project.create',name:'Journal smoke project',clientId,clientName:'',address:'',note:''})).result.id;
-  const journalId = (await command(employee, {type:'journal.save',projectId,body:'Synthetic project journal from the sealed release.'})).result.id;
+  const journalId = (await command(owner, {type:'journal.save',projectId,body:'Synthetic project journal from the sealed release.'})).result.id;
   const employeeSnapshot = (await call(employee, '/api/v1/snapshot')).body;
   assert.deepEqual(employeeSnapshot.expenses, [], 'Employee finances absent');
   assert.equal(employeeSnapshot.tasks.find(item => item.id === taskId).projectId, null, 'Name-only task stays unfiled');
-  assert.equal(employeeSnapshot.projectNotes.find(item => item.id === journalId).noteKind, 'journal', 'Built API returns journal entry');
+  assert(!employeeSnapshot.projectNotes.some(item => item.id === journalId), 'Built API hides private journals from employee');
+  assert((await call(owner,'/api/v1/snapshot')).body.projectNotes.some(item => item.id === journalId), 'Owner retains journal');
   for (const path of ['/api/v1/export', '/api/v1/admin/team']) assert.equal((await call(employee, path)).status, 403, 'Employee owner-route rejected');
 
   const png = await sharp(randomBytes(1200 * 1200 * 3), { raw: { width: 1200, height: 1200, channels: 3 } }).png().toBuffer();
@@ -125,8 +126,11 @@ try {
   }
   const response = await fetch(origin);
   await page.goto(origin + '/#/project/' + projectId);
-  await page.getByRole('region', {name:'Project journal',exact:true}).locator('.journal-entries button').click();
-  await page.getByRole('dialog').getByText('Synthetic project journal from the sealed release.', {exact:true}).waitFor();
+  await page.getByRole('heading',{name:'Journal smoke project',exact:true}).waitFor();
+  assert.equal(await page.getByRole('region', {name:'Project journal',exact:true}).count(),0,'Employee journal section hidden');
+  await page.locator('.add-button').click();
+  await page.getByRole('dialog').waitFor();
+  assert.equal(await page.locator('[data-quick-kind="journal"]').count(),0,'Employee journal Add option hidden');
   assert.match(response.headers.get('content-security-policy'), /script-src 'self'/);
   assert.deepEqual(errors, [], 'Built UI runtime errors');
   console.log('PASS: sealed team API + built web + real Caddy; app authentication, employee finance/admin isolation, name-only task, project journal create/read, >2 MiB photo + PDF, authenticated downloads and recoverable removal, phone/tablet/desktop screenshots. Chromium only.');
