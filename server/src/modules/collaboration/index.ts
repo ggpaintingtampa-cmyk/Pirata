@@ -1,5 +1,6 @@
 import type { HandlerMap, HandlerResult, TransactionContext } from '../../core/context.js';
 import { conflict, invalid } from '../../core/errors.js';
+import { businessDate } from '@pirata/domain/lib/dates';
 
 const record = (ctx: TransactionContext) => ({ id: ctx.newId(), createdAt: ctx.serverNow, updatedAt: ctx.serverNow });
 const result = (kind: string, id: string, changed = true): HandlerResult => ({ changed, result: { kind, id } });
@@ -38,6 +39,7 @@ export const handlers = {
   },
   'note.save': (ctx, c) => {
     project(ctx, c.projectId);
+    if (c.id && ctx.repo.require('project_notes', c.id).noteKind === 'journal') invalid('Open this entry in the project journal.');
     if (c.labelAttachmentId) {
       const file = ctx.repo.require('attachments', c.labelAttachmentId);
       const linkedTask = file.parentType === 'task' ? ctx.repo.require('tasks', file.parentId) : null;
@@ -48,6 +50,19 @@ export const handlers = {
     if (id) { ctx.repo.require('project_notes', id); ctx.repo.update('project_notes', id, { ...patch, updatedAt: ctx.serverNow }); return result('note', id); }
     const note = { ...record(ctx), ...patch, createdBy: actor(ctx) };
     ctx.repo.insert('project_notes', note); return result('note', note.id);
+  },
+  'journal.save': (ctx, c) => {
+    project(ctx, c.projectId);
+    if (c.id) {
+      const previous = ctx.repo.require('project_notes', c.id);
+      if (previous.noteKind !== 'journal' || previous.projectId !== c.projectId) invalid('Choose a journal entry in this project.');
+      const changed = previous.body !== c.body;
+      if (changed) ctx.repo.update('project_notes', c.id, { body: c.body, updatedAt: ctx.serverNow });
+      return result('note', c.id, changed);
+    }
+    const entry = { ...record(ctx), projectId: c.projectId, title: businessDate(ctx.serverNow), body: c.body, noteKind: 'journal' as const, pinned: 0, product: '', color: '', colorCode: '', finish: '', quantity: '', store: '', labelAttachmentId: null, createdBy: actor(ctx) };
+    ctx.repo.insert('project_notes', entry);
+    return result('note', entry.id);
   },
   'shopping.add': (ctx, c) => {
     project(ctx, c.projectId);
@@ -86,4 +101,4 @@ export const handlers = {
     if (changed) ctx.repo.update('cleanup_obligations', item.id, { completedAt: ctx.serverNow, completedBy: actor(ctx), updatedAt: ctx.serverNow });
     return result('cleanup', item.id, changed);
   },
-} satisfies Pick<HandlerMap, 'update.post' | 'note.save' | 'shopping.add' | 'shopping.check' | 'equipment.cleanupRule' | 'equipment.use' | 'cleanup.snooze' | 'cleanup.complete'>;
+} satisfies Pick<HandlerMap, 'update.post' | 'note.save' | 'journal.save' | 'shopping.add' | 'shopping.check' | 'equipment.cleanupRule' | 'equipment.use' | 'cleanup.snooze' | 'cleanup.complete'>;

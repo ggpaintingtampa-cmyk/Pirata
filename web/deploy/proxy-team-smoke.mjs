@@ -33,7 +33,8 @@ try {
     .replace('pirata.andresinbox.tech {', origin + ' {\n bind 127.0.0.1')
     .replaceAll('/srv/pirata/current', JSON.stringify(join(web, 'dist')))
     .replaceAll('/srv/pirata/shared', JSON.stringify(join(web, 'dist')))
-    .replace('127.0.0.1:3001', '127.0.0.1:3006');
+    .replaceAll('127.0.0.1:3001', '127.0.0.1:3006');
+  assert(!config.includes('127.0.0.1:3001'), 'Every proxy route must use the isolated API');
   await writeFile(join(directory, 'Caddyfile'), config, { mode: 0o600 });
   const validation = spawnSync('caddy', ['validate', '--config', join(directory, 'Caddyfile'), '--adapter', 'caddyfile'], { encoding: 'utf8' });
   assert.equal(validation.status, 0, 'Isolated Caddy config validation');
@@ -78,9 +79,13 @@ try {
   await command(owner, { type: 'expense.create', purchaseDate: '2026-09-18', description: 'Private smoke expense', category: 'other', amountCents: 12345, projectId: null });
   const task = await command(employee, { type: 'task.create', title: 'Team proxy smoke task' });
   const taskId = task.result.id;
+  const clientId = (await command(owner, {type:'client.create',name:'Journal smoke client',phone:'',email:'',note:''})).result.id;
+  const projectId = (await command(owner, {type:'project.create',name:'Journal smoke project',clientId,clientName:'',address:'',note:''})).result.id;
+  const journalId = (await command(employee, {type:'journal.save',projectId,body:'Synthetic project journal from the sealed release.'})).result.id;
   const employeeSnapshot = (await call(employee, '/api/v1/snapshot')).body;
   assert.deepEqual(employeeSnapshot.expenses, [], 'Employee finances absent');
   assert.equal(employeeSnapshot.tasks.find(item => item.id === taskId).projectId, null, 'Name-only task stays unfiled');
+  assert.equal(employeeSnapshot.projectNotes.find(item => item.id === journalId).noteKind, 'journal', 'Built API returns journal entry');
   for (const path of ['/api/v1/export', '/api/v1/admin/team']) assert.equal((await call(employee, path)).status, 403, 'Employee owner-route rejected');
 
   const png = await sharp(randomBytes(1200 * 1200 * 3), { raw: { width: 1200, height: 1200, channels: 3 } }).png().toBuffer();
@@ -119,9 +124,12 @@ try {
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'No page horizontal overflow at ' + width);
   }
   const response = await fetch(origin);
+  await page.goto(origin + '/#/project/' + projectId);
+  await page.getByRole('region', {name:'Project journal',exact:true}).locator('.journal-entries button').click();
+  await page.getByRole('dialog').getByText('Synthetic project journal from the sealed release.', {exact:true}).waitFor();
   assert.match(response.headers.get('content-security-policy'), /script-src 'self'/);
   assert.deepEqual(errors, [], 'Built UI runtime errors');
-  console.log('PASS: sealed team API + built web + real Caddy; app authentication, employee finance/admin isolation, name-only task, >2 MiB photo + PDF, authenticated downloads and recoverable removal, phone/tablet/desktop screenshots. Chromium only.');
+  console.log('PASS: sealed team API + built web + real Caddy; app authentication, employee finance/admin isolation, name-only task, project journal create/read, >2 MiB photo + PDF, authenticated downloads and recoverable removal, phone/tablet/desktop screenshots. Chromium only.');
 } finally {
   if (browser) await browser.close();
   if (proxy && proxy.exitCode === null) { proxy.kill('SIGTERM'); await new Promise(resolve => proxy.once('exit', resolve)); }

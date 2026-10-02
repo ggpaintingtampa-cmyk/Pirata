@@ -2,6 +2,8 @@
 // English text the code emits (same approach as legacy.ts); the parity test greps the sources against this map.
 import type { Locale } from './index';
 export const fieldStrings: Record<string, string> = {
+  'Open this entry in the project journal.': 'Abre esta entrada en el diario del proyecto.',
+  'Choose a journal entry in this project.': 'Elige una entrada del diario de este proyecto.',
   'Use at least 8 characters.': 'Usa al menos 8 caracteres.',
   'Use a password between 8 and 128 characters.': 'Usa una contraseña de entre 8 y 128 caracteres.',
   'The read scope is required.': 'Se requiere el permiso de lectura.',

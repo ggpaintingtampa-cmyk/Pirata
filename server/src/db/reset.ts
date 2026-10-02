@@ -19,7 +19,7 @@ export function resetBusinessRecords(db:Sqlite, expectedRevision:number, backupP
       const tables=(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as {name:string}[]).map(r=>r.name);
       if (JSON.stringify(tables)!==JSON.stringify(allTables)) throw new Error('Unreviewed tables; reset refused.');
       const schema=db.prepare('SELECT version,checksum FROM schema_versions ORDER BY version').all();
-      if (JSON.stringify(schema)!==JSON.stringify(migrations().map(({version,checksum})=>({version,checksum}))) || migrations().length!==5) throw new Error('Unreviewed schema; reset refused.');
+      if (JSON.stringify(schema)!==JSON.stringify(migrations().map(({version,checksum})=>({version,checksum}))) || migrations().length!==6) throw new Error('Unreviewed schema; reset refused.');
       const revisions=db.prepare('SELECT revision FROM data_revisions').all() as {revision:number}[];
       if (revisions.length!==1 || revisions[0].revision!==expectedRevision || expectedRevision===Number.MAX_SAFE_INTEGER) throw new Error('Revision changed; reset refused.');
       // Compare privately: no account, credential or business values reach output.

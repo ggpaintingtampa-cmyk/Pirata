@@ -14,7 +14,7 @@ export type Attachment=z.infer<typeof attachmentSchema>;
 export type StoredAttachment=Attachment & {storageKey:string;previewKey:string|null};
 export const activitySchema=z.object({...record,userId:id,projectId:nullableId,taskId:nullableId,kind:z.string(),body:z.string()}).strict();
 export type Activity=z.infer<typeof activitySchema>;
-export const projectNoteSchema=z.object({...record,projectId:id,title,body:note,pinned:z.number(),product:z.string(),color:z.string(),colorCode:z.string(),finish:z.string(),quantity:z.string(),store:z.string(),labelAttachmentId:nullableId,createdBy:id}).strict();
+export const projectNoteSchema=z.object({...record,projectId:id,title,body:note,pinned:z.number(),product:z.string(),color:z.string(),colorCode:z.string(),finish:z.string(),quantity:z.string(),store:z.string(),labelAttachmentId:nullableId,createdBy:id,noteKind:z.enum(['note','journal']).optional()}).strict();
 export type ProjectNote=z.infer<typeof projectNoteSchema>;
 export const shoppingItemSchema=z.object({...record,title,note,projectId:nullableId,sourceNoteId:nullableId,checkedAt:stamp.nullable(),createdBy:id,quantity:z.string().optional(),taskId:nullableId.optional(),forUserId:nullableId.optional(),receivedAt:stamp.nullable().optional(),receivedBy:nullableId.optional(),archivedAt:stamp.nullable().optional()}).strict();
 export type ShoppingItem=z.infer<typeof shoppingItemSchema>;
@@ -32,6 +32,7 @@ export const extraCommands=[
  command('dailyGoal.replace',{date:z.string().refine(isLocalDate,'Choose a valid date.'),userId:id,taskIds:z.array(id).max(3).refine(a=>new Set(a).size===a.length)}),
  command('update.post',{projectId:nullableId,taskId:nullableId,body:note.min(1)}),
  command('note.save',{id:id.optional(),projectId:id,title,body:note.default(''),pinned:z.boolean().default(false),product:text,color:text,colorCode:text,finish:text,quantity:text,store:text,labelAttachmentId:nullableId.default(null)}),
+ command('journal.save',{id:id.optional(),projectId:id,body:note.min(1)}),
  command('shopping.add',{title,note:note.default(''),projectId:nullableId.default(null),sourceNoteId:nullableId.default(null)}),
  command('shopping.check',{id,checked:z.boolean()}),
  command('equipment.cleanupRule',{id,cleaningMinutes:z.number().int().min(1).max(1440),maxCleaningDelayMinutes:z.number().int().min(1).max(525600)}),

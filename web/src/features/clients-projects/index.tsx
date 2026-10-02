@@ -1,4 +1,6 @@
-import { tx } from '../../i18n';
+import { tx, useT } from '../../i18n';
+import { JournalPanel } from '../journal/JournalPanel';
+import { JournalDialog } from '../journal/JournalDialog';
 import { can } from '@pirata/contracts/permissions';
 import { Gauge } from 'lucide-react';
 import { CopyField } from '../../components/CopyField';
@@ -124,6 +126,8 @@ export function ProjectsView(app: ModuleProps) {
 }
 
 export function ProjectDetail(app: ModuleProps) {
+  const t = useT();
+  const [addingJournal, setAddingJournal] = useState(false);
   const [dialog, open] = useState<DialogState | null>(null);
   const [selectedSection, setSelectedSection] = useState('tasks');
   const sectionId = useId();
@@ -142,6 +146,7 @@ export function ProjectDetail(app: ModuleProps) {
   return <section className="cp-module cp-project-detail" aria-label={tx('Project details')}><div className="cp-project-back-row"><button className="text-button cp-back" onClick={app.onClose}><ArrowLeft size={16} aria-hidden="true" />{tx('Back to projects')}</button><span>{tx('Overview')}</span></div>
     <header className="cp-header"><div><ProjectStatusChip project={project} tasks={app.snapshot.tasks} /><h1>{project.name}</h1>{project.note && <p className="cp-note cp-project-intro">{project.note}</p>}</div></header>
     <ProjectLifecycle app={app} project={project} />
+    <button type="button" className="text-button" onClick={() => setAddingJournal(true)}><Plus size={16} aria-hidden="true" />{t('journal.add')}</button>
     <nav className="cp-section-nav" aria-label={tx('Project sections')}>{sections.map(({ key, label }) => <a key={key} aria-current={selectedSection === key ? 'location' : undefined} href={'#' + sectionId + '-' + key} onClick={event => jump(event, key)}>{label}</a>)}</nav>
     <div className="cp-project-context"><div className="cp-context-item"><div className="cp-context-label"><User size={16} aria-hidden="true" /><span>{tx('Client')}</span></div>{client ? <button className="cp-client-link" onClick={() => app.onOpenClient(client.id)}><span>{client.name}{client.archivedAt !== null ? ' (archived)' : ''}</span><ChevronRight size={16} aria-hidden="true" /></button> : <p>{project.clientName || 'No linked client'}</p>}</div>{project.address && <div className="cp-context-item"><div className="cp-context-label"><MapPin size={16} aria-hidden="true" /><span>{tx('Job address')}</span></div><p className="cp-note">{project.address}</p></div>}</div>
     <FactsCard app={app} project={project} />
@@ -155,6 +160,8 @@ export function ProjectDetail(app: ModuleProps) {
     <section className="cp-project-section" id={sectionId + '-activity'} aria-label={tx('Activity section')} tabIndex={-1}><UpdatesPanel app={app} projectId={project.id} /></section>
     {owner && <section className="cp-project-section cp-surface" id={sectionId + '-purchases'} aria-label={tx('Purchases section')} tabIndex={-1}><div className="cp-section-heading"><h3>{tx('Purchases')}</h3><button className="text-button" onClick={() => app.onAddExpense(project.id)}><Plus size={18} />{tx('Add expense')}</button></div>{summary.expenses.length ? <ul className="cp-records">{[...summary.expenses].sort((a, b) => b.createdAt - a.createdAt).map(expense => <li key={expense.id}><button className="cp-record" onClick={() => app.onOpenExpense(expense.id)}><span><strong>{expense.description}</strong><small>{expense.purchaseDate}</small></span><strong>{formatMoney(expense.amountCents)}</strong></button></li>)}</ul> : <p className="empty-state">{tx('No purchases recorded for this project.')}</p>}</section>}
     {(project.status === 'scheduled' || project.status === 'completed') && <footer className="cp-project-footer"><p className="muted">{project.status !== 'completed' ? 'All set with this job?' : 'More work to do on this job?'}</p><button className="secondary" onClick={() => open({ kind: 'project-status', id: project.id })}><Check size={18} aria-hidden="true" />{project.status !== 'completed' ? 'Complete project' : 'Reopen project'}</button></footer>}
+    <JournalPanel app={app} projectId={project.id} />
+    {addingJournal && <JournalDialog app={app} projectId={project.id} onClose={() => setAddingJournal(false)} onDone={() => setAddingJournal(false)} />}
     {dialog && <FeatureDialog app={app} state={dialog} open={open} />}
   </section>;
 }

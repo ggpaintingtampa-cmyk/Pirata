@@ -1,0 +1,6 @@
+.journal-entries{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;list-style:none;padding:0;margin:12px 0}
+.project-journal .journal-entries button{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;text-align:center;font-variant-numeric:tabular-nums}
+.project-journal .cp-section-heading{flex-wrap:wrap;gap:10px}
+.journal-dialog textarea{min-height:240px;resize:vertical}
+.journal-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+.journal-project-name{font-weight:700;overflow-wrap:anywhere}

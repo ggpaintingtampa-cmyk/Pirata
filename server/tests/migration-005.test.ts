@@ -19,7 +19,7 @@ describe('migration 005', () => {
     directory = mkdtempSync(join(tmpdir(), 'pirata-005-'));
     const path = join(directory, 'business.sqlite');
     const steps = migrations();
-    expect(steps).toHaveLength(5);
+    expect(steps.length).toBeGreaterThanOrEqual(5);
     db = openDatabase(path, { create: true, applyMigrations: false });
     migrate(db, steps.slice(0, 4));
     const ownerId = await setOwnerPassword(db, 'Isolated schema fixture password', 'setup', NOW);
@@ -28,7 +28,7 @@ describe('migration 005', () => {
     db.prepare('INSERT INTO project_templates (id,owner_id,created_at,updated_at,name,note,tree,created_by) VALUES (?,?,?,?,?,?,?,?)').run('ptpl', ownerId, NOW, NOW, 'Interior', '', JSON.stringify([{ title: 'Prep', description: '', children: [] }]), ownerId);
     db.prepare("INSERT INTO ai_usage (id,owner_id,user_id,created_at,status,reserved_cents) VALUES ('u1',?,?,?,'complete',3)").run(ownerId, ownerId, NOW);
     migrate(db);
-    expect(db.prepare('SELECT max(version) v FROM schema_versions').get()).toEqual({ v: 5 });
+    expect(db.prepare('SELECT max(version) v FROM schema_versions').get()).toEqual({ v: steps.length });
     expect(repo.require('task_templates', 'tpl')).toMatchObject({ name: 'Prepare wall', version: 1 });
     expect(repo.require('project_templates', 'ptpl')).toMatchObject({ name: 'Interior', version: 1 });
     expect(db.prepare("SELECT kind FROM ai_usage WHERE id='u1'").get()).toEqual({ kind: 'ask' });
