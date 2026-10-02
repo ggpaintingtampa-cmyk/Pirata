@@ -1,5 +1,7 @@
 # Project journals — live October 2, 2026
 
+Privacy follow-up: journals are now visible only to the primary owner account. The shared-journal behavior documented below is historical and superseded by `PRIVATE-JOURNALS-DEPLOYMENT-2026-10-02.md`.
+
 Pirata web `20261002T020010Z-7e7349b5` and API `20261002T020005Z-191744e7` were published from commit `f52adf8` at https://pirata.andresinbox.tech. Migration 006 adds a constrained note kind to project notes. Existing notes retain every original value and default to regular notes.
 
 ## Use
