@@ -11,7 +11,8 @@ import { runCommand } from './commands';
 export function PlanEditor({ app, date, scope, rows, onClose }: { app: ModuleProps; date: string; scope: DayScope; rows: readonly DayAssignment[]; onClose(): void }) {
   const t = useT(), canOthers = useCan('plan.others'), tasks = app.snapshot.tasks, projects = app.snapshot.projects.filter(p => p.status !== 'completed');
   const [ids, setIds] = useState(rows.map(row => row.taskId!).filter(Boolean));
-  const [project, setProject] = useState(scope.kind === 'project' ? scope.projectId : projects[0]?.id ?? '');
+  const [project, setProject] = useState(scope.kind === 'project' ? scope.projectId : 'all');
+  const personName=scope.kind==='person'?app.snapshot.team?.find(member=>member.id===scope.userId)?.name??'':'';
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [copyDate, setCopyDate] = useState(date), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [people, setPeople] = useState<string[]>(scope.kind === 'project' ? presence(app.snapshot, date, scope.projectId) : []);
@@ -30,17 +31,18 @@ export function PlanEditor({ app, date, scope, rows, onClose }: { app: ModulePro
     return <li className={'plan-node depth-' + depth}>
       <div className="plan-node-row">
         {children.length ? <button type="button" className="plan-node-toggle" aria-expanded={Boolean(open[task.id])} aria-label={task.title} onClick={() => setOpen({ ...open, [task.id]: !open[task.id] })}>{open[task.id] ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronRight size={15} aria-hidden="true" />}</button> : <span className="plan-node-spacer" />}
-        <span className={'plan-node-title' + (task.status === 'done' ? ' is-done' : '')}>{task.title}</span>
+        <span className={'plan-node-title' + (task.status === 'done' ? ' is-done' : '')}>{task.title}<small>{app.snapshot.team?.find(member=>member.id===task.assigneeId)?.name??t('work.unassigned')}{project==='all'?' · '+(projects.find(item=>item.id===task.projectId)?.name??''):''}</small></span>
         <button type="button" disabled={added} onClick={() => setIds([...ids, task.id])}><Plus size={14} aria-hidden="true" />{added ? t('work.plan.added') : t('work.plan.add')}</button>
       </div>
       {open[task.id] && children.length > 0 && <ul className="plan-tree">{children.map(child => <Node key={child.id} task={child} />)}</ul>}
     </li>;
   };
-  const roots = project ? orderedChildren(tasks, null, project) : [];
+  const roots = project==='all'?projects.flatMap(item=>orderedChildren(tasks,null,item.id)):project?orderedChildren(tasks,null,project):[];
   return <WorkDialog title={t('work.planTitle', { date })} className="plan-editor-dialog" onClose={onClose}>
-    {scope.kind === 'person' && <label className="work-field">{t('work.plan.project')}<select value={project} onChange={e => setProject(e.target.value)}>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
+    {scope.kind==='person'&&<p className="plan-person-context"><strong>{t('work.dayHint',{name:personName,date})}</strong><br/>{t('work.plan.assignmentHint')}</p>}
+    {scope.kind === 'person' && <label className="work-field">{t('work.plan.project')}<select value={project} onChange={e => setProject(e.target.value)}><option value="all">{t('work.allProjects')}</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
     {!projects.length && <p className="empty-state">{t('work.plan.noProjects')}</p>}
-    <h3>{t('work.plan.browse')}</h3>
+    <h3>{t(project==='all'?'work.allTasks':'work.plan.browse')}</h3>
     {project && !roots.length && <p className="empty-state">{t('work.empty')}</p>}
     <ul className="plan-tree">{roots.map(task => <Node key={task.id} task={task} />)}</ul>
     <h3>{t('work.plan.chosen')}</h3>

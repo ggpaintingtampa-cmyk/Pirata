@@ -13,6 +13,8 @@ import { ThumbStrip } from '../../components/ThumbStrip';
 import { CompletionRing } from '../tasks-time/CompletionRing';
 import { useServerNow } from '../tasks-time/useServerNow';
 import { PlanEditor } from './PlanEditor';
+import { AssignTaskDialog } from './AssignTaskDialog';
+import { TaskList } from '../tasks-time';
 import { QuestionDialog } from './QuestionDialog';
 import { WhoWorked } from './WhoWorked';
 import { RequirementChips } from '../templates/RequirementsEditor';
@@ -80,8 +82,12 @@ export function WorkView(app: ModuleProps & { onOpenProjects?(): void; onOpenTas
   const snapshot = app.snapshot, me = snapshot.currentUser?.id ?? '', tasks = snapshot.tasks;
   const [date, setDate] = useState(app.businessDate), [scopeId, setScopeId] = useState('person:' + me), [planning, setPlanning] = useState(false), [question, setQuestion] = useState<string | null>(null), [timing, setTiming] = useState<string | null>(null);
   const [mode, setModeState] = useState<DayGroupMode>(rememberedMode);
+  const [listView,setListView]=useState<'day'|'assigned'>('day'),[assigning,setAssigning]=useState(false);
   const setMode = (next: DayGroupMode) => { rememberedMode = next; setModeState(next); };
   const scope: DayScope = parseScope(scopeId) ?? { kind: 'person', userId: me };
+  const showAssigned=scope.kind==='person'&&listView==='assigned';
+  const personName=scope.kind==='person'?snapshot.team?.find(member=>member.id===scope.userId)?.name??'':'';
+  const assignedCount=scope.kind==='person'?tasks.filter(task=>!task.archivedAt&&task.assigneeId===scope.userId).length:0;
   const rows = dayItems(snapshot, date, scope), completion = dayCompletion(tasks, rows);
   const timeGroups = mode === 'time' ? groupByTimeThenProject(snapshot, rows, date) : null, projectGroups = mode === 'project' ? groupByProject(snapshot, rows) : null;
   const numbers = new Map(flattenGroups(timeGroups ?? projectGroups ?? []).map((row, index) => [row.id, index + 1] as const));
@@ -98,16 +104,21 @@ export function WorkView(app: ModuleProps & { onOpenProjects?(): void; onOpenTas
         <optgroup label={t('work.people')}>{people.map(member => <option key={member.id} value={'person:' + member.id}>{member.id === me ? t('work.mine') + ' · ' : ''}{member.name}</option>)}</optgroup>
         <optgroup label={t('work.pools')}>{projects.map(project => <option key={project.id} value={'project:' + project.id}>{project.name}</option>)}</optgroup></select></label>
     </div>
-    <div className="day-summary"><CompletionRing fraction={completion} label={t('work.steps', { done: doneLeaves, total: leaves })} size={56} /><div><strong>{t('work.steps', { done: doneLeaves, total: leaves })}</strong>{scope.kind === 'project' && <p className="muted">{onSite.length ? t('work.onSite', { names: onSite.join(', ') }) : t('work.nobodyPlanned')}</p>}</div>{canPlan && <button type="button" className="work-primary" onClick={() => setPlanning(true)}>{t('work.plan')}</button>}</div>
+    {scope.kind==='person'&&<div className="day-view-toggle" role="group" aria-label={t('work.view')}><button type="button" aria-pressed={!showAssigned} onClick={()=>setListView('day')}>{t('work.view.day')} ({rows.length})</button><button type="button" aria-pressed={showAssigned} onClick={()=>setListView('assigned')}>{t('work.view.assigned')} ({assignedCount})</button></div>}
+    <div className="day-employee-actions"><p>{scope.kind==='person'?t(showAssigned?'work.assignedHint':'work.dayHint',{name:personName,date}):t('work.pool')}</p><div className="live-actions">{canPlan&&<button type="button" className="work-primary" onClick={()=>setPlanning(true)}>{t('work.plan')}</button>}{canOthers&&scope.kind==='person'&&<button type="button" onClick={()=>setAssigning(true)}>{t('work.assign')}</button>}</div></div>
+    {showAssigned&&scope.kind==='person'?<TaskList key={scope.userId} {...app} personId={scope.userId} initialStatus="all"/>:<>
+    <div className="day-summary"><CompletionRing fraction={completion} label={t('work.steps', { done: doneLeaves, total: leaves })} size={56} /><div><strong>{t('work.steps', { done: doneLeaves, total: leaves })}</strong>{scope.kind === 'project' && <p className="muted">{onSite.length ? t('work.onSite', { names: onSite.join(', ') }) : t('work.nobodyPlanned')}</p>}</div></div>
     <WhoWorked app={app} date={date} onOpenHours={app.onOpenHours} />
     {!rows.length && <div className="work-empty-state"><div><h3>{t('work.empty')}</h3><p>{t('work.emptyHint')}</p></div></div>}
     {rows.length > 0 && <div className="day-mode" role="group" aria-label={t('work.groupMode')}><button type="button" aria-pressed={mode === 'time'} onClick={() => setMode('time')}>{t('work.group.time')}</button><button type="button" aria-pressed={mode === 'project'} onClick={() => setMode('project')}>{t('work.group.project')}</button></div>}
     {timeGroups?.map(group => <section key={group.startMinute ?? 'unscheduled'} className="day-time-group" aria-label={group.startMinute === null ? t('work.group.unscheduled') : formatClockMinute(locale, group.startMinute)}><h3 className="day-time-title">{group.startMinute === null ? t('work.group.unscheduled') : formatClockMinute(locale, group.startMinute)}</h3>
       {group.projects.map(project => <div key={project.projectId} className="day-group"><h4 className="day-group-title">{projectHeading(project.projectId, project.name)}</h4>{cards(project.rows)}</div>)}</section>)}
     {projectGroups?.map(group => <section key={group.projectId} className="day-group"><h3 className="day-group-title">{projectHeading(group.projectId, group.name)}</h3>{cards(group.rows)}</section>)}
+    </>}
     <section className="day-projects"><div className="task-results-heading"><span>{t('work.projects')}</span><button type="button" className="work-link-button" onClick={() => app.onOpenProjects?.()}>{t('work.allProjects')}</button><button type="button" className="work-link-button" onClick={() => app.onOpenTasks?.()}>{t('work.allTasks')}</button></div>
       <ul className="day-project-list">{projects.slice(0, 4).map(project => { const fraction = projectCompletion(project.id, tasks); return <li key={project.id}><button type="button" onClick={() => app.onOpenProject(project.id)}><span>{project.name}</span><small>{fraction === null ? '—' : completionPercent(fraction) + '%'}</small></button></li>; })}</ul></section>
     {planning && <PlanEditor app={app} date={date} scope={scope} rows={rows} onClose={() => setPlanning(false)} />}
+    {assigning&&scope.kind==='person'&&<AssignTaskDialog app={app} userId={scope.userId} onClose={()=>setAssigning(false)}/>}
     {question && <QuestionDialog app={app} taskId={question} projectId={tasks.find(task => task.id === question)?.projectId ?? undefined} onClose={() => setQuestion(null)} onDone={() => setQuestion(null)} />}
     {timing && <ScheduleTaskDialog {...app} businessDate={date} selection={{ taskId: timing }} onClose={() => setTiming(null)} />}
   </section>;

@@ -161,3 +161,13 @@
   .task-detail-dialog .task-primary{padding:8px}
   .task-subtask-list>div:not(.task-checklist-heading):not(.task-checklist-summary)>.task-check-row{padding:8px}
 }
+/* Filter actions expand in Spanish: keep labels and controls inside the phone instead of shrinking the task count into a vertical column. */
+.task-library .task-results-heading{flex-wrap:wrap;justify-content:flex-start;min-width:0}
+.task-library .task-results-heading>span{flex:1 0 100%;min-width:0}
+.task-library .task-results-heading>button{white-space:normal;min-width:0;max-width:100%;min-height:44px;overflow-wrap:anywhere}
+.task-library .task-filters select{width:100%;min-width:0;max-width:100%}
+.task-library .task-filters>.work-field{overflow-wrap:anywhere}
+.task-library .task-library-item.bulk-row{display:flex;align-items:center;flex-wrap:nowrap}
+.task-library .task-library-item.bulk-row>.task-library-open{flex:1;width:auto;min-width:0}
+.task-library .task-library-meta>span,.task-library .task-parent-context,.task-library .task-library-secondary{overflow-wrap:anywhere}
+@media(max-width:360px){.task-library .task-filters{grid-template-columns:minmax(0,1fr)}.task-library .task-filters>.work-field{grid-column:1/-1}}

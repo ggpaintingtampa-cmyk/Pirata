@@ -1,7 +1,14 @@
 import type { Strings } from '../../i18n';
 export const strings:Strings={
   en:{
-    'work.previousDay':'Previous day','work.nextDay':'Next day','work.today':'Today','work.date':'Day','work.scope':'Whose list','work.people':'People','work.pools':'Project pools',
+    'work.view':'Task view','work.view.day':'Day plan','work.view.assigned':'All assigned tasks',
+    'work.assignedHint':'All tasks assigned to {name}, across every date and project, including completed tasks. Archived tasks stay in the archive.',
+    'work.dayHint':'Day plan for {name} · {date}','work.assign':'Assign tasks',
+    'work.assign.title':'Assign a task to {name}','work.assign.hint':'Assign responsibility without choosing a day. Inherited subtasks follow the assignment; explicitly assigned subtasks keep their person.',
+    'work.assign.task':'Task to assign','work.assign.choose':'Choose a task','work.assign.current':'Currently assigned to: {name}',
+    'work.assign.save':'Assign to {name}','work.assign.saved':'Task assigned.','work.assign.empty':'No other active tasks are available to assign.',
+    'work.plan.assignmentHint':'Saving adds these tasks to this person’s day. Unassigned tasks become theirs; tasks explicitly assigned to someone else keep that assignment.',
+    'work.previousDay':'Previous day','work.nextDay':'Next day','work.today':'Today','work.date':'Day','work.scope':'Employee / project','work.people':'People','work.pools':'Project pools',
     'work.plan':'Plan this day','work.planTitle':'Plan {date}','work.steps':'{done} of {total} steps done','work.onSite':'On site: {names}','work.nobodyPlanned':'Nobody planned on this project yet',
     'work.empty':'Nothing planned for this day.','work.emptyHint':'Pick the tasks and their order. Workers see exactly this list.',
     'work.bring':'Bring','work.requestMaterial':'Request','work.hours.team':'Who worked','work.hours.mine':'Your hours','work.hours.open':'Open hours','work.hours.none':'No hours recorded for this day.','work.hours.note':'Task timers are not paid hours and are not included.','work.hours.total':'{hours} h','work.hours.days':'{days} d ({hours} h)','work.hours.approved':'{count} approved','work.hours.submitted':'{count} submitted','work.openTask':'Open task','work.ask':'Ask the team','work.setTime':'Set time','work.groupMode':'Group by','work.group.time':'By time','work.group.project':'By project','work.group.unscheduled':'Unscheduled','work.plan.timesHint':'Times come from the schedule; reordering only changes the order inside a time.','work.take':'Take this','work.release':'Put back in pool','work.done':'Done','work.open':'Open','work.blocked':'Blocked','work.unassigned':'Unassigned',
@@ -14,7 +21,14 @@ export const strings:Strings={
     'work.progress.title':'Team progress','work.progress.none':'No day list for this person.',
   },
   es:{
-    'work.previousDay':'Día anterior','work.nextDay':'Día siguiente','work.today':'Hoy','work.date':'Día','work.scope':'Lista de','work.people':'Personas','work.pools':'Pendientes por proyecto',
+    'work.view':'Vista de tareas','work.view.day':'Plan del día','work.view.assigned':'Todas las tareas asignadas',
+    'work.assignedHint':'Todas las tareas asignadas a {name}, de cualquier fecha y proyecto, incluidas las completadas. Las archivadas permanecen en el archivo.',
+    'work.dayHint':'Plan del día para {name} · {date}','work.assign':'Asignar tareas',
+    'work.assign.title':'Asignar una tarea a {name}','work.assign.hint':'Asigna la responsabilidad sin elegir un día. Las subtareas heredadas siguen la asignación; las asignadas explícitamente conservan a su responsable.',
+    'work.assign.task':'Tarea para asignar','work.assign.choose':'Elige una tarea','work.assign.current':'Responsable actual: {name}',
+    'work.assign.save':'Asignar a {name}','work.assign.saved':'Tarea asignada.','work.assign.empty':'No hay otras tareas activas disponibles para asignar.',
+    'work.plan.assignmentHint':'Al guardar, estas tareas se agregan al día de esta persona. Las tareas sin responsable se le asignan; las asignadas explícitamente a otra persona conservan esa asignación.',
+    'work.previousDay':'Día anterior','work.nextDay':'Día siguiente','work.today':'Hoy','work.date':'Día','work.scope':'Empleado / proyecto','work.people':'Personas','work.pools':'Pendientes por proyecto',
     'work.plan':'Planear este día','work.planTitle':'Planear {date}','work.steps':'{done} de {total} pasos hechos','work.onSite':'En la obra: {names}','work.nobodyPlanned':'Aún nadie planeado en este proyecto',
     'work.empty':'No hay nada planeado para este día.','work.emptyHint':'Elige las tareas y su orden. Los trabajadores ven exactamente esta lista.',
     'work.bring':'Llevar','work.requestMaterial':'Pedir','work.hours.team':'Quién trabajó','work.hours.mine':'Tus horas','work.hours.open':'Abrir horas','work.hours.none':'No hay horas registradas para este día.','work.hours.note':'Los temporizadores de tareas no son horas pagadas y no se incluyen.','work.hours.total':'{hours} h','work.hours.days':'{days} d ({hours} h)','work.hours.approved':'{count} aprobadas','work.hours.submitted':'{count} enviadas','work.openTask':'Abrir tarea','work.ask':'Preguntar al equipo','work.setTime':'Fijar hora','work.groupMode':'Agrupar por','work.group.time':'Por hora','work.group.project':'Por proyecto','work.group.unscheduled':'Sin hora','work.plan.timesHint':'Las horas vienen del horario; reordenar solo cambia el orden dentro de una hora.','work.take':'Tomar esta','work.release':'Devolver al proyecto','work.done':'Hecho','work.open':'Abierta','work.blocked':'Bloqueada','work.unassigned':'Sin asignar',

@@ -149,6 +149,7 @@
 .plan-node-toggle{min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
 .plan-node-spacer{display:inline-block;width:32px}
 .plan-node-title{flex:1;min-width:0}
+.plan-node-title small{display:block;font-size:11px;line-height:1.4;color:var(--color-text-muted);overflow-wrap:anywhere}
 .plan-node-title.is-done{text-decoration:line-through;opacity:.6}
 .plan-chosen{margin:0;padding:0;list-style:none;display:grid;gap:6px}
 .plan-chosen li{display:flex;justify-content:space-between;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:10px;padding:6px 8px}
@@ -177,3 +178,11 @@
 .who-worked-empty,.who-worked-note{margin:0;font-size:.85rem}
 /* P02 */
 .day-bring{display:grid;gap:4px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.04)}
+.day-view-toggle{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.day-view-toggle>button{flex:1 1 140px;min-height:44px;white-space:normal;min-width:0;padding:10px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);color:var(--color-text)}
+.daily-page .day-view-toggle>button[aria-pressed=true]{background:var(--color-action);color:var(--color-on-primary);font-weight:700}
+.day-employee-actions{display:grid;gap:8px;min-width:0}
+.day-employee-actions>p{margin:0;color:var(--color-muted);font-size:14px;overflow-wrap:anywhere}
+.day-header,.day-date,.day-scope,.daily-page>.task-library{min-width:0}
+.day-scope select{min-width:0;max-width:100%}
+.plan-person-context{font-size:14px;line-height:1.5}
